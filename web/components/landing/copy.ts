@@ -108,6 +108,7 @@ export const landingCopy = {
     },
     footer: {
       description: "Credit-based AI image generation and enhancement service",
+      contactLabel: "Contact",
       pricing: "Pricing",
       privacy: "Privacy Policy",
       terms: "Terms of Service",
@@ -220,6 +221,7 @@ export const landingCopy = {
     },
     footer: {
       description: "AI 이미지 생성과 보정을 위한 크레딧 기반 서비스",
+      contactLabel: "문의",
       pricing: "요금제",
       privacy: "개인정보처리방침",
       terms: "이용약관",
@@ -332,6 +334,7 @@ export const landingCopy = {
     },
     footer: {
       description: "Service de génération et d’amélioration d’images par IA basé sur des crédits",
+      contactLabel: "Contact",
       pricing: "Tarifs",
       privacy: "Politique de confidentialité",
       terms: "Conditions d’utilisation",
