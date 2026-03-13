@@ -56,3 +56,32 @@ export async function isSoftDeletedAccount(
     return false;
   }
 }
+
+export async function isSoftDeletedEmail(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) {
+    return false;
+  }
+
+  try {
+    const adminDb = createAdminClient().schema(dbSchema());
+    const result = await adminDb
+      .from("profiles")
+      .select("account_status, deleted_at")
+      .eq("email", normalizedEmail)
+      .eq("account_status", "deleted")
+      .limit(1)
+      .maybeSingle();
+
+    if (result.error) {
+      if (isMissingProfileStatusError(result.error)) {
+        return false;
+      }
+      throw result.error;
+    }
+
+    return isDeletedProfileRow((result.data ?? null) as ProfileStatusRow | null);
+  } catch {
+    return false;
+  }
+}

@@ -52,6 +52,11 @@ export default function SignupForm({ initialLanguage = "en" }: SignupFormProps) 
             className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-800 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             placeholder="you@example.com"
           />
+          <p className="mt-2 text-xs leading-5 text-gray-500">
+            {language === "ko"
+              ? "가입 후 이메일로 전송되는 인증 링크를 완료한 계정만 로그인할 수 있습니다."
+              : "Only accounts that complete the verification link sent by email can sign in."}
+          </p>
         </div>
         <div>
           <label htmlFor="password" className="block text-sm text-gray-400 mb-1">

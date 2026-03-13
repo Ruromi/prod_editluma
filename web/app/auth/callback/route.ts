@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { ACCOUNT_DELETED_ERROR_MESSAGE } from "@/lib/account-status";
 import { isSoftDeletedAccount } from "@/lib/account-status.server";
+import { provisionSignupCreditsForUser } from "@/lib/signup-credits.server";
 
 function resolveNextPath(rawNext: string | null) {
   if (!rawNext || !rawNext.startsWith("/") || rawNext.startsWith("//")) {
@@ -29,6 +30,12 @@ export async function GET(request: Request) {
         return NextResponse.redirect(
           `${origin}/auth/login?error=${encodeURIComponent(ACCOUNT_DELETED_ERROR_MESSAGE)}`
         );
+      }
+
+      try {
+        await provisionSignupCreditsForUser(user);
+      } catch (provisionError) {
+        console.error("Failed to provision signup credits after auth callback", provisionError);
       }
 
       return NextResponse.redirect(`${origin}${next}`);
