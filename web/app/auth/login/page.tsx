@@ -70,6 +70,11 @@ export default async function LoginPage({
           >
             {language === "ko" ? "로그인" : "Log in"}
           </button>
+          <div className="text-right">
+            <Link href="/auth/forgot-password" className="text-sm text-indigo-600 hover:text-indigo-500">
+              {language === "ko" ? "비밀번호를 잊으셨나요?" : "Forgot password?"}
+            </Link>
+          </div>
         </form>
 
         <div className="relative">

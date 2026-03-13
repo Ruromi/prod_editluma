@@ -14,6 +14,10 @@ const PASSWORD_POLICY_MESSAGE =
 const PASSWORD_CONFIRMATION_MESSAGE = "비밀번호 확인이 일치하지 않습니다.";
 const EMAIL_VERIFICATION_REQUIRED_MESSAGE =
   "가입 확인 이메일의 인증 링크를 완료한 뒤 로그인해주세요.";
+const PASSWORD_RESET_REQUEST_MESSAGE =
+  "비밀번호 재설정 메일을 확인해주세요.";
+const PASSWORD_RESET_SUCCESS_MESSAGE =
+  "비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.";
 
 function resolveNextPath(rawNext: FormDataEntryValue | null, fallback: string) {
   if (typeof rawNext !== "string" || !rawNext.startsWith("/") || rawNext.startsWith("//")) {
@@ -153,6 +157,64 @@ export async function loginWithGoogle(formData: FormData) {
   }
 
   redirect(data.url);
+}
+
+export async function requestPasswordReset(formData: FormData) {
+  const supabase = await createServerClient();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const headersList = await headers();
+  const origin = resolveRequestOrigin(headersList);
+
+  if (!email) {
+    redirect(`/auth/forgot-password?error=${encodeURIComponent("이메일을 입력해주세요.")}`);
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/reset-password`,
+  });
+
+  if (error) {
+    redirect(`/auth/forgot-password?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(`/auth/login?message=${encodeURIComponent(PASSWORD_RESET_REQUEST_MESSAGE)}`);
+}
+
+export async function updatePassword(formData: FormData) {
+  const supabase = await createServerClient();
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirm_password") ?? "");
+
+  if (password !== confirmPassword) {
+    redirect(`/auth/reset-password?error=${encodeURIComponent(PASSWORD_CONFIRMATION_MESSAGE)}`);
+  }
+
+  if (!isValidSignupPassword(password)) {
+    redirect(`/auth/reset-password?error=${encodeURIComponent(PASSWORD_POLICY_MESSAGE)}`);
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(`/auth/forgot-password?error=${encodeURIComponent("비밀번호 재설정 링크를 다시 요청해주세요.")}`);
+  }
+
+  if (await isSoftDeletedAccount(user)) {
+    await supabase.auth.signOut();
+    redirect(`/auth/login?error=${encodeURIComponent(ACCOUNT_DELETED_ERROR_MESSAGE)}`);
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    redirect(`/auth/reset-password?error=${encodeURIComponent(error.message)}`);
+  }
+
+  await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  redirect(`/auth/login?message=${encodeURIComponent(PASSWORD_RESET_SUCCESS_MESSAGE)}`);
 }
 
 export async function logout() {

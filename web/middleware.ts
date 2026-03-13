@@ -34,6 +34,8 @@ export async function middleware(request: NextRequest) {
   const isDeletedUser = isDeletedAccountMetadata(user);
 
   const { pathname } = request.nextUrl;
+  const allowAuthenticatedAuthPath =
+    pathname.startsWith("/auth/reset-password") || pathname.startsWith("/auth/confirm");
 
   // Protect app pages — redirect unauthenticated users to login
   if ((pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) && (!user || isDeletedUser)) {
@@ -52,7 +54,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect authenticated users away from auth pages
-  if (pathname.startsWith("/auth") && user && !isDeletedUser) {
+  if (pathname.startsWith("/auth") && user && !isDeletedUser && !allowAuthenticatedAuthPath) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
