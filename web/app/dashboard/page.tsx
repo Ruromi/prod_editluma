@@ -780,8 +780,9 @@ function DashboardPageContent() {
             : latestRunningJob;
         const showLocalPreview = submitting && !previewJob;
         const localPreviewStatus: "pending" | "processing" = uploading ? "pending" : "processing";
-        const isActive = previewJob && (previewJob.status === "pending" || previewJob.status === "processing");
-        const isDone = previewJob?.status === "done";
+        const previewStatus = previewJob?.status ?? null;
+        const isActive = previewStatus === "pending" || previewStatus === "processing";
+        const isDone = previewStatus === "done";
         const hasEnoughCredits = creditBalance === null || creditBalance >= creditCost;
 
         return (
@@ -793,11 +794,11 @@ function DashboardPageContent() {
                   <div className="aspect-square w-full bg-white/80 flex flex-col items-center justify-center">
                     <PixelAgent status={localPreviewStatus} />
                   </div>
-                ) : isActive ? (
+                ) : previewJob && isActive ? (
                   <div className="aspect-square w-full bg-white/80 flex flex-col items-center justify-center">
                     <PixelAgent status={previewJob.status as "pending" | "processing"} />
                   </div>
-                ) : isDone && previewJob.output_url ? (
+                ) : previewJob && isDone && previewJob.output_url ? (
                   <div className="aspect-square w-full relative animate-fade-in">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -812,7 +813,7 @@ function DashboardPageContent() {
                       </div>
                     </div>
                   </div>
-                ) : previewJob.status === "failed" ? (
+                ) : previewJob && previewStatus === "failed" ? (
                   <div className="aspect-square w-full flex flex-col items-center justify-center gap-2 bg-red-50">
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-red-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
