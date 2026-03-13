@@ -10,6 +10,7 @@ type UserMenuPopoverProps = {
   avatarUrl?: string | null;
   displayName: string;
   email?: string | null;
+  showAdminLink?: boolean;
 };
 
 type CreditSummary = {
@@ -22,6 +23,7 @@ export default function UserMenuPopover({
   avatarUrl,
   displayName,
   email,
+  showAdminLink = false,
 }: UserMenuPopoverProps) {
   const [supabase] = useState(() => createClient());
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -194,6 +196,16 @@ export default function UserMenuPopover({
           >
             크레딧 충전하기
           </Link>
+
+          {showAdminLink && (
+            <Link
+              href="/admin"
+              onClick={() => setIsOpen(false)}
+              className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-medium text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-900"
+            >
+              관리자 페이지
+            </Link>
+          )}
 
           <form
             action={logout}

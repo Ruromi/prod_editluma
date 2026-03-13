@@ -1,9 +1,12 @@
 import { createServerClient } from "@/lib/supabase/server";
+import { hasAdminIpAccess } from "@/lib/admin";
 import Link from "next/link";
 import UserMenuPopover from "@/components/UserMenuPopover";
+import { headers } from "next/headers";
 
 export default async function UserMenu() {
   const supabase = await createServerClient();
+  const headerList = await headers();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -24,12 +27,14 @@ export default async function UserMenu() {
     user.email?.split("@")[0] ||
     "사용자";
   const avatarUrl = user.user_metadata?.avatar_url;
+  const showAdminLink = hasAdminIpAccess(headerList);
 
   return (
     <UserMenuPopover
       avatarUrl={avatarUrl}
       displayName={displayName}
       email={user.email}
+      showAdminLink={showAdminLink}
     />
   );
 }
