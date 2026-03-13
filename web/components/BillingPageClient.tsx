@@ -100,6 +100,38 @@ type BillingPageClientProps = {
 };
 
 const ZERO_DECIMAL_CURRENCIES = new Set(["KRW", "JPY"]);
+const BILLING_PACKAGE_COPY = {
+  starter: {
+    ko: {
+      badge: "입문용",
+      description: "가볍게 써보거나 급하게 소량 충전할 때 적합한 기본 패키지",
+    },
+    en: {
+      badge: "Starter",
+      description: "A lightweight starter pack for trying EditLuma or topping up a small amount fast.",
+    },
+  },
+  pro: {
+    ko: {
+      badge: "가장 많이 선택",
+      description: "반복 생성과 리터치를 꾸준히 돌릴 때 가장 무난한 메인 패키지",
+    },
+    en: {
+      badge: "Most Popular",
+      description: "The best-value core package for frequent generations, edits, and repeat creative work.",
+    },
+  },
+  max: {
+    ko: {
+      badge: "대용량",
+      description: "팀 단위 작업이나 대량 생성이 많은 사용자를 위한 대용량 패키지",
+    },
+    en: {
+      badge: "High Volume",
+      description: "A larger credit pack designed for team workflows and high-output image generation.",
+    },
+  },
+} as const;
 
 const JOB_STATUS_COLOR: Record<JobStatus, string> = {
   pending: "text-yellow-700 bg-yellow-400/10",
@@ -557,6 +589,22 @@ export default function BillingPageClient({
     }
     return Math.floor(creditBalance / creditCost);
   }, [creditBalance, creditCost]);
+  const localizedPackages = useMemo(
+    () =>
+      packages.map((pkg) => {
+        const localized = BILLING_PACKAGE_COPY[pkg.id as keyof typeof BILLING_PACKAGE_COPY];
+        if (!localized) {
+          return pkg;
+        }
+
+        return {
+          ...pkg,
+          badge: localized[initialLanguage].badge,
+          description: localized[initialLanguage].description,
+        };
+      }),
+    [initialLanguage, packages]
+  );
   const loginHref = buildLoginHref(navigationBasePath);
   const refundRequestsByLedgerId = useMemo(
     () =>
@@ -982,7 +1030,7 @@ export default function BillingPageClient({
 
           {isPricingView ? (
             <section className="grid gap-4 lg:grid-cols-3">
-              {packages.map((pkg) => {
+              {localizedPackages.map((pkg) => {
                 const pricePerCredit = pkg.price / pkg.total_credits;
                 const isBusy = checkoutingPackageId === pkg.id;
 
