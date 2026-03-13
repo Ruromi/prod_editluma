@@ -771,36 +771,42 @@ function DashboardPageContent() {
       {/* 생성 탭                                                               */}
       {/* ------------------------------------------------------------------ */}
       {tab === "generate" && (() => {
-        const activeJob = activeJobId ? jobs.find((j) => j.id === activeJobId) ?? null : null;
-        const isActive = activeJob && (activeJob.status === "pending" || activeJob.status === "processing");
-        const isDone = activeJob?.status === "done";
+        const pinnedJob = activeJobId ? jobs.find((j) => j.id === activeJobId) ?? null : null;
+        const latestRunningJob =
+          generateJobs.find((j) => j.status === "pending" || j.status === "processing") ?? null;
+        const previewJob =
+          pinnedJob && ((pinnedJob.status === "pending" || pinnedJob.status === "processing") || !latestRunningJob)
+            ? pinnedJob
+            : latestRunningJob;
+        const isActive = previewJob && (previewJob.status === "pending" || previewJob.status === "processing");
+        const isDone = previewJob?.status === "done";
         const hasEnoughCredits = creditBalance === null || creditBalance >= creditCost;
 
         return (
           <div className="min-h-[calc(100vh-10rem)] flex flex-col items-center justify-center gap-5 max-w-2xl mx-auto w-full">
             {/* 프리뷰 카드 */}
-            {activeJob && (
+            {previewJob && (
               <div className="w-full rounded-2xl overflow-hidden border border-gray-200 shadow-2xl">
                 {isActive ? (
                   <div className="aspect-square w-full bg-white/80 flex flex-col items-center justify-center">
-                    <PixelAgent status={activeJob.status as "pending" | "processing"} />
+                    <PixelAgent status={previewJob.status as "pending" | "processing"} />
                   </div>
-                ) : isDone && activeJob.output_url ? (
+                ) : isDone && previewJob.output_url ? (
                   <div className="aspect-square w-full relative animate-fade-in">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={activeJob.output_url}
-                      alt={activeJob.prompt ?? ""}
+                      src={previewJob.output_url}
+                      alt={previewJob.prompt ?? ""}
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
                       <div className="space-y-1">
-                        <p className="text-xs text-gray-400 line-clamp-2">{activeJob.original_prompt || activeJob.prompt}</p>
+                        <p className="text-xs text-gray-400 line-clamp-2">{previewJob.original_prompt || previewJob.prompt}</p>
                         <p className="text-xs text-indigo-600">갤러리로 이동 중…</p>
                       </div>
                     </div>
                   </div>
-                ) : activeJob.status === "failed" ? (
+                ) : previewJob.status === "failed" ? (
                   <div className="aspect-square w-full flex flex-col items-center justify-center gap-2 bg-red-50">
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-red-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
