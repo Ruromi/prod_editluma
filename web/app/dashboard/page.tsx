@@ -535,6 +535,7 @@ function DashboardPageContent() {
   const [userId, setUserId] = useState<string | null>(null);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [creditCost, setCreditCost] = useState(10);
+  const [expandedPromptExample, setExpandedPromptExample] = useState<string | null>(null);
 
   const [prompt, setPrompt] = useState("");
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
@@ -955,36 +956,62 @@ function DashboardPageContent() {
                 </span>
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {PROMPT_EXAMPLES.map((example) => (
-                  <button
-                    key={example.label}
-                    type="button"
-                    onClick={() => {
-                      setPrompt(example.prompt);
-                      setError(null);
-                    }}
-                    disabled={submitting}
-                    className="group overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 text-left transition-all hover:border-indigo-500/40 hover:bg-indigo-500/5 hover:shadow-lg hover:shadow-indigo-900/10 disabled:opacity-50"
-                  >
-                    <div className="relative h-40 w-full overflow-hidden bg-gray-100">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={example.image}
-                        alt={example.label}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                      <div className="absolute bottom-0 left-0 right-0 p-3">
-                        <p className="text-sm font-semibold text-white">{example.label}</p>
-                      </div>
+                {PROMPT_EXAMPLES.map((example) => {
+                  const isExpanded = expandedPromptExample === example.label;
+
+                  return (
+                    <div
+                      key={example.label}
+                      className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 text-left transition-all hover:border-indigo-500/40 hover:bg-indigo-500/5 hover:shadow-lg hover:shadow-indigo-900/10"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrompt(example.prompt);
+                          setError(null);
+                          setExpandedPromptExample((current) =>
+                            current === example.label ? null : example.label
+                          );
+                        }}
+                        disabled={submitting}
+                        aria-expanded={isExpanded}
+                        className="group block w-full disabled:opacity-50"
+                      >
+                        <div className="bg-gradient-to-br from-gray-100 via-white to-gray-100 p-3">
+                          <div className="aspect-square w-full overflow-hidden rounded-xl border border-gray-200 bg-white">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={example.image}
+                              alt={example.label}
+                              className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+                            />
+                          </div>
+                        </div>
+                        <div className="border-t border-gray-200 px-3 py-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-semibold text-gray-900">{example.label}</p>
+                            <span className="text-[11px] text-indigo-600">
+                              {isExpanded ? "프롬프트 숨기기" : "이미지 클릭"}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {isExpanded ? "입력창에 적용되었습니다" : "전체 이미지 보기 + 프롬프트 펼치기"}
+                          </p>
+                        </div>
+                      </button>
+                      {isExpanded && (
+                        <div className="border-t border-gray-200 bg-white px-3 py-3">
+                          <p className="text-xs font-medium uppercase tracking-[0.14em] text-gray-500">
+                            Prompt
+                          </p>
+                          <p className="mt-2 text-sm leading-6 text-gray-700">
+                            {example.prompt}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                    <div className="p-3">
-                      <p className="text-sm leading-6 text-gray-600 group-hover:text-gray-900">
-                        {example.prompt}
-                      </p>
-                    </div>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
