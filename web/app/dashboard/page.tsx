@@ -41,34 +41,28 @@ const ALLOWED_UPLOAD_TYPES = new Set([
 ]);
 const PROMPT_EXAMPLES = [
   {
-    label: "컨셉 아트",
-    image: "/landing/ai-landing_2.png",
+    label: "동화풍 카페 장면",
+    image: "/prompt-examples/fairytale-cafe.png",
     prompt:
-      "A cinematic fantasy city floating above the ocean at sunset, glowing bridges, soft mist, ultra detailed concept art",
+      "A fairytale princess with very long golden hair sitting at a cozy cafe table, holding a tiny espresso cup, pink dress, warm indoor lighting, shallow depth of field, whimsical cinematic detail",
   },
   {
-    label: "인물 보정 무드",
-    image: "/landing/feature-enhance-portrait.png",
+    label: "뷰티 포트레이트",
+    image: "/prompt-examples/beauty-portrait.png",
     prompt:
-      "Editorial beauty portrait of a young woman with natural glowing skin, soft studio lighting, clean background, high detail",
+      "Clean beauty portrait of a young East Asian woman, natural glowing skin, beige satin blouse, centered composition, soft daylight, realistic facial detail, minimal editorial styling",
   },
   {
-    label: "스타일 변환",
-    image: "/landing/features/style-transfer.png",
+    label: "팝아트 스타일 변환",
+    image: "/prompt-examples/pop-art-grid.png",
     prompt:
-      "A rainy Seoul street at night reimagined as dreamy watercolor concept art, neon reflections, pastel palette",
+      "A four-panel pop art portrait series of an androgynous person with round glasses, neon cyan and magenta palette, bold graphic shapes, mixed illustration styles, gallery poster composition",
   },
   {
-    label: "감성 장면",
-    image: "/landing/hero-main.png",
+    label: "시네마틱 스트리트",
+    image: "/prompt-examples/cinematic-street.png",
     prompt:
-      "따뜻한 햇살이 비치는 카페 창가, 라떼와 책 한 권, 필름 사진 같은 부드러운 분위기",
-  },
-  {
-    label: "다중언어 예시",
-    image: "/landing/gallery-enhance.png",
-    prompt:
-      "Une ruelle de Kyoto sous des pétales de cerisier, lumière dorée, ambiance cinématographique",
+      "Cinematic street portrait of a stylish young woman in a beige coat, soft bokeh lights, narrow city alley, warm glow, fashion editorial mood, realistic photography",
   },
 ];
 
