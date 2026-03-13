@@ -61,11 +61,11 @@ def polar_api_base_url() -> str:
 
 
 def billing_return_url() -> str:
-    return f"{settings.web_app_url.rstrip('/')}/billing"
+    return f"{settings.web_app_url.rstrip('/')}/mypage"
 
 
 def billing_success_url() -> str:
-    return f"{settings.web_app_url.rstrip('/')}/billing?checkout=success&checkout_id={{CHECKOUT_ID}}"
+    return f"{settings.web_app_url.rstrip('/')}/mypage?checkout=success&checkout_id={{CHECKOUT_ID}}"
 
 
 def get_billing_packages() -> list[BillingPackage]:

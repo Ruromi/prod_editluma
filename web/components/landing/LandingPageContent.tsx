@@ -41,15 +41,6 @@ export default function LandingPageContent({ isAuthenticated }: LandingPageConte
             >
               한국어
             </button>
-            <button
-              type="button"
-              onClick={() => setLanguage("fr")}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                language === "fr" ? "bg-gray-950 text-white" : "text-gray-500 hover:text-gray-900"
-              }`}
-            >
-              FR
-            </button>
           </div>
         </div>
       </div>

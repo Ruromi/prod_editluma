@@ -14,7 +14,8 @@ export default function DashboardNav() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const isDashboard = pathname.startsWith("/dashboard");
-  const isPricing = pathname.startsWith("/pricing") || pathname.startsWith("/billing");
+  const isPricing = pathname.startsWith("/pricing");
+  const isMyPage = pathname.startsWith("/mypage") || pathname.startsWith("/billing");
   const tab = isDashboard ? (searchParams.get("tab") ?? "generate") : null;
 
   return (
@@ -56,6 +57,20 @@ export default function DashboardNav() {
       >
         요금제
         {isPricing && (
+          <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] bg-indigo-500 rounded-full" />
+        )}
+      </Link>
+
+      <Link
+        href="/mypage"
+        className={`text-sm font-medium transition-colors relative pb-0.5 ${
+          isMyPage
+            ? "text-gray-900"
+            : "text-gray-500 hover:text-gray-400"
+        }`}
+      >
+        마이페이지
+        {isMyPage && (
           <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] bg-indigo-500 rounded-full" />
         )}
       </Link>

@@ -190,9 +190,17 @@ export default function UserMenuPopover({
           </div>
 
           <Link
+            href="/mypage"
+            onClick={() => setIsOpen(false)}
+            className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-medium text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-900"
+          >
+            마이페이지
+          </Link>
+
+          <Link
             href="/pricing"
             onClick={() => setIsOpen(false)}
-            className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-3 py-2.5 text-sm font-medium text-gray-900 transition-colors hover:bg-indigo-500"
+            className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-3 py-2.5 text-sm font-medium text-gray-900 transition-colors hover:bg-indigo-500"
           >
             크레딧 충전하기
           </Link>

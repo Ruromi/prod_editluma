@@ -1,1 +1,49 @@
-export { default } from "../billing/page";
+import { Suspense } from "react";
+import Link from "next/link";
+import BillingPageClient from "@/components/BillingPageClient";
+import { createServerClient } from "@/lib/supabase/server";
+
+function PricingFallback() {
+  return (
+    <div className="mx-auto max-w-5xl rounded-[36px] border border-gray-200 bg-white/95 p-6 shadow-2xl shadow-black/15 sm:p-8">
+      <div className="h-24 rounded-3xl border border-gray-200 bg-gray-100 animate-pulse" />
+      <div className="mt-6 grid gap-4 lg:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={index}
+            className="h-[22rem] rounded-3xl border border-gray-200 bg-gray-100 animate-pulse"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default async function PricingPage() {
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const closeHref = user ? "/mypage" : "/";
+
+  return (
+    <div className="min-h-screen bg-black/55 px-4 py-6 backdrop-blur-sm sm:px-6 sm:py-10">
+      <div className="mx-auto max-w-5xl">
+        <div className="mb-4 flex justify-end">
+          <Link
+            href={closeHref}
+            className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/20"
+          >
+            닫기
+          </Link>
+        </div>
+
+        <div className="rounded-[36px] border border-gray-200 bg-white/95 shadow-2xl shadow-black/15">
+          <Suspense fallback={<PricingFallback />}>
+            <BillingPageClient view="pricing" />
+          </Suspense>
+        </div>
+      </div>
+    </div>
+  );
+}

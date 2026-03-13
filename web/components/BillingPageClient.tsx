@@ -78,6 +78,12 @@ type BillingPackagesResponse = {
   mode: string;
 };
 
+type BillingPageView = "pricing" | "mypage";
+
+type BillingPageClientProps = {
+  view?: BillingPageView;
+};
+
 const ZERO_DECIMAL_CURRENCIES = new Set(["KRW", "JPY"]);
 
 function normalizeCurrencyAmount(amount: number, currency?: string | null) {
@@ -187,10 +193,13 @@ function isWithinRefundWindow(value: string, days = 7) {
   return Date.now() - createdAt.getTime() <= days * 24 * 60 * 60 * 1000;
 }
 
-export default function BillingPageClient() {
+export default function BillingPageClient({
+  view = "mypage",
+}: BillingPageClientProps) {
   const [supabase] = useState(() => createClient());
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const isPricingView = view === "pricing";
   const [packages, setPackages] = useState<BillingPackage[]>([]);
   const [history, setHistory] = useState<BillingHistoryItem[]>([]);
   const [usageHistory, setUsageHistory] = useState<UsageHistoryItem[]>([]);
@@ -210,6 +219,7 @@ export default function BillingPageClient() {
   const autoCheckoutPackageRef = useRef<string | null>(null);
   const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
   const checkoutPackageId = searchParams.get("checkoutPackage");
+  const navigationBasePath = pathname.startsWith("/pricing") ? "/pricing" : "/mypage";
 
   const getAccessToken = useCallback(async () => {
     const { data } = await supabase.auth.getSession();
@@ -407,7 +417,7 @@ export default function BillingPageClient() {
 
       try {
         const accessToken = await getAccessToken();
-        const nextPath = `${pathname.startsWith("/billing") ? "/billing" : "/pricing"}?checkoutPackage=${encodeURIComponent(packageId)}`;
+        const nextPath = `${navigationBasePath}?checkoutPackage=${encodeURIComponent(packageId)}`;
 
         if (!accessToken) {
           window.location.assign(buildLoginHref(nextPath));
@@ -444,7 +454,7 @@ export default function BillingPageClient() {
         setCheckoutingPackageId(null);
       }
     },
-    [apiFetchWithToken, getAccessToken, pathname]
+    [apiFetchWithToken, getAccessToken, navigationBasePath]
   );
 
   useEffect(() => {
@@ -470,7 +480,7 @@ export default function BillingPageClient() {
     }
     return Math.floor(creditBalance / creditCost);
   }, [creditBalance, creditCost]);
-  const loginHref = buildLoginHref(pathname.startsWith("/billing") ? "/billing" : "/pricing");
+  const loginHref = buildLoginHref(navigationBasePath);
   const refundRequestsByLedgerId = useMemo(
     () =>
       new Map(
@@ -616,19 +626,26 @@ export default function BillingPageClient() {
   );
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
+    <div
+      className={
+        isPricingView
+          ? "mx-auto max-w-5xl px-6 py-6 sm:px-8 sm:py-8"
+          : "mx-auto max-w-6xl px-6 py-10"
+      }
+    >
       <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-3">
           <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500">
-            안전 결제
+            {isPricingView ? "안전 결제" : "마이 페이지"}
           </span>
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-gray-900 sm:text-4xl">
-              요금제
+              {isPricingView ? "요금제" : "마이페이지"}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-500 sm:text-base">
-              필요한 만큼 크레딧을 충전하고 바로 이미지 생성과 보정에 사용할 수 있습니다.
-              로그인한 상태라면 패키지 선택 후 바로 결제로 이어집니다.
+              {isPricingView
+                ? "필요한 만큼 크레딧을 충전하고 바로 이미지 생성과 보정에 사용할 수 있습니다. 로그인한 상태라면 패키지 선택 후 바로 결제로 이어집니다."
+                : "보유 크레딧, 최근 충전 내역, 최근 사용 내역을 한곳에서 확인할 수 있습니다."}
             </p>
           </div>
         </div>
@@ -641,20 +658,28 @@ export default function BillingPageClient() {
           >
             새로고침
           </button>
-          {isAuthenticated ? (
+          {isPricingView ? (
             <Link
-              href="/dashboard"
+              href={isAuthenticated ? "/mypage" : "/"}
               className="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-400 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900"
             >
-              대시보드로 돌아가기
+              {isAuthenticated ? "마이페이지로 이동" : "홈으로 돌아가기"}
             </Link>
           ) : (
-            <Link
-              href={loginHref}
-              className="inline-flex items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-2.5 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-500/20"
-            >
-              로그인하고 결제하기
-            </Link>
+            <>
+              <Link
+                href="/pricing"
+                className="inline-flex items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-2.5 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-500/20"
+              >
+                크레딧 충전
+              </Link>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-400 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900"
+              >
+                대시보드
+              </Link>
+            </>
           )}
         </div>
       </div>
@@ -673,7 +698,76 @@ export default function BillingPageClient() {
             />
             <div className="relative z-10">
               <div className="space-y-5">
-                {isAuthenticated ? (
+                {isPricingView ? (
+                  isAuthenticated ? (
+                    <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+                      <div className="rounded-[28px] border border-gray-200 bg-gray-50 p-5">
+                        <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+                          Current Balance
+                        </p>
+                        <div className="mt-3 flex items-end gap-3">
+                          <span className="text-4xl font-semibold text-gray-900 sm:text-5xl">
+                            {typeof creditBalance === "number" ? creditBalance : "—"}
+                          </span>
+                          <span className="pb-2 text-sm text-gray-500">credits</span>
+                        </div>
+                        <p className="mt-4 text-sm leading-relaxed text-gray-500">
+                          패키지를 선택하면 Polar 체크아웃으로 바로 이동하고, 결제 완료 후
+                          마이페이지에 잔액과 충전 내역이 자동 반영됩니다.
+                        </p>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
+                          <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
+                            Cost Per Image
+                          </p>
+                          <p className="mt-2 text-xl font-semibold text-indigo-600">
+                            {creditCost} credits
+                          </p>
+                        </div>
+                        <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
+                          <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
+                            Est. Remaining Jobs
+                          </p>
+                          <p className="mt-2 text-xl font-semibold text-gray-900">
+                            {imageCapacity === null ? "—" : `${imageCapacity} images`}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+                      <div className="rounded-[28px] border border-gray-200 bg-gray-50 p-5">
+                        <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+                          Pricing Flow
+                        </p>
+                        <h2 className="mt-3 text-2xl font-semibold text-gray-900">
+                          패키지를 고르면 로그인 후 바로 결제로 이어집니다.
+                        </h2>
+                        <p className="mt-3 text-sm leading-relaxed text-gray-500">
+                          비로그인 상태에서도 요금제는 볼 수 있고, 원하는 패키지를 누르면 로그인 후
+                          동일한 패키지로 곧바로 체크아웃을 시작합니다.
+                        </p>
+                      </div>
+
+                      <div className="rounded-[28px] border border-indigo-500/20 bg-indigo-500/10 p-5">
+                        <p className="text-xs font-medium uppercase tracking-[0.18em] text-indigo-600">
+                          Sign In Required
+                        </p>
+                        <p className="mt-3 text-sm leading-relaxed text-indigo-700">
+                          결제 완료 후에는 자동으로 크레딧이 반영되고, 로그인하면 충전 내역도 함께 확인할 수 있습니다.
+                        </p>
+                        <Link
+                          href={loginHref}
+                          className="mt-5 inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-gray-950 transition-colors hover:bg-gray-100"
+                        >
+                          로그인하고 결제 시작
+                        </Link>
+                      </div>
+                    </div>
+                  )
+                ) : isAuthenticated ? (
                   <>
                     <div>
                       <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
@@ -687,7 +781,7 @@ export default function BillingPageClient() {
                       </div>
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid gap-3 sm:grid-cols-3">
                       <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
                         <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
                           Cost Per Image
@@ -704,20 +798,30 @@ export default function BillingPageClient() {
                           {imageCapacity === null ? "—" : `${imageCapacity} images`}
                         </p>
                       </div>
+                      <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/10 px-4 py-4">
+                        <p className="text-[11px] uppercase tracking-[0.16em] text-indigo-600">
+                          Quick Action
+                        </p>
+                        <Link
+                          href="/pricing"
+                          className="mt-3 inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-950 transition-colors hover:bg-gray-100"
+                        >
+                          크레딧 충전하러 가기
+                        </Link>
+                      </div>
                     </div>
                   </>
                 ) : (
                   <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
                     <div className="rounded-[28px] border border-gray-200 bg-gray-50 p-5">
                       <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-                        Pricing Flow
+                        My Page
                       </p>
                       <h2 className="mt-3 text-2xl font-semibold text-gray-900">
-                        패키지를 고르면 로그인 후 바로 결제로 이어집니다.
+                        로그인하면 보유 크레딧과 최근 내역을 볼 수 있습니다.
                       </h2>
                       <p className="mt-3 text-sm leading-relaxed text-gray-500">
-                        비로그인 상태에서도 요금제는 볼 수 있고, 원하는 패키지를 누르면 로그인 후
-                        동일한 패키지로 곧바로 체크아웃을 시작합니다.
+                        충전 내역, 최근 사용 내역, 환불 요청 상태까지 계정 기준으로 한곳에서 관리할 수 있습니다.
                       </p>
                     </div>
 
@@ -726,13 +830,13 @@ export default function BillingPageClient() {
                         Sign In Required
                       </p>
                       <p className="mt-3 text-sm leading-relaxed text-indigo-700">
-                        결제 완료 후에는 자동으로 크레딧이 반영되고, 로그인하면 충전 내역도 함께 확인할 수 있습니다.
+                        로그인 후 마이페이지에서 잔액과 최근 결제/사용 내역을 확인할 수 있습니다.
                       </p>
                       <Link
                         href={loginHref}
                         className="mt-5 inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-gray-950 transition-colors hover:bg-gray-100"
                       >
-                        로그인하고 결제 시작
+                        로그인하기
                       </Link>
                     </div>
                   </div>
@@ -750,104 +854,112 @@ export default function BillingPageClient() {
                   </div>
                 )}
                 <p className="text-xs text-gray-500">
-                  {isAuthenticated
-                    ? isRefreshingCredits
-                      ? "크레딧을 새로고침 중입니다."
-                      : "결제 반영이 늦으면 몇 초 후 새로고침하세요."
-                    : "패키지 버튼을 누르면 로그인 후 바로 해당 결제로 이어집니다."}
+                  {isPricingView
+                    ? isAuthenticated
+                      ? isRefreshingCredits
+                        ? "크레딧을 새로고침 중입니다."
+                        : "결제 완료 후 자동으로 마이페이지에서 충전 내역을 확인할 수 있습니다."
+                      : "패키지 버튼을 누르면 로그인 후 바로 해당 결제로 이어집니다."
+                    : isAuthenticated
+                      ? isRefreshingCredits
+                        ? "크레딧을 새로고침 중입니다."
+                        : "결제 반영이 늦으면 몇 초 후 새로고침하세요."
+                      : "로그인 후 마이페이지에서 보유 크레딧과 최근 내역을 확인할 수 있습니다."}
                 </p>
               </div>
             </div>
           </section>
 
-          <section className="grid gap-4 lg:grid-cols-3">
-            {packages.map((pkg) => {
-              const pricePerCredit = pkg.price / pkg.total_credits;
-              const isBusy = checkoutingPackageId === pkg.id;
+          {isPricingView ? (
+            <section className="grid gap-4 lg:grid-cols-3">
+              {packages.map((pkg) => {
+                const pricePerCredit = pkg.price / pkg.total_credits;
+                const isBusy = checkoutingPackageId === pkg.id;
 
-              return (
-                <article
-                  key={pkg.id}
-                  className={`relative overflow-hidden rounded-[28px] border p-6 transition-colors ${
-                    pkg.highlight
-                      ? "border-indigo-500/40 bg-indigo-500/10 shadow-lg shadow-indigo-950/20"
-                      : "border-gray-200 bg-white/80"
-                  }`}
-                >
-                  {pkg.highlight && (
-                    <div className="absolute right-4 top-4 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-indigo-600">
-                      Recommended
-                    </div>
-                  )}
+                return (
+                  <article
+                    key={pkg.id}
+                    className={`relative overflow-hidden rounded-[28px] border p-6 transition-colors ${
+                      pkg.highlight
+                        ? "border-indigo-500/40 bg-indigo-500/10 shadow-lg shadow-indigo-950/20"
+                        : "border-gray-200 bg-white/80"
+                    }`}
+                  >
+                    {pkg.highlight && (
+                      <div className="absolute right-4 top-4 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-indigo-600">
+                        Recommended
+                      </div>
+                    )}
 
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
-                        {pkg.badge}
-                      </p>
-                      <h2 className="mt-2 text-2xl font-semibold text-gray-900">{pkg.name}</h2>
-                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
+                          {pkg.badge}
+                        </p>
+                        <h2 className="mt-2 text-2xl font-semibold text-gray-900">{pkg.name}</h2>
+                      </div>
 
-                    <div className="flex items-end gap-2">
-                      <span className="text-4xl font-semibold text-gray-900">{pkg.total_credits}</span>
-                      <span className="pb-1 text-sm text-gray-500">credits</span>
-                    </div>
+                      <div className="flex items-end gap-2">
+                        <span className="text-4xl font-semibold text-gray-900">{pkg.total_credits}</span>
+                        <span className="pb-1 text-sm text-gray-500">credits</span>
+                      </div>
 
-                    <div className="flex flex-wrap gap-2 text-xs">
-                      <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-gray-400">
-                        기본 {pkg.credits}
-                      </span>
-                      {pkg.bonus > 0 && (
-                        <span className="rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-green-700">
-                          보너스 +{pkg.bonus}
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-gray-400">
+                          기본 {pkg.credits}
                         </span>
+                        {pkg.bonus > 0 && (
+                          <span className="rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-green-700">
+                            보너스 +{pkg.bonus}
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-sm leading-relaxed text-gray-500">{pkg.description}</p>
+
+                      <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
+                        <p className="text-2xl font-semibold text-gray-900">
+                          {formatCurrency(pkg.price, pkg.currency)}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          크레딧당 약 {formatCurrency(pricePerCredit, pkg.currency)}
+                        </p>
+                      </div>
+
+                      {pkg.available ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleCheckout(pkg.id)}
+                          disabled={isBusy}
+                          className={`inline-flex w-full items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
+                            pkg.highlight
+                              ? "bg-indigo-500 text-gray-900 hover:bg-indigo-400 disabled:opacity-50"
+                              : "bg-white text-gray-950 hover:bg-gray-100 disabled:opacity-50"
+                          }`}
+                        >
+                          {isBusy
+                            ? "체크아웃 준비 중..."
+                            : isAuthenticated
+                              ? "결제하기"
+                              : "로그인 후 결제하기"}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled
+                          className="inline-flex w-full items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-500"
+                        >
+                          상품 ID 연결 필요
+                        </button>
                       )}
                     </div>
-
-                    <p className="text-sm leading-relaxed text-gray-500">{pkg.description}</p>
-
-                    <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
-                      <p className="text-2xl font-semibold text-gray-900">
-                        {formatCurrency(pkg.price, pkg.currency)}
-                      </p>
-                      <p className="mt-1 text-xs text-gray-500">
-                        크레딧당 약 {formatCurrency(pricePerCredit, pkg.currency)}
-                      </p>
-                    </div>
-
-                    {pkg.available ? (
-                      <button
-                        type="button"
-                        onClick={() => void handleCheckout(pkg.id)}
-                        disabled={isBusy}
-                        className={`inline-flex w-full items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
-                          pkg.highlight
-                            ? "bg-indigo-500 text-gray-900 hover:bg-indigo-400 disabled:opacity-50"
-                            : "bg-white text-gray-950 hover:bg-gray-100 disabled:opacity-50"
-                        }`}
-                      >
-                        {isBusy
-                          ? "체크아웃 준비 중..."
-                          : isAuthenticated
-                            ? "결제하기"
-                            : "로그인 후 결제하기"}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled
-                        className="inline-flex w-full items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-500"
-                      >
-                        상품 ID 연결 필요
-                      </button>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
-          </section>
-
-          <section className="rounded-[32px] border border-gray-200 bg-white/80 p-6 sm:p-8">
+                  </article>
+                );
+              })}
+            </section>
+          ) : (
+            <>
+              <section className="rounded-[32px] border border-gray-200 bg-white/80 p-6 sm:p-8">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
@@ -1038,74 +1150,76 @@ export default function BillingPageClient() {
                 </div>
               </div>
             )}
-          </section>
+              </section>
 
-          <section className="rounded-[32px] border border-gray-200 bg-white/80 p-6 sm:p-8">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-                  Usage History
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold text-gray-900">최근 사용 내역</h2>
-              </div>
-              <p className="text-sm text-gray-500">
-                이미지 생성과 보정으로 차감된 크레딧이 이력으로 남습니다.
-              </p>
-            </div>
+              <section className="rounded-[32px] border border-gray-200 bg-white/80 p-6 sm:p-8">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+                      Usage History
+                    </p>
+                    <h2 className="mt-2 text-2xl font-semibold text-gray-900">최근 사용 내역</h2>
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    이미지 생성과 보정으로 차감된 크레딧이 이력으로 남습니다.
+                  </p>
+                </div>
 
-            {!isAuthenticated ? (
-              <div className="mt-6 rounded-3xl border border-dashed border-gray-200 px-6 py-12 text-center">
-                <p className="text-sm text-gray-500">로그인하면 최근 사용 내역을 함께 확인할 수 있습니다.</p>
-                <Link
-                  href={loginHref}
-                  className="mt-4 inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-indigo-500"
-                >
-                  로그인하기
-                </Link>
-              </div>
-            ) : usageHistory.length === 0 ? (
-              <div className="mt-6 rounded-3xl border border-dashed border-gray-200 px-6 py-12 text-center text-sm text-gray-500">
-                아직 사용 내역이 없습니다.
-              </div>
-            ) : (
-              <div className="mt-6 overflow-hidden rounded-3xl border border-gray-200">
-                <div className="grid grid-cols-[1.6fr_0.7fr_0.8fr_1fr] gap-4 border-b border-gray-200 bg-gray-50 px-5 py-3 text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">
-                  <span>Action</span>
-                  <span>Used</span>
-                  <span>Balance</span>
-                  <span>Created</span>
-                </div>
-                <div className="divide-y divide-gray-200">
-                  {usageHistory.map((item) => {
-                    const prompt = summarizePrompt(item.prompt);
-                    return (
-                      <div
-                        key={item.id}
-                        className="grid grid-cols-1 gap-3 px-5 py-4 text-sm text-gray-400 sm:grid-cols-[1.6fr_0.7fr_0.8fr_1fr]"
-                      >
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {item.description ?? formatUsageMode(item.mode)}
-                          </p>
-                          <p className="mt-1 text-xs text-gray-500">
-                            {item.filename ?? item.job_id ?? item.source_id}
-                          </p>
-                          {prompt && (
-                            <p className="mt-2 text-xs leading-5 text-gray-500">
-                              {prompt}
-                            </p>
-                          )}
-                        </div>
-                        <div className="font-medium text-rose-600">-{item.credits_used} credits</div>
-                        <div>{item.balance_after} credits</div>
-                        <div className="text-gray-500">{formatDate(item.created_at)}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </section>
+                {!isAuthenticated ? (
+                  <div className="mt-6 rounded-3xl border border-dashed border-gray-200 px-6 py-12 text-center">
+                    <p className="text-sm text-gray-500">로그인하면 최근 사용 내역을 함께 확인할 수 있습니다.</p>
+                    <Link
+                      href={loginHref}
+                      className="mt-4 inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-indigo-500"
+                    >
+                      로그인하기
+                    </Link>
+                  </div>
+                ) : usageHistory.length === 0 ? (
+                  <div className="mt-6 rounded-3xl border border-dashed border-gray-200 px-6 py-12 text-center text-sm text-gray-500">
+                    아직 사용 내역이 없습니다.
+                  </div>
+                ) : (
+                  <div className="mt-6 overflow-hidden rounded-3xl border border-gray-200">
+                    <div className="grid grid-cols-[1.6fr_0.7fr_0.8fr_1fr] gap-4 border-b border-gray-200 bg-gray-50 px-5 py-3 text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">
+                      <span>Action</span>
+                      <span>Used</span>
+                      <span>Balance</span>
+                      <span>Created</span>
+                    </div>
+                    <div className="divide-y divide-gray-200">
+                      {usageHistory.map((item) => {
+                        const prompt = summarizePrompt(item.prompt);
+                        return (
+                          <div
+                            key={item.id}
+                            className="grid grid-cols-1 gap-3 px-5 py-4 text-sm text-gray-400 sm:grid-cols-[1.6fr_0.7fr_0.8fr_1fr]"
+                          >
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {item.description ?? formatUsageMode(item.mode)}
+                              </p>
+                              <p className="mt-1 text-xs text-gray-500">
+                                {item.filename ?? item.job_id ?? item.source_id}
+                              </p>
+                              {prompt && (
+                                <p className="mt-2 text-xs leading-5 text-gray-500">
+                                  {prompt}
+                                </p>
+                              )}
+                            </div>
+                            <div className="font-medium text-rose-600">-{item.credits_used} credits</div>
+                            <div>{item.balance_after} credits</div>
+                            <div className="text-gray-500">{formatDate(item.created_at)}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </section>
+            </>
+          )}
         </div>
       )}
     </div>

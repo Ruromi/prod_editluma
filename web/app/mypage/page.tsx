@@ -1,0 +1,22 @@
+import { Suspense } from "react";
+import BillingPageClient from "@/components/BillingPageClient";
+
+function MyPageFallback() {
+  return (
+    <div className="mx-auto max-w-6xl px-6 py-10">
+      <div className="space-y-6">
+        <div className="h-40 rounded-3xl border border-gray-800 bg-gray-900/60 animate-pulse" />
+        <div className="h-60 rounded-3xl border border-gray-800 bg-gray-900/60 animate-pulse" />
+        <div className="h-60 rounded-3xl border border-gray-800 bg-gray-900/60 animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
+export default function MyPage() {
+  return (
+    <Suspense fallback={<MyPageFallback />}>
+      <BillingPageClient view="mypage" />
+    </Suspense>
+  );
+}
