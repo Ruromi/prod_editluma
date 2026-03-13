@@ -778,6 +778,8 @@ function DashboardPageContent() {
           pinnedJob && ((pinnedJob.status === "pending" || pinnedJob.status === "processing") || !latestRunningJob)
             ? pinnedJob
             : latestRunningJob;
+        const showLocalPreview = submitting && !previewJob;
+        const localPreviewStatus: "pending" | "processing" = uploading ? "pending" : "processing";
         const isActive = previewJob && (previewJob.status === "pending" || previewJob.status === "processing");
         const isDone = previewJob?.status === "done";
         const hasEnoughCredits = creditBalance === null || creditBalance >= creditCost;
@@ -785,9 +787,13 @@ function DashboardPageContent() {
         return (
           <div className="min-h-[calc(100vh-10rem)] flex flex-col items-center justify-center gap-5 max-w-2xl mx-auto w-full">
             {/* 프리뷰 카드 */}
-            {previewJob && (
+            {(previewJob || showLocalPreview) && (
               <div className="w-full rounded-2xl overflow-hidden border border-gray-200 shadow-2xl">
-                {isActive ? (
+                {showLocalPreview ? (
+                  <div className="aspect-square w-full bg-white/80 flex flex-col items-center justify-center">
+                    <PixelAgent status={localPreviewStatus} />
+                  </div>
+                ) : isActive ? (
                   <div className="aspect-square w-full bg-white/80 flex flex-col items-center justify-center">
                     <PixelAgent status={previewJob.status as "pending" | "processing"} />
                   </div>
