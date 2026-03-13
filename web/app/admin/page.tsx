@@ -9,13 +9,6 @@ type AdminPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-type CreditRow = {
-  user_id: string;
-  balance: number;
-  created_at: string;
-  updated_at: string;
-};
-
 type LedgerRow = {
   id: string;
   user_id: string;
@@ -53,6 +46,35 @@ function isMissingTableError(error: unknown) {
   const code = String((error as { code?: string } | null)?.code ?? "");
   const message = String((error as { message?: string } | null)?.message ?? error ?? "");
   return code === "PGRST205" || code === "42P01" || message.includes("profiles") || message.includes("refund_requests");
+}
+
+function extractCreditBalance(row: Record<string, unknown>) {
+  const balance = row.balance;
+  if (typeof balance === "number") {
+    return balance;
+  }
+  const credits = row.credits;
+  if (typeof credits === "number") {
+    return credits;
+  }
+  return 0;
+}
+
+function formatRefundStatusLabel(status: string) {
+  switch (status) {
+    case "requested":
+      return "사용자 요청";
+    case "pending":
+      return "처리 중";
+    case "completed":
+      return "환불 완료";
+    case "failed":
+      return "실패";
+    case "manual_review":
+      return "수동 검토";
+    default:
+      return status || "-";
+  }
 }
 
 async function listAdminUsers() {
@@ -118,34 +140,22 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     ])
   );
 
-  const profileRowsResult = await adminDb
-    .from("profiles")
-    .select("user_id, email, user_credits, created_at, updated_at")
+  const creditRowsResult = await adminDb
+    .from("user_credits")
+    .select("*")
     .order("updated_at", { ascending: false })
     .limit(100);
 
   const creditRows =
-    !profileRowsResult.error
-      ? ((profileRowsResult.data ?? []) as Array<Record<string, unknown>>).map((row) => ({
+    !creditRowsResult.error
+      ? ((creditRowsResult.data ?? []) as Array<Record<string, unknown>>).map((row) => ({
           user_id: String(row.user_id),
-          balance: Number(row.user_credits ?? 0),
+          balance: extractCreditBalance(row),
           created_at: String(row.created_at ?? new Date().toISOString()),
           updated_at: String(row.updated_at ?? new Date().toISOString()),
-          email: String(row.email ?? userMap.get(String(row.user_id))?.email ?? "알 수 없음"),
+          email: String(userMap.get(String(row.user_id))?.email ?? "알 수 없음"),
           lastSignInAt: userMap.get(String(row.user_id))?.lastSignInAt ?? null,
         }))
-      : isMissingTableError(profileRowsResult.error)
-      ? (
-          await adminDb
-            .from("user_credits")
-            .select("user_id, balance, created_at, updated_at")
-            .order("updated_at", { ascending: false })
-            .limit(100)
-        ).data?.map((row) => ({
-          ...(row as CreditRow),
-          email: userMap.get((row as CreditRow).user_id)?.email ?? "알 수 없음",
-          lastSignInAt: userMap.get((row as CreditRow).user_id)?.lastSignInAt ?? null,
-        })) ?? []
       : [];
 
   const balanceByUserId = new Map(creditRows.map((row) => [row.user_id, row.balance]));
@@ -200,7 +210,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         }) ?? []
       : [];
 
-  const refundedOrderIds = new Set(refundRows.map((row) => row.orderId).filter(Boolean));
+  const refundByOrderId = new Map(refundRows.map((row) => [row.orderId, row]));
   const managedCreditTotal = creditRows.reduce((sum, row) => sum + row.balance, 0);
 
   return (
@@ -355,23 +365,31 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
         <div className="space-y-4">
           {paymentRows.map((row) => {
-            const alreadyRefunded = refundedOrderIds.has(row.orderId);
+            const existingRefund = refundByOrderId.get(row.orderId);
+            const refundStatus = existingRefund?.status ?? null;
+            const refundLocked =
+              refundStatus === "pending" || refundStatus === "completed" || refundStatus === "manual_review";
             const canRefund =
               Boolean(process.env.POLAR_ACCESS_TOKEN) &&
-              !alreadyRefunded &&
               row.amount > 0 &&
               row.delta > 0 &&
-              row.currentBalance >= row.delta;
+              row.currentBalance >= row.delta &&
+              (!existingRefund || refundStatus === "requested" || refundStatus === "failed");
 
             return (
               <div key={row.id} className="rounded-2xl border border-gray-200 p-4">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-medium text-gray-900">{row.packageName}</p>
                       <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
                         {row.email}
                       </span>
+                      {existingRefund && (
+                        <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
+                          {formatRefundStatusLabel(existingRefund.status)}
+                        </span>
+                      )}
                     </div>
                     <div className="grid gap-1 text-sm text-gray-500">
                       <p>주문 ID: <span className="font-mono text-gray-900">{row.orderId || "-"}</span></p>
@@ -412,15 +430,31 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                       disabled={!canRefund}
                       className="w-full rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400 bg-red-600 text-white hover:bg-red-500"
                     >
-                      전액 환불
+                      {refundStatus === "requested"
+                        ? "요청 처리 후 환불"
+                        : refundStatus === "failed"
+                          ? "환불 재시도"
+                          : "전액 환불"}
                     </button>
                     {!process.env.POLAR_ACCESS_TOKEN && (
                       <p className="text-xs text-amber-600">POLAR_ACCESS_TOKEN이 없어 환불 요청을 보낼 수 없습니다.</p>
                     )}
-                    {alreadyRefunded && (
-                      <p className="text-xs text-gray-500">이미 환불 처리된 주문입니다.</p>
+                    {refundStatus === "requested" && (
+                      <p className="text-xs text-amber-700">사용자가 환불 요청을 남긴 주문입니다. 검토 후 환불을 진행하세요.</p>
                     )}
-                    {!alreadyRefunded && row.currentBalance < row.delta && (
+                    {refundLocked && (
+                      <p className="text-xs text-gray-500">
+                        {refundStatus === "completed"
+                          ? "이미 환불 처리된 주문입니다."
+                          : refundStatus === "manual_review"
+                            ? "수동 검토가 필요한 환불 건입니다."
+                            : "이미 환불 처리 중인 주문입니다."}
+                      </p>
+                    )}
+                    {refundStatus === "failed" && (
+                      <p className="text-xs text-amber-700">이전 환불 시도가 실패했습니다. 재시도 전에 주문 상태를 확인하세요.</p>
+                    )}
+                    {!refundLocked && row.currentBalance < row.delta && (
                       <p className="text-xs text-gray-500">현재 잔액이 부족해 자동 환불 회수가 불가능합니다.</p>
                     )}
                   </form>

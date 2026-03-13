@@ -16,6 +16,8 @@ const REFUND_REASONS = new Set([
   "other",
 ]);
 
+const REFUND_LOCKED_STATUSES = new Set(["pending", "completed", "manual_review"]);
+
 type AdminDb = ReturnType<ReturnType<typeof createAdminClient>["schema"]>;
 
 function isMissingTableError(error: unknown) {
@@ -63,6 +65,55 @@ function creditColumnName(row: Record<string, unknown> | null | undefined) {
   if (row && "balance" in row) return "balance";
   if (row && "credits" in row) return "credits";
   return "balance";
+}
+
+async function syncProfileSnapshot(
+  adminDb: AdminDb,
+  {
+    userId,
+    email,
+    balance,
+  }: {
+    userId: string;
+    email?: string | null;
+    balance: number;
+  }
+) {
+  const existing = await adminDb
+    .from("profiles")
+    .select("user_id, email")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
+
+  if (existing.error) {
+    if (String(existing.error.code ?? "") === "PGRST205" || String(existing.error.message ?? "").includes("profiles")) {
+      return;
+    }
+    throw existing.error;
+  }
+
+  const nextEmail = email ?? (existing.data?.email as string | null | undefined) ?? null;
+
+  if (existing.data) {
+    const updated = await adminDb
+      .from("profiles")
+      .update({ email: nextEmail, user_credits: balance })
+      .eq("user_id", userId);
+
+    if (updated.error) {
+      throw updated.error;
+    }
+    return;
+  }
+
+  const inserted = await adminDb
+    .from("profiles")
+    .insert({ user_id: userId, email: nextEmail, user_credits: balance });
+
+  if (inserted.error) {
+    throw inserted.error;
+  }
 }
 
 async function ensureCreditRow(adminDb: AdminDb, userId: string) {
@@ -291,7 +342,7 @@ export async function adjustCredits(formData: FormData) {
     description || (delta > 0 ? "관리자 수동 크레딧 지급" : "관리자 수동 크레딧 차감");
 
   try {
-    await recordLedgerEntry(adminDb, {
+    const nextBalance = await recordLedgerEntry(adminDb, {
       userId: targetUserId,
       source: "manual_adjustment",
       sourceId,
@@ -302,6 +353,11 @@ export async function adjustCredits(formData: FormData) {
         admin_email: user.email ?? null,
         action: "manual_adjustment",
       },
+    });
+    await syncProfileSnapshot(adminDb, {
+      userId: targetUserId,
+      email,
+      balance: nextBalance,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "크레딧 조정 중 오류가 발생했습니다.";
@@ -358,17 +414,29 @@ export async function refundPayment(formData: FormData) {
 
   const existingRefundRequest = await adminDb
     .from("refund_requests")
-    .select("id")
+    .select("id, status, comment, metadata")
     .eq("order_id", orderId)
     .limit(1)
     .maybeSingle();
 
-  if (!existingRefundRequest.error && existingRefundRequest.data) {
-    adminRedirect({ error: "이미 환불 처리된 결제입니다." });
-  }
-
   if (existingRefundRequest.error && !isMissingTableError(existingRefundRequest.error)) {
     adminRedirect({ error: "기존 환불 여부를 확인하지 못했습니다." });
+  }
+
+  const existingRequestRow =
+    !existingRefundRequest.error && existingRefundRequest.data
+      ? (existingRefundRequest.data as Record<string, unknown>)
+      : null;
+  const existingRequestStatus = String(existingRequestRow?.status ?? "");
+
+  if (existingRequestRow && REFUND_LOCKED_STATUSES.has(existingRequestStatus)) {
+    const message =
+      existingRequestStatus === "completed"
+        ? "이미 환불 처리된 결제입니다."
+        : existingRequestStatus === "manual_review"
+          ? "이미 수동 검토 중인 환불 건입니다."
+          : "이미 환불 처리 중인 결제입니다.";
+    adminRedirect({ error: message });
   }
 
   if (existingRefundRequest.error && isMissingTableError(existingRefundRequest.error)) {
@@ -419,31 +487,45 @@ export async function refundPayment(formData: FormData) {
     adminRedirect({ error: "Polar 환불 응답에 refund id가 없습니다." });
   }
 
-  const refundRequestResult = await adminDb
-    .from("refund_requests")
-    .insert({
-      user_id: targetUserId,
-      payment_ledger_id: ledgerId,
-      order_id: orderId,
-      refund_id: refundId,
-      status: refundStatus === "succeeded" ? "completed" : "pending",
-      reason,
-      amount,
-      credits_reversed: creditsToReverse,
-      admin_email: user.email ?? null,
-      comment: comment || null,
-      metadata: {
-        package_name: packageName,
-        polar_refund_status: refundStatus,
-      },
-    });
+  const nextRefundRequestStatus = refundStatus === "succeeded" ? "completed" : "pending";
+  const existingMetadata =
+    existingRequestRow?.metadata && typeof existingRequestRow.metadata === "object"
+      ? (existingRequestRow.metadata as Record<string, unknown>)
+      : {};
+  const existingComment =
+    typeof existingRequestRow?.comment === "string" ? existingRequestRow.comment : null;
+  const refundRequestPayload = {
+    user_id: targetUserId,
+    payment_ledger_id: ledgerId,
+    order_id: orderId,
+    refund_id: refundId,
+    status: nextRefundRequestStatus,
+    reason,
+    amount,
+    credits_reversed: creditsToReverse,
+    admin_email: user.email ?? null,
+    comment: comment || existingComment || null,
+    metadata: {
+      ...existingMetadata,
+      package_name: packageName,
+      polar_refund_status: refundStatus,
+      ...(existingComment ? { customer_comment: existingComment } : {}),
+      ...(comment ? { admin_comment: comment } : {}),
+    },
+  };
+  const refundRequestResult = existingRequestRow
+    ? await adminDb
+        .from("refund_requests")
+        .update(refundRequestPayload)
+        .eq("id", String(existingRequestRow.id))
+    : await adminDb.from("refund_requests").insert(refundRequestPayload);
 
   if (refundRequestResult.error && !isMissingTableError(refundRequestResult.error)) {
     adminRedirect({ error: "환불 처리 테이블 기록 중 오류가 발생했습니다." });
   }
 
   try {
-    await recordLedgerEntry(adminDb, {
+    const nextBalance = await recordLedgerEntry(adminDb, {
       userId: targetUserId,
       source: "refund",
       sourceId: refundId,
@@ -461,6 +543,11 @@ export async function refundPayment(formData: FormData) {
         refund_status: refundStatus,
         package_name: packageName,
       },
+    });
+    await syncProfileSnapshot(adminDb, {
+      userId: targetUserId,
+      email: typeof metadata.polar_customer_email === "string" ? metadata.polar_customer_email : null,
+      balance: nextBalance,
     });
   } catch (error) {
     if (!refundRequestResult.error) {

@@ -59,6 +59,19 @@ type UsageHistoryItem = {
   created_at: string;
 };
 
+type RefundRequestItem = {
+  id: string;
+  payment_ledger_id?: string | null;
+  order_id: string;
+  refund_id?: string | null;
+  status: string;
+  reason: string;
+  amount: number;
+  credits_reversed: number;
+  comment?: string | null;
+  created_at: string;
+};
+
 type BillingPackagesResponse = {
   packages: BillingPackage[];
   provider: string;
@@ -103,6 +116,38 @@ function summarizePrompt(prompt?: string | null) {
   return prompt.length > 72 ? `${prompt.slice(0, 72)}…` : prompt;
 }
 
+function formatRefundStatus(status?: string | null) {
+  switch (status) {
+    case "requested":
+      return "환불 요청됨";
+    case "pending":
+      return "환불 처리 중";
+    case "completed":
+      return "환불 완료";
+    case "failed":
+      return "환불 실패";
+    case "manual_review":
+      return "수동 검토";
+    default:
+      return "상태 확인 필요";
+  }
+}
+
+function refundStatusClasses(status?: string | null) {
+  switch (status) {
+    case "completed":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    case "pending":
+      return "border-amber-200 bg-amber-50 text-amber-700";
+    case "requested":
+      return "border-sky-200 bg-sky-50 text-sky-700";
+    case "failed":
+      return "border-rose-200 bg-rose-50 text-rose-700";
+    default:
+      return "border-gray-200 bg-gray-50 text-gray-600";
+  }
+}
+
 function BillingPageSkeleton() {
   return (
     <div className="space-y-6">
@@ -140,12 +185,17 @@ export default function BillingPageClient() {
   const [packages, setPackages] = useState<BillingPackage[]>([]);
   const [history, setHistory] = useState<BillingHistoryItem[]>([]);
   const [usageHistory, setUsageHistory] = useState<UsageHistoryItem[]>([]);
+  const [refundRequests, setRefundRequests] = useState<RefundRequestItem[]>([]);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [creditCost, setCreditCost] = useState(10);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshingCredits, setIsRefreshingCredits] = useState(false);
   const [checkoutingPackageId, setCheckoutingPackageId] = useState<string | null>(null);
+  const [requestingRefundLedgerId, setRequestingRefundLedgerId] = useState<string | null>(null);
+  const [openRefundLedgerId, setOpenRefundLedgerId] = useState<string | null>(null);
+  const [refundReason, setRefundReason] = useState("customer_request");
+  const [refundComment, setRefundComment] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const autoCheckoutPackageRef = useRef<string | null>(null);
@@ -247,6 +297,23 @@ export default function BillingPageClient() {
     return true;
   }, [apiFetchWithToken, getAccessToken]);
 
+  const refreshRefundRequests = useCallback(async (accessToken?: string | null) => {
+    const token = accessToken ?? (await getAccessToken());
+    if (!token) {
+      setRefundRequests([]);
+      return false;
+    }
+
+    const response = await apiFetchWithToken("/api/billing/refund-requests", token);
+    if (!response.ok) {
+      throw new Error("환불 요청 내역을 불러오지 못했습니다.");
+    }
+
+    const payload: RefundRequestItem[] = await response.json();
+    setRefundRequests(payload);
+    return true;
+  }, [apiFetchWithToken, getAccessToken]);
+
   const loadBillingPage = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -260,11 +327,13 @@ export default function BillingPageClient() {
           refreshCredits(accessToken),
           refreshHistory(accessToken),
           refreshUsageHistory(accessToken),
+          refreshRefundRequests(accessToken),
         ]);
       } else {
         setCreditBalance(null);
         setHistory([]);
         setUsageHistory([]);
+        setRefundRequests([]);
         clearStoredCreditBalance();
       }
     } catch (loadError) {
@@ -276,7 +345,7 @@ export default function BillingPageClient() {
     } finally {
       setIsLoading(false);
     }
-  }, [getAccessToken, refreshCredits, refreshHistory, refreshPackages, refreshUsageHistory]);
+  }, [getAccessToken, refreshCredits, refreshHistory, refreshPackages, refreshRefundRequests, refreshUsageHistory]);
 
   useEffect(() => {
     setCreditBalance(readStoredCreditBalance());
@@ -297,7 +366,7 @@ export default function BillingPageClient() {
     let attempts = 0;
     const intervalId = window.setInterval(() => {
       attempts += 1;
-      void Promise.all([refreshCredits(), refreshHistory(), refreshUsageHistory()]).catch((pollError) => {
+      void Promise.all([refreshCredits(), refreshHistory(), refreshUsageHistory(), refreshRefundRequests()]).catch((pollError) => {
         setError(
           pollError instanceof Error
             ? pollError.message
@@ -309,7 +378,7 @@ export default function BillingPageClient() {
       }
     }, 3000);
 
-    void Promise.all([refreshCredits(), refreshHistory(), refreshUsageHistory()]).catch((pollError) => {
+    void Promise.all([refreshCredits(), refreshHistory(), refreshUsageHistory(), refreshRefundRequests()]).catch((pollError) => {
       setError(
         pollError instanceof Error
           ? pollError.message
@@ -320,7 +389,7 @@ export default function BillingPageClient() {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [refreshCredits, refreshHistory, refreshUsageHistory]);
+  }, [refreshCredits, refreshHistory, refreshRefundRequests, refreshUsageHistory]);
 
   const handleCheckout = useCallback(
     async (packageId: string) => {
@@ -393,6 +462,92 @@ export default function BillingPageClient() {
     return Math.floor(creditBalance / creditCost);
   }, [creditBalance, creditCost]);
   const loginHref = buildLoginHref(pathname.startsWith("/billing") ? "/billing" : "/pricing");
+  const refundRequestsByLedgerId = useMemo(
+    () =>
+      new Map(
+        refundRequests
+          .filter((item) => item.payment_ledger_id)
+          .map((item) => [item.payment_ledger_id as string, item])
+      ),
+    [refundRequests]
+  );
+  const refundRequestsByOrderId = useMemo(
+    () => new Map(refundRequests.filter((item) => item.order_id).map((item) => [item.order_id, item])),
+    [refundRequests]
+  );
+
+  const openRefundRequestForm = useCallback((ledgerId: string) => {
+    setError(null);
+    setOpenRefundLedgerId((current) => {
+      const next = current === ledgerId ? null : ledgerId;
+      if (next) {
+        setRefundReason("customer_request");
+        setRefundComment("");
+      }
+      return next;
+    });
+  }, []);
+
+  const handleRequestRefund = useCallback(async () => {
+    if (!openRefundLedgerId) {
+      return;
+    }
+
+    setRequestingRefundLedgerId(openRefundLedgerId);
+    setError(null);
+
+    try {
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        window.location.assign(loginHref);
+        return;
+      }
+
+      const response = await apiFetchWithToken("/api/billing/refund-requests", accessToken, {
+        method: "POST",
+        body: JSON.stringify({
+          payment_ledger_id: openRefundLedgerId,
+          reason: refundReason,
+          comment: refundComment.trim() || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        let detail = "환불 요청을 접수하지 못했습니다.";
+        try {
+          const payload = await response.json();
+          if (payload?.detail) {
+            detail = payload.detail;
+          }
+        } catch {
+          // ignore JSON parse failure
+        }
+        throw new Error(detail);
+      }
+
+      await refreshRefundRequests(accessToken);
+      setStatusMessage("환불 요청이 접수되었습니다. 관리자가 확인 후 처리합니다.");
+      setOpenRefundLedgerId(null);
+      setRefundComment("");
+      setRefundReason("customer_request");
+    } catch (refundError) {
+      setError(
+        refundError instanceof Error
+          ? refundError.message
+          : "환불 요청을 접수하지 못했습니다."
+      );
+    } finally {
+      setRequestingRefundLedgerId(null);
+    }
+  }, [
+    apiFetchWithToken,
+    getAccessToken,
+    loginHref,
+    openRefundLedgerId,
+    refundComment,
+    refundReason,
+    refreshRefundRequests,
+  ]);
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
@@ -655,38 +810,128 @@ export default function BillingPageClient() {
               </div>
             ) : (
               <div className="mt-6 overflow-hidden rounded-3xl border border-gray-200">
-                <div className="grid grid-cols-[1.4fr_0.9fr_0.8fr_1fr] gap-4 border-b border-gray-200 bg-gray-50 px-5 py-3 text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">
+                <div className="grid grid-cols-[1.3fr_0.75fr_0.75fr_0.9fr_1.1fr] gap-4 border-b border-gray-200 bg-gray-50 px-5 py-3 text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">
                   <span>Package</span>
                   <span>Credits</span>
                   <span>Amount</span>
                   <span>Created</span>
+                  <span>Refund</span>
                 </div>
                 <div className="divide-y divide-gray-200">
-                  {history.map((item) => (
-                    <div
-                      key={item.id}
-                      className="grid grid-cols-1 gap-3 px-5 py-4 text-sm text-gray-400 sm:grid-cols-[1.4fr_0.9fr_0.8fr_1fr]"
-                    >
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {item.package_name ?? item.package_id ?? "Credit top-up"}
-                        </p>
-                        <p className="mt-1 text-xs text-gray-500">
-                          Order {item.order_id ?? item.source_id}
-                        </p>
+                  {history.map((item) => {
+                    const existingRefundRequest =
+                      refundRequestsByLedgerId.get(item.id) ??
+                      (item.order_id ? refundRequestsByOrderId.get(item.order_id) : undefined);
+                    const canRequestRefund =
+                      !existingRefundRequest &&
+                      item.credits_added > 0 &&
+                      typeof item.amount === "number" &&
+                      item.amount > 0 &&
+                      Boolean(item.order_id);
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="grid grid-cols-1 gap-3 px-5 py-4 text-sm text-gray-400 sm:grid-cols-[1.3fr_0.75fr_0.75fr_0.9fr_1.1fr]"
+                      >
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {item.package_name ?? item.package_id ?? "Credit top-up"}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            Order {item.order_id ?? item.source_id}
+                          </p>
+                        </div>
+                        <div className="font-medium text-indigo-600">+{item.credits_added} credits</div>
+                        <div>
+                          {typeof item.amount === "number"
+                            ? formatCurrency(
+                                normalizeCurrencyAmount(item.amount, item.currency),
+                                item.currency
+                              )
+                            : "—"}
+                        </div>
+                        <div className="text-gray-500">{formatDate(item.created_at)}</div>
+                        <div className="space-y-2">
+                          {existingRefundRequest ? (
+                            <>
+                              <span
+                                className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${refundStatusClasses(existingRefundRequest.status)}`}
+                              >
+                                {formatRefundStatus(existingRefundRequest.status)}
+                              </span>
+                              <p className="text-xs leading-5 text-gray-500">
+                                {existingRefundRequest.status === "completed"
+                                  ? "이미 환불이 완료된 결제입니다."
+                                  : existingRefundRequest.status === "pending"
+                                    ? "관리자가 환불을 처리 중입니다."
+                                    : existingRefundRequest.status === "failed"
+                                      ? "이전 환불 요청 이력이 있습니다. 지원팀에 문의하세요."
+                                      : "관리자가 요청을 검토 중입니다."}
+                              </p>
+                            </>
+                          ) : openRefundLedgerId === item.id ? (
+                            <div className="rounded-2xl border border-sky-200 bg-sky-50/80 p-3">
+                              <label className="block text-xs font-medium text-gray-600">
+                                환불 사유
+                                <select
+                                  value={refundReason}
+                                  onChange={(event) => setRefundReason(event.target.value)}
+                                  className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500"
+                                >
+                                  <option value="customer_request">단순 변심</option>
+                                  <option value="duplicate">중복 결제</option>
+                                  <option value="service_disruption">서비스 문제</option>
+                                  <option value="satisfaction_guarantee">품질 불만족</option>
+                                  <option value="other">기타</option>
+                                </select>
+                              </label>
+                              <label className="mt-2 block text-xs font-medium text-gray-600">
+                                메모
+                                <textarea
+                                  value={refundComment}
+                                  onChange={(event) => setRefundComment(event.target.value)}
+                                  rows={3}
+                                  placeholder="환불 사유를 간단히 남겨주세요."
+                                  className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500"
+                                />
+                              </label>
+                              <div className="mt-3 flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => void handleRequestRefund()}
+                                  disabled={requestingRefundLedgerId === item.id}
+                                  className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-sky-500 disabled:opacity-50"
+                                >
+                                  {requestingRefundLedgerId === item.id ? "요청 전송 중..." : "요청 보내기"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenRefundLedgerId(null)}
+                                  disabled={requestingRefundLedgerId === item.id}
+                                  className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                                >
+                                  취소
+                                </button>
+                              </div>
+                            </div>
+                          ) : canRequestRefund ? (
+                            <button
+                              type="button"
+                              onClick={() => openRefundRequestForm(item.id)}
+                              className="inline-flex items-center justify-center rounded-xl border border-sky-300 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700 transition-colors hover:bg-sky-100"
+                            >
+                              환불 요청
+                            </button>
+                          ) : (
+                            <p className="text-xs leading-5 text-gray-500">
+                              이 결제 건은 현재 자동 환불 요청을 지원하지 않습니다.
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <div className="font-medium text-indigo-600">+{item.credits_added} credits</div>
-                      <div>
-                        {typeof item.amount === "number"
-                          ? formatCurrency(
-                              normalizeCurrencyAmount(item.amount, item.currency),
-                              item.currency
-                            )
-                          : "—"}
-                      </div>
-                      <div className="text-gray-500">{formatDate(item.created_at)}</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

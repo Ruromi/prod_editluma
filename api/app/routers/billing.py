@@ -20,6 +20,16 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/billing", tags=["billing"])
 
+REFUND_REASONS = {
+    "duplicate",
+    "fraudulent",
+    "customer_request",
+    "service_disruption",
+    "satisfaction_guarantee",
+    "dispute_prevention",
+    "other",
+}
+
 
 class BillingPackageResponse(BaseModel):
     id: str
@@ -66,6 +76,21 @@ class UsageHistoryItem(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+class RefundRequestItem(BaseModel):
+    id: str
+    payment_ledger_id: str | None = None
+    order_id: str
+    refund_id: str | None = None
+    status: str
+    reason: str
+    amount: int
+    credits_reversed: int
+    comment: str | None = None
+    created_at: str
+    updated_at: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 class BillingPackagesResponse(BaseModel):
     packages: list[BillingPackageResponse]
     provider: str = "polar"
@@ -89,10 +114,22 @@ class WebhookResponse(BaseModel):
     balance: int | None = None
 
 
+class CreateRefundRequestRequest(BaseModel):
+    payment_ledger_id: str
+    reason: str = "customer_request"
+    comment: str | None = None
+
+
 def _is_missing_credit_ledger_error(exc: Exception) -> bool:
     code = str(getattr(exc, "code", "") or "")
     message = str(exc)
     return code == "PGRST205" or ("credit_ledger" in message and "schema cache" in message)
+
+
+def _is_missing_refund_requests_error(exc: Exception) -> bool:
+    code = str(getattr(exc, "code", "") or "")
+    message = str(exc)
+    return code in {"PGRST205", "42P01"} or "refund_requests" in message
 
 
 def _metadata_dict(row: dict[str, Any]) -> dict[str, Any]:
@@ -134,6 +171,26 @@ def _map_usage_row(row: dict[str, Any]) -> UsageHistoryItem:
         mode=metadata.get("mode"),
         prompt=metadata.get("prompt"),
         created_at=str(row["created_at"]),
+        metadata=metadata,
+    )
+
+
+def _map_refund_request_row(row: dict[str, Any]) -> RefundRequestItem:
+    metadata = _metadata_dict(row)
+    payment_ledger_id = row.get("payment_ledger_id")
+    refund_id = row.get("refund_id")
+    return RefundRequestItem(
+        id=str(row["id"]),
+        payment_ledger_id=str(payment_ledger_id) if payment_ledger_id else None,
+        order_id=str(row["order_id"]),
+        refund_id=str(refund_id) if refund_id else None,
+        status=str(row.get("status") or "requested"),
+        reason=str(row.get("reason") or "customer_request"),
+        amount=int(row.get("amount") or 0),
+        credits_reversed=int(row.get("credits_reversed") or 0),
+        comment=row.get("comment"),
+        created_at=str(row["created_at"]),
+        updated_at=str(row["updated_at"]) if row.get("updated_at") else None,
         metadata=metadata,
     )
 
@@ -211,6 +268,136 @@ async def list_usage_history(user: AuthenticatedUser = Depends(get_current_user)
         raise HTTPException(status_code=503, detail="사용 내역을 불러오지 못했습니다.") from exc
 
     return [_map_usage_row(row) for row in (result.data or [])]
+
+
+@router.get("/refund-requests", response_model=list[RefundRequestItem])
+async def list_refund_requests(user: AuthenticatedUser = Depends(get_current_user)):
+    try:
+        result = (
+            get_supabase()
+            .schema(db_schema())
+            .table("refund_requests")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", desc=True)
+            .limit(20)
+            .execute()
+        )
+    except Exception as exc:
+        if _is_missing_refund_requests_error(exc):
+            logger.warning("Refund requests unavailable, returning empty list: %s", exc)
+            return []
+        raise HTTPException(status_code=503, detail="환불 요청 내역을 불러오지 못했습니다.") from exc
+
+    return [_map_refund_request_row(row) for row in (result.data or [])]
+
+
+@router.post("/refund-requests", response_model=RefundRequestItem)
+async def create_refund_request(
+    body: CreateRefundRequestRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    payment_ledger_id = body.payment_ledger_id.strip()
+    reason = body.reason.strip() or "customer_request"
+    comment = body.comment.strip() if body.comment else None
+
+    if not payment_ledger_id:
+        raise HTTPException(status_code=400, detail="환불 요청할 결제 정보를 찾지 못했습니다.")
+
+    if reason not in REFUND_REASONS:
+        raise HTTPException(status_code=400, detail="지원되지 않는 환불 사유입니다.")
+
+    db = get_supabase().schema(db_schema())
+    try:
+        payment_result = (
+            db.table("credit_ledger")
+            .select("*")
+            .eq("id", payment_ledger_id)
+            .eq("user_id", user.id)
+            .eq("source", "polar_topup")
+            .limit(1)
+            .execute()
+        )
+    except Exception as exc:
+        if _is_missing_credit_ledger_error(exc):
+            raise HTTPException(status_code=503, detail="결제 내역 테이블이 아직 준비되지 않았습니다.") from exc
+        raise HTTPException(status_code=503, detail="결제 내역을 불러오지 못했습니다.") from exc
+
+    payment_rows = payment_result.data or []
+    payment_row = payment_rows[0] if payment_rows else None
+    if not payment_row:
+        raise HTTPException(status_code=404, detail="환불 요청 가능한 결제 내역을 찾지 못했습니다.")
+
+    metadata = _metadata_dict(payment_row)
+    order_id = str(metadata.get("order_id") or payment_row.get("source_id") or "").strip()
+    amount = int(metadata.get("amount") or 0)
+    credits_reversed = int(payment_row.get("delta") or 0)
+    package_name = str(metadata.get("package_name") or payment_row.get("description") or "Polar 결제")
+
+    if not order_id or amount <= 0 or credits_reversed <= 0:
+        raise HTTPException(status_code=400, detail="환불 요청에 필요한 결제 메타데이터가 부족합니다.")
+
+    try:
+        existing_request = (
+            db.table("refund_requests")
+            .select("*")
+            .eq("order_id", order_id)
+            .limit(1)
+            .execute()
+        )
+    except Exception as exc:
+        if _is_missing_refund_requests_error(exc):
+            raise HTTPException(
+                status_code=503,
+                detail="환불 요청 기능을 사용하려면 최신 환불 SQL을 먼저 적용해야 합니다.",
+            ) from exc
+        raise HTTPException(status_code=503, detail="기존 환불 요청 여부를 확인하지 못했습니다.") from exc
+
+    existing_rows = existing_request.data or []
+    existing_row = existing_rows[0] if existing_rows else None
+    if existing_row:
+        status = str(existing_row.get("status") or "requested")
+        if status == "completed":
+            raise HTTPException(status_code=409, detail="이미 환불 처리된 결제입니다.")
+        if status == "failed":
+            raise HTTPException(status_code=409, detail="이 결제 건은 이전 환불 요청 이력이 있어 관리자 확인이 필요합니다.")
+        if status == "manual_review":
+            raise HTTPException(status_code=409, detail="이 결제 건은 이미 수동 검토 중입니다.")
+        raise HTTPException(status_code=409, detail="이미 환불 요청이 접수되었습니다.")
+
+    try:
+        inserted = (
+            db.table("refund_requests")
+            .insert(
+                {
+                    "user_id": user.id,
+                    "payment_ledger_id": payment_ledger_id,
+                    "order_id": order_id,
+                    "status": "requested",
+                    "reason": reason,
+                    "amount": amount,
+                    "credits_reversed": credits_reversed,
+                    "comment": comment,
+                    "metadata": {
+                        "package_name": package_name,
+                        "polar_customer_email": user.email,
+                        "requested_by": "user",
+                    },
+                }
+            )
+            .select("*")
+            .single()
+            .execute()
+        )
+    except Exception as exc:
+        if _is_missing_refund_requests_error(exc):
+            raise HTTPException(
+                status_code=503,
+                detail="환불 요청 기능을 사용하려면 최신 환불 SQL을 먼저 적용해야 합니다.",
+            ) from exc
+        raise HTTPException(status_code=503, detail="환불 요청을 저장하지 못했습니다.") from exc
+
+    return _map_refund_request_row(inserted.data)
 
 
 @router.post("/webhooks/polar", response_model=WebhookResponse)
