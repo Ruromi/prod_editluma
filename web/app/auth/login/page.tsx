@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { LANDING_LANGUAGE_COOKIE, normalizeLandingLanguage } from "@/lib/landing-language";
 import { login, loginWithGoogle } from "../actions";
 
 export default async function LoginPage({
@@ -7,6 +9,8 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string; message?: string; next?: string }>;
 }) {
   const { error, message, next } = await searchParams;
+  const cookieStore = await cookies();
+  const language = normalizeLandingLanguage(cookieStore.get(LANDING_LANGUAGE_COOKIE)?.value);
   const nextPath =
     typeof next === "string" && next.startsWith("/") && !next.startsWith("//")
       ? next
@@ -17,7 +21,7 @@ export default async function LoginPage({
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">EditLuma</h1>
-          <p className="text-gray-500 mt-1">로그인</p>
+          <p className="text-gray-500 mt-1">{language === "ko" ? "로그인" : "Log in"}</p>
         </div>
 
         {error && (
@@ -35,7 +39,7 @@ export default async function LoginPage({
           <input type="hidden" name="next" value={nextPath} />
           <div>
             <label htmlFor="email" className="block text-sm text-gray-400 mb-1">
-              이메일
+              {language === "ko" ? "이메일" : "Email"}
             </label>
             <input
               id="email"
@@ -48,7 +52,7 @@ export default async function LoginPage({
           </div>
           <div>
             <label htmlFor="password" className="block text-sm text-gray-400 mb-1">
-              비밀번호
+              {language === "ko" ? "비밀번호" : "Password"}
             </label>
             <input
               id="password"
@@ -64,7 +68,7 @@ export default async function LoginPage({
             type="submit"
             className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 font-medium text-gray-900 hover:bg-indigo-500 transition-colors"
           >
-            로그인
+            {language === "ko" ? "로그인" : "Log in"}
           </button>
         </form>
 
@@ -73,7 +77,7 @@ export default async function LoginPage({
             <div className="w-full border-t border-gray-300" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-2 text-gray-500">또는</span>
+            <span className="bg-white px-2 text-gray-500">{language === "ko" ? "또는" : "Or"}</span>
           </div>
         </div>
 
@@ -101,14 +105,14 @@ export default async function LoginPage({
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            Google로 로그인
+            {language === "ko" ? "Google로 로그인" : "Continue with Google"}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-500">
-          계정이 없으신가요?{" "}
+          {language === "ko" ? "계정이 없으신가요?" : "Need an account?"}{" "}
           <Link href="/auth/signup" className="text-indigo-600 hover:text-indigo-500">
-            회원가입
+            {language === "ko" ? "회원가입" : "Sign up"}
           </Link>
         </p>
       </div>

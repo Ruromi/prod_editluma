@@ -1,31 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import GallerySection from "@/components/landing/GallerySection";
 import HeroSection from "@/components/landing/HeroSection";
 import LandingFooter from "@/components/landing/LandingFooter";
-import { landingCopy, type LandingLanguage } from "@/components/landing/copy";
+import { landingCopy } from "@/components/landing/copy";
 import {
   persistLandingLanguage,
-  readBrowserLandingLanguage,
   type HeaderLanguage,
 } from "@/lib/landing-language";
+import { useAppLanguage } from "@/lib/use-app-language";
 
 type LandingPageContentProps = {
   isAuthenticated: boolean;
+  initialLanguage?: HeaderLanguage;
 };
 
-export default function LandingPageContent({ isAuthenticated }: LandingPageContentProps) {
-  const [language, setLanguage] = useState<HeaderLanguage>("en");
+export default function LandingPageContent({
+  isAuthenticated,
+  initialLanguage = "en",
+}: LandingPageContentProps) {
+  const language = useAppLanguage(initialLanguage);
   const copy = landingCopy[language];
 
-  useEffect(() => {
-    setLanguage(readBrowserLandingLanguage());
-  }, []);
-
   function handleLanguageChange(nextLanguage: HeaderLanguage) {
-    setLanguage(nextLanguage);
     persistLandingLanguage(nextLanguage);
   }
 

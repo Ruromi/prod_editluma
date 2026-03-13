@@ -32,7 +32,7 @@ export default async function UserMenu({
   const displayName =
     user.user_metadata?.full_name ||
     user.email?.split("@")[0] ||
-    "사용자";
+    (initialLanguage === "ko" ? "사용자" : "User");
   const avatarUrl = user.user_metadata?.avatar_url;
   const showAdminLink = hasAdminAccess(headerList, user.email);
 
@@ -42,6 +42,7 @@ export default async function UserMenu({
       displayName={displayName}
       email={user.email}
       showAdminLink={showAdminLink}
+      initialLanguage={initialLanguage}
     />
   );
 }

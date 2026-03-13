@@ -96,27 +96,16 @@ type BillingPageView = "pricing" | "mypage";
 
 type BillingPageClientProps = {
   view?: BillingPageView;
+  initialLanguage?: "en" | "ko";
 };
 
 const ZERO_DECIMAL_CURRENCIES = new Set(["KRW", "JPY"]);
-
-const JOB_STATUS_LABEL: Record<JobStatus, string> = {
-  pending: "대기 중",
-  processing: "처리 중",
-  done: "완료",
-  failed: "실패",
-};
 
 const JOB_STATUS_COLOR: Record<JobStatus, string> = {
   pending: "text-yellow-700 bg-yellow-400/10",
   processing: "text-blue-600 bg-blue-400/10",
   done: "text-green-600 bg-green-400/10",
   failed: "text-red-600 bg-red-400/10",
-};
-
-const JOB_MODE_LABEL: Record<JobMode, string> = {
-  enhance: "AI 보정",
-  generate: "AI 생성",
 };
 
 function normalizeCurrencyAmount(amount: number, currency?: string | null) {
@@ -144,10 +133,10 @@ function buildLoginHref(next: string) {
   return `/auth/login?next=${encodeURIComponent(next)}`;
 }
 
-function formatUsageMode(mode?: string | null) {
-  if (mode === "generate") return "이미지 생성";
-  if (mode === "enhance") return "이미지 보정";
-  return "크레딧 사용";
+function formatUsageMode(mode: string | null | undefined, language: "en" | "ko") {
+  if (mode === "generate") return language === "ko" ? "이미지 생성" : "Image generation";
+  if (mode === "enhance") return language === "ko" ? "이미지 보정" : "Image enhancement";
+  return language === "ko" ? "크레딧 사용" : "Credit usage";
 }
 
 function summarizePrompt(prompt?: string | null) {
@@ -155,20 +144,20 @@ function summarizePrompt(prompt?: string | null) {
   return prompt.length > 72 ? `${prompt.slice(0, 72)}…` : prompt;
 }
 
-function formatRefundStatus(status?: string | null) {
+function formatRefundStatus(status: string | null | undefined, language: "en" | "ko") {
   switch (status) {
     case "requested":
-      return "요청 중";
+      return language === "ko" ? "요청 중" : "Requested";
     case "pending":
-      return "환불 처리 중";
+      return language === "ko" ? "환불 처리 중" : "Processing";
     case "completed":
-      return "환불 완료";
+      return language === "ko" ? "환불 완료" : "Completed";
     case "failed":
-      return "환불 실패";
+      return language === "ko" ? "환불 실패" : "Failed";
     case "manual_review":
-      return "수동 검토";
+      return language === "ko" ? "수동 검토" : "Manual review";
     default:
-      return "상태 확인 필요";
+      return language === "ko" ? "상태 확인 필요" : "Needs review";
   }
 }
 
@@ -204,11 +193,11 @@ function BillingPageSkeleton() {
   );
 }
 
-function formatDate(value: string) {
+function formatDate(value: string, language: "en" | "ko") {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? value
-    : new Intl.DateTimeFormat("ko-KR", {
+    : new Intl.DateTimeFormat(language === "ko" ? "ko-KR" : "en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -228,7 +217,20 @@ function isWithinRefundWindow(value: string, days = 7) {
 
 export default function BillingPageClient({
   view = "mypage",
+  initialLanguage = "en",
 }: BillingPageClientProps) {
+  const isKo = initialLanguage === "ko";
+  const t = (ko: string, en: string) => (isKo ? ko : en);
+  const jobStatusLabel: Record<JobStatus, string> = {
+    pending: t("대기 중", "Pending"),
+    processing: t("처리 중", "Processing"),
+    done: t("완료", "Done"),
+    failed: t("실패", "Failed"),
+  };
+  const jobModeLabel: Record<JobMode, string> = {
+    enhance: t("AI 보정", "Enhance"),
+    generate: t("AI 생성", "Generate"),
+  };
   const [supabase] = useState(() => createClient());
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -390,19 +392,22 @@ export default function BillingPageClient({
 
     try {
       const accessToken = await getAccessToken();
-      await refreshPackages();
+      const requests: Promise<unknown>[] = [];
+
+      if (isPricingView) {
+        requests.push(refreshPackages());
+      }
 
       if (accessToken) {
-        const requests: Promise<boolean>[] = [
+        requests.push(
           refreshCredits(accessToken),
           refreshHistory(accessToken),
           refreshUsageHistory(accessToken),
           refreshRefundRequests(accessToken),
-        ];
+        );
         if (!isPricingView) {
           requests.push(refreshJobHistory(accessToken));
         }
-        await Promise.all(requests);
       } else {
         setCreditBalance(null);
         setHistory([]);
@@ -411,6 +416,8 @@ export default function BillingPageClient({
         setRefundRequests([]);
         clearStoredCreditBalance();
       }
+
+      await Promise.all(requests);
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -445,7 +452,12 @@ export default function BillingPageClient({
     const params = new URLSearchParams(window.location.search);
     if (params.get("checkout") !== "success") return;
 
-    setStatusMessage("결제 완료를 확인하고 있습니다. 크레딧 반영까지 몇 초 정도 걸릴 수 있습니다.");
+      setStatusMessage(
+        t(
+          "결제 완료를 확인하고 있습니다. 크레딧 반영까지 몇 초 정도 걸릴 수 있습니다.",
+          "We're verifying your payment. Credits can take a few seconds to appear."
+        )
+      );
 
     let attempts = 0;
     const intervalId = window.setInterval(() => {
@@ -454,7 +466,7 @@ export default function BillingPageClient({
         setError(
           pollError instanceof Error
             ? pollError.message
-            : "결제 반영 상태를 확인하지 못했습니다."
+            : t("결제 반영 상태를 확인하지 못했습니다.", "Could not verify the payment status.")
         );
       });
       if (attempts >= 5) {
@@ -466,7 +478,7 @@ export default function BillingPageClient({
       setError(
         pollError instanceof Error
           ? pollError.message
-          : "결제 반영 상태를 확인하지 못했습니다."
+          : t("결제 반영 상태를 확인하지 못했습니다.", "Could not verify the payment status.")
       );
     });
 
@@ -495,7 +507,7 @@ export default function BillingPageClient({
         });
 
         if (!response.ok) {
-          let detail = "체크아웃을 시작하지 못했습니다.";
+          let detail = t("체크아웃을 시작하지 못했습니다.", "Could not start checkout.");
           try {
             const payload = await response.json();
             if (payload?.detail) {
@@ -513,7 +525,7 @@ export default function BillingPageClient({
         setError(
           checkoutError instanceof Error
             ? checkoutError.message
-            : "체크아웃을 시작하지 못했습니다."
+            : t("체크아웃을 시작하지 못했습니다.", "Could not start checkout.")
         );
       } finally {
         setCheckoutingPackageId(null);
@@ -597,7 +609,7 @@ export default function BillingPageClient({
       });
 
       if (!response.ok) {
-        let detail = "환불 요청을 접수하지 못했습니다.";
+        let detail = t("환불 요청을 저장하지 못했습니다.", "Could not save your refund request.");
         try {
           const payload = await response.json();
           if (payload?.detail) {
@@ -620,7 +632,12 @@ export default function BillingPageClient({
         return [payload, ...next];
       });
       void refreshRefundRequests(accessToken);
-      setStatusMessage("환불 요청이 접수되었습니다. 관리자가 확인 후 처리합니다.");
+      setStatusMessage(
+        t(
+          "환불 요청이 접수되었습니다. 관리자가 확인 후 처리합니다.",
+          "Your refund request was submitted. An administrator will review it."
+        )
+      );
       setOpenRefundLedgerId(null);
       setRefundComment("");
       setRefundReason("customer_request");
@@ -628,7 +645,7 @@ export default function BillingPageClient({
       setError(
         refundError instanceof Error
           ? refundError.message
-          : "환불 요청을 접수하지 못했습니다."
+          : t("환불 요청을 저장하지 못했습니다.", "Could not save your refund request.")
       );
     } finally {
       setRequestingRefundLedgerId(null);
@@ -662,7 +679,7 @@ export default function BillingPageClient({
         );
 
         if (!response.ok) {
-          let detail = "환불 요청을 취소하지 못했습니다.";
+          let detail = t("환불 요청을 취소하지 못했습니다.", "Could not cancel the refund request.");
           try {
             const payload = await response.json();
             if (payload?.detail) {
@@ -676,12 +693,12 @@ export default function BillingPageClient({
 
         setRefundRequests((current) => current.filter((item) => item.id !== refundRequestId));
         void refreshRefundRequests(accessToken);
-        setStatusMessage("환불 요청을 취소했습니다.");
+        setStatusMessage(t("환불 요청을 취소했습니다.", "Your refund request was canceled."));
       } catch (cancelError) {
         setError(
           cancelError instanceof Error
             ? cancelError.message
-            : "환불 요청을 취소하지 못했습니다."
+            : t("환불 요청을 취소하지 못했습니다.", "Could not cancel the refund request.")
         );
       } finally {
         setRequestingRefundLedgerId(null);
@@ -701,16 +718,22 @@ export default function BillingPageClient({
       <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-3">
           <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500">
-            {isPricingView ? "안전 결제" : "마이 페이지"}
+            {isPricingView ? t("안전 결제", "Secure Checkout") : t("마이 페이지", "My Page")}
           </span>
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-gray-900 sm:text-4xl">
-              {isPricingView ? "요금제" : "마이페이지"}
+              {isPricingView ? t("요금제", "Pricing") : t("마이페이지", "My Page")}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-500 sm:text-base">
               {isPricingView
-                ? "필요한 만큼 크레딧을 충전하고 바로 이미지 생성과 보정에 사용할 수 있습니다. 로그인한 상태라면 패키지 선택 후 바로 결제로 이어집니다."
-                : "보유 크레딧, 최근 충전 내역, 최근 사용 내역을 한곳에서 확인할 수 있습니다."}
+                ? t(
+                    "필요한 만큼 크레딧을 충전하고 바로 이미지 생성과 보정에 사용할 수 있습니다. 로그인한 상태라면 패키지 선택 후 바로 결제로 이어집니다.",
+                    "Top up credits and use them right away for image generation and enhancement. If you're signed in, choosing a package takes you straight to checkout."
+                  )
+                : t(
+                    "보유 크레딧, 최근 충전 내역, 최근 사용 내역을 한곳에서 확인할 수 있습니다.",
+                    "Review your credit balance, purchases, usage history, and jobs in one place."
+                  )}
             </p>
           </div>
         </div>
@@ -721,14 +744,14 @@ export default function BillingPageClient({
             onClick={() => void loadBillingPage()}
             className="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-400 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900"
           >
-            새로고침
+            {t("새로고침", "Refresh")}
           </button>
           {isPricingView ? (
             <Link
               href={isAuthenticated ? "/mypage" : "/"}
               className="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-400 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900"
             >
-              {isAuthenticated ? "마이페이지로 이동" : "홈으로 돌아가기"}
+              {isAuthenticated ? t("마이페이지로 이동", "Go to My Page") : t("홈으로 돌아가기", "Back to home")}
             </Link>
           ) : (
             <>
@@ -736,13 +759,13 @@ export default function BillingPageClient({
                 href="/pricing"
                 className="inline-flex items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-2.5 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-500/20"
               >
-                크레딧 충전
+                {t("크레딧 충전", "Buy credits")}
               </Link>
               <Link
                 href="/dashboard"
                 className="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-400 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900"
               >
-                대시보드
+                {t("대시보드", "Dashboard")}
               </Link>
             </>
           )}
@@ -777,8 +800,10 @@ export default function BillingPageClient({
                           <span className="pb-2 text-sm text-gray-500">credits</span>
                         </div>
                         <p className="mt-4 text-sm leading-relaxed text-gray-500">
-                          패키지를 선택하면 Polar 체크아웃으로 바로 이동하고, 결제 완료 후
-                          마이페이지에 잔액과 충전 내역이 자동 반영됩니다.
+                          {t(
+                            "패키지를 선택하면 Polar 체크아웃으로 바로 이동하고, 결제 완료 후 마이페이지에 잔액과 충전 내역이 자동 반영됩니다.",
+                            "Choose a package to open Polar checkout. After payment, your balance and purchase history will update automatically in My Page."
+                          )}
                         </p>
                       </div>
 
@@ -808,11 +833,13 @@ export default function BillingPageClient({
                           Pricing Flow
                         </p>
                         <h2 className="mt-3 text-2xl font-semibold text-gray-900">
-                          패키지를 고르면 로그인 후 바로 결제로 이어집니다.
+                          {t("패키지를 고르면 로그인 후 바로 결제로 이어집니다.", "Choose a package and continue after signing in.")}
                         </h2>
                         <p className="mt-3 text-sm leading-relaxed text-gray-500">
-                          비로그인 상태에서도 요금제는 볼 수 있고, 원하는 패키지를 누르면 로그인 후
-                          동일한 패키지로 곧바로 체크아웃을 시작합니다.
+                          {t(
+                            "비로그인 상태에서도 요금제는 볼 수 있고, 원하는 패키지를 누르면 로그인 후 동일한 패키지로 곧바로 체크아웃을 시작합니다.",
+                            "You can browse packages before logging in. Selecting one will ask you to sign in and continue with the same package."
+                          )}
                         </p>
                       </div>
 
@@ -821,13 +848,16 @@ export default function BillingPageClient({
                           Sign In Required
                         </p>
                         <p className="mt-3 text-sm leading-relaxed text-indigo-700">
-                          결제 완료 후에는 자동으로 크레딧이 반영되고, 로그인하면 충전 내역도 함께 확인할 수 있습니다.
+                          {t(
+                            "결제 완료 후에는 자동으로 크레딧이 반영되고, 로그인하면 충전 내역도 함께 확인할 수 있습니다.",
+                            "After payment, credits are applied automatically and your purchase history becomes available in My Page."
+                          )}
                         </p>
                         <Link
                           href={loginHref}
                           className="mt-5 inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-gray-950 transition-colors hover:bg-gray-100"
                         >
-                          로그인하고 결제 시작
+                          {t("로그인하고 결제 시작", "Sign in and continue")}
                         </Link>
                       </div>
                     </div>
@@ -871,7 +901,7 @@ export default function BillingPageClient({
                           href="/pricing"
                           className="mt-3 inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-950 transition-colors hover:bg-gray-100"
                         >
-                          크레딧 충전하러 가기
+                          {t("크레딧 충전하러 가기", "Buy credits")}
                         </Link>
                       </div>
                     </div>
@@ -883,10 +913,13 @@ export default function BillingPageClient({
                         My Page
                       </p>
                       <h2 className="mt-3 text-2xl font-semibold text-gray-900">
-                        로그인하면 보유 크레딧과 최근 내역을 볼 수 있습니다.
+                        {t("로그인하면 보유 크레딧과 최근 내역을 볼 수 있습니다.", "Sign in to view your credits and recent activity.")}
                       </h2>
                       <p className="mt-3 text-sm leading-relaxed text-gray-500">
-                        충전 내역, 최근 사용 내역, 환불 요청 상태까지 계정 기준으로 한곳에서 관리할 수 있습니다.
+                        {t(
+                          "충전 내역, 최근 사용 내역, 환불 요청 상태까지 계정 기준으로 한곳에서 관리할 수 있습니다.",
+                          "Track purchase history, usage history, and refund request status from one account page."
+                        )}
                       </p>
                     </div>
 
@@ -895,13 +928,16 @@ export default function BillingPageClient({
                         Sign In Required
                       </p>
                       <p className="mt-3 text-sm leading-relaxed text-indigo-700">
-                        로그인 후 마이페이지에서 잔액과 최근 결제/사용 내역을 확인할 수 있습니다.
+                        {t(
+                          "로그인 후 마이페이지에서 잔액과 최근 결제/사용 내역을 확인할 수 있습니다.",
+                          "Sign in to view your balance and recent purchase and usage activity."
+                        )}
                       </p>
                       <Link
                         href={loginHref}
                         className="mt-5 inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-gray-950 transition-colors hover:bg-gray-100"
                       >
-                        로그인하기
+                        {t("로그인하기", "Log in")}
                       </Link>
                     </div>
                   </div>
@@ -922,14 +958,23 @@ export default function BillingPageClient({
                   {isPricingView
                     ? isAuthenticated
                       ? isRefreshingCredits
-                        ? "크레딧을 새로고침 중입니다."
-                        : "결제 완료 후 자동으로 마이페이지에서 충전 내역을 확인할 수 있습니다."
-                      : "패키지 버튼을 누르면 로그인 후 바로 해당 결제로 이어집니다."
+                        ? t("크레딧을 새로고침 중입니다.", "Refreshing your credit balance.")
+                        : t(
+                            "결제 완료 후 자동으로 마이페이지에서 충전 내역을 확인할 수 있습니다.",
+                            "After payment, your latest top-ups appear automatically in My Page."
+                          )
+                      : t(
+                          "패키지 버튼을 누르면 로그인 후 바로 해당 결제로 이어집니다.",
+                          "Select a package to continue through sign-in and straight into checkout."
+                        )
                     : isAuthenticated
                       ? isRefreshingCredits
-                        ? "크레딧을 새로고침 중입니다."
-                        : "결제 반영이 늦으면 몇 초 후 새로고침하세요."
-                      : "로그인 후 마이페이지에서 보유 크레딧과 최근 내역을 확인할 수 있습니다."}
+                        ? t("크레딧을 새로고침 중입니다.", "Refreshing your credit balance.")
+                        : t("결제 반영이 늦으면 몇 초 후 새로고침하세요.", "If payment confirmation looks delayed, refresh again in a few seconds.")
+                      : t(
+                          "로그인 후 마이페이지에서 보유 크레딧과 최근 내역을 확인할 수 있습니다.",
+                          "Sign in to view your credit balance and recent activity in My Page."
+                        )}
                 </p>
               </div>
             </div>
@@ -971,11 +1016,11 @@ export default function BillingPageClient({
 
                       <div className="flex flex-wrap gap-2 text-xs">
                         <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-gray-400">
-                          기본 {pkg.credits}
+                          {isKo ? `기본 ${pkg.credits}` : `Base ${pkg.credits}`}
                         </span>
                         {pkg.bonus > 0 && (
                           <span className="rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-green-700">
-                            보너스 +{pkg.bonus}
+                            {isKo ? `보너스 +${pkg.bonus}` : `Bonus +${pkg.bonus}`}
                           </span>
                         )}
                       </div>
@@ -987,7 +1032,7 @@ export default function BillingPageClient({
                           {formatCurrency(pkg.price, pkg.currency)}
                         </p>
                         <p className="mt-1 text-xs text-gray-500">
-                          크레딧당 약 {formatCurrency(pricePerCredit, pkg.currency)}
+                          {t("크레딧당 약", "Approx. per credit")} {formatCurrency(pricePerCredit, pkg.currency)}
                         </p>
                       </div>
 
@@ -1003,10 +1048,10 @@ export default function BillingPageClient({
                           }`}
                         >
                           {isBusy
-                            ? "체크아웃 준비 중..."
+                            ? t("체크아웃 준비 중...", "Preparing checkout...")
                             : isAuthenticated
-                              ? "결제하기"
-                              : "로그인 후 결제하기"}
+                              ? t("결제하기", "Continue to payment")
+                              : t("로그인 후 결제하기", "Log in to pay")}
                         </button>
                       ) : (
                         <button
@@ -1014,7 +1059,7 @@ export default function BillingPageClient({
                           disabled
                           className="inline-flex w-full items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-500"
                         >
-                          상품 ID 연결 필요
+                          {t("상품 ID 연결 필요", "Product ID required")}
                         </button>
                       )}
                     </div>
@@ -1030,26 +1075,34 @@ export default function BillingPageClient({
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
                   Purchase History
                 </p>
-                <h2 className="mt-2 text-2xl font-semibold text-gray-900">최근 충전 내역</h2>
+                <h2 className="mt-2 text-2xl font-semibold text-gray-900">{t("최근 충전 내역", "Purchase History")}</h2>
               </div>
               <p className="text-sm text-gray-500">
-                웹훅이 정상 반영되면 이 영역에 최신 결제 내역이 추가됩니다.
+                {t(
+                  "웹훅이 정상 반영되면 이 영역에 최신 결제 내역이 추가됩니다.",
+                  "When webhooks are processed correctly, your latest payments appear here."
+                )}
               </p>
             </div>
 
             {!isAuthenticated ? (
               <div className="mt-6 rounded-3xl border border-dashed border-gray-200 px-6 py-12 text-center">
-                <p className="text-sm text-gray-500">로그인하면 최근 충전 내역과 현재 잔액을 함께 확인할 수 있습니다.</p>
+                <p className="text-sm text-gray-500">
+                  {t(
+                    "로그인하면 최근 충전 내역과 현재 잔액을 함께 확인할 수 있습니다.",
+                    "Sign in to view your recent purchases and current balance."
+                  )}
+                </p>
                 <Link
                   href={loginHref}
                   className="mt-4 inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-indigo-500"
                 >
-                  로그인하기
+                  {t("로그인하기", "Log in")}
                 </Link>
               </div>
             ) : history.length === 0 ? (
               <div className="mt-6 rounded-3xl border border-dashed border-gray-200 px-6 py-12 text-center text-sm text-gray-500">
-                아직 충전 내역이 없습니다.
+                {t("아직 충전 내역이 없습니다.", "No purchase history yet.")}
               </div>
             ) : (
               <div className="mt-6 overflow-hidden rounded-3xl border border-gray-200">
@@ -1084,7 +1137,7 @@ export default function BillingPageClient({
                             {item.package_name ?? item.package_id ?? "Credit top-up"}
                           </p>
                           <p className="mt-1 text-xs text-gray-500">
-                            Order {item.order_id ?? item.source_id}
+                            {t("주문", "Order")} {item.order_id ?? item.source_id}
                           </p>
                         </div>
                         <div className="font-medium text-indigo-600">+{item.credits_added} credits</div>
@@ -1096,23 +1149,23 @@ export default function BillingPageClient({
                               )
                             : "—"}
                         </div>
-                        <div className="text-gray-500">{formatDate(item.created_at)}</div>
+                        <div className="text-gray-500">{formatDate(item.created_at, initialLanguage)}</div>
                         <div className="space-y-2">
                           {existingRefundRequest ? (
                             <>
                               <span
                                 className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${refundStatusClasses(existingRefundRequest.status)}`}
                               >
-                                {formatRefundStatus(existingRefundRequest.status)}
+                                {formatRefundStatus(existingRefundRequest.status, initialLanguage)}
                               </span>
                               <p className="text-xs leading-5 text-gray-500">
                                 {existingRefundRequest.status === "completed"
-                                  ? "이미 환불이 완료된 결제입니다."
+                                  ? t("이미 환불이 완료된 결제입니다.", "This payment has already been refunded.")
                                   : existingRefundRequest.status === "pending"
-                                    ? "관리자가 환불을 처리 중입니다."
+                                    ? t("관리자가 환불을 처리 중입니다.", "An administrator is currently processing this refund.")
                                     : existingRefundRequest.status === "failed"
-                                      ? "이전 환불 요청 이력이 있습니다. 지원팀에 문의하세요."
-                                      : "관리자가 요청을 검토 중입니다."}
+                                      ? t("이전 환불 요청 이력이 있습니다. 지원팀에 문의하세요.", "A previous refund request exists. Please contact support.")
+                                      : t("관리자가 요청을 검토 중입니다.", "Your request is under review.")}
                               </p>
                               {existingRefundRequest.status === "requested" && (
                                 <>
@@ -1123,11 +1176,11 @@ export default function BillingPageClient({
                                     className="inline-flex items-center justify-center rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50"
                                   >
                                     {requestingRefundLedgerId === existingRefundRequest.id
-                                      ? "취소 중..."
-                                      : "요청 취소"}
+                                      ? t("취소 중...", "Canceling...")
+                                      : t("요청 취소", "Cancel request")}
                                   </button>
                                   <p className="text-xs font-medium text-red-600">
-                                    7일 이내 환불 요청 가능
+                                    {t("7일 이내 환불 요청 가능", "Refund requests are available within 7 days.")}
                                   </p>
                                 </>
                               )}
@@ -1135,26 +1188,26 @@ export default function BillingPageClient({
                           ) : openRefundLedgerId === item.id ? (
                             <div className="rounded-2xl border border-sky-200 bg-sky-50/80 p-3">
                               <label className="block text-xs font-medium text-gray-600">
-                                환불 사유
+                                {t("환불 사유", "Refund reason")}
                                 <select
                                   value={refundReason}
                                   onChange={(event) => setRefundReason(event.target.value)}
                                   className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500"
                                 >
-                                  <option value="customer_request">단순 변심</option>
-                                  <option value="duplicate">중복 결제</option>
-                                  <option value="service_disruption">서비스 문제</option>
-                                  <option value="satisfaction_guarantee">품질 불만족</option>
-                                  <option value="other">기타</option>
+                                  <option value="customer_request">{t("단순 변심", "Changed my mind")}</option>
+                                  <option value="duplicate">{t("중복 결제", "Duplicate charge")}</option>
+                                  <option value="service_disruption">{t("서비스 문제", "Service issue")}</option>
+                                  <option value="satisfaction_guarantee">{t("품질 불만족", "Unsatisfied with quality")}</option>
+                                  <option value="other">{t("기타", "Other")}</option>
                                 </select>
                               </label>
                               <label className="mt-2 block text-xs font-medium text-gray-600">
-                                메모
+                                {t("메모", "Note")}
                                 <textarea
                                   value={refundComment}
                                   onChange={(event) => setRefundComment(event.target.value)}
                                   rows={3}
-                                  placeholder="환불 사유를 간단히 남겨주세요."
+                                  placeholder={t("환불 사유를 간단히 남겨주세요.", "Share a short reason for the refund request.")}
                                   className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500"
                                 />
                               </label>
@@ -1165,7 +1218,7 @@ export default function BillingPageClient({
                                   disabled={requestingRefundLedgerId === item.id}
                                   className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-sky-500 disabled:opacity-50"
                                 >
-                                  {requestingRefundLedgerId === item.id ? "요청 전송 중..." : "요청 보내기"}
+                                  {requestingRefundLedgerId === item.id ? t("요청 전송 중...", "Sending...") : t("요청 보내기", "Submit request")}
                                 </button>
                                 <button
                                   type="button"
@@ -1173,7 +1226,7 @@ export default function BillingPageClient({
                                   disabled={requestingRefundLedgerId === item.id}
                                   className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50"
                                 >
-                                  취소
+                                  {t("취소", "Cancel")}
                                 </button>
                               </div>
                             </div>
@@ -1184,10 +1237,10 @@ export default function BillingPageClient({
                                 onClick={() => openRefundRequestForm(item.id)}
                                 className="inline-flex items-center justify-center rounded-xl border border-sky-300 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700 transition-colors hover:bg-sky-100"
                               >
-                                환불 요청
+                                {t("환불 요청", "Request refund")}
                               </button>
                               <p className="text-xs font-medium text-red-600">
-                                7일 이내 환불 요청 가능
+                                {t("7일 이내 환불 요청 가능", "Refund requests are available within 7 days.")}
                               </p>
                             </>
                           ) : !existingRefundRequest && !isRefundWindowOpen ? (
@@ -1197,15 +1250,18 @@ export default function BillingPageClient({
                                 disabled
                                 className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-400"
                               >
-                                환불 요청
+                                {t("환불 요청", "Request refund")}
                               </button>
                               <p className="text-xs font-medium text-red-600">
-                                7일 이내 환불 요청 가능
+                                {t("7일 이내 환불 요청 가능", "Refund requests are available within 7 days.")}
                               </p>
                             </>
                           ) : (
                             <p className="text-xs leading-5 text-gray-500">
-                              이 결제 건은 현재 자동 환불 요청을 지원하지 않습니다.
+                              {t(
+                                "이 결제 건은 현재 자동 환불 요청을 지원하지 않습니다.",
+                                "Automatic refund requests are not available for this payment yet."
+                              )}
                             </p>
                           )}
                         </div>
@@ -1223,26 +1279,29 @@ export default function BillingPageClient({
                     <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
                       Usage History
                     </p>
-                    <h2 className="mt-2 text-2xl font-semibold text-gray-900">최근 사용 내역</h2>
+                    <h2 className="mt-2 text-2xl font-semibold text-gray-900">{t("최근 사용 내역", "Usage History")}</h2>
                   </div>
                   <p className="text-sm text-gray-500">
-                    이미지 생성과 보정으로 차감된 크레딧이 이력으로 남습니다.
+                    {t(
+                      "이미지 생성과 보정으로 차감된 크레딧이 이력으로 남습니다.",
+                      "Credits spent on generation and enhancement are recorded here."
+                    )}
                   </p>
                 </div>
 
                 {!isAuthenticated ? (
                   <div className="mt-6 rounded-3xl border border-dashed border-gray-200 px-6 py-12 text-center">
-                    <p className="text-sm text-gray-500">로그인하면 최근 사용 내역을 함께 확인할 수 있습니다.</p>
+                    <p className="text-sm text-gray-500">{t("로그인하면 최근 사용 내역을 함께 확인할 수 있습니다.", "Sign in to view your recent usage history.")}</p>
                     <Link
                       href={loginHref}
                       className="mt-4 inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-indigo-500"
                     >
-                      로그인하기
+                      {t("로그인하기", "Log in")}
                     </Link>
                   </div>
                 ) : usageHistory.length === 0 ? (
                   <div className="mt-6 rounded-3xl border border-dashed border-gray-200 px-6 py-12 text-center text-sm text-gray-500">
-                    아직 사용 내역이 없습니다.
+                    {t("아직 사용 내역이 없습니다.", "No usage history yet.")}
                   </div>
                 ) : (
                   <div className="mt-6 overflow-hidden rounded-3xl border border-gray-200">
@@ -1262,7 +1321,7 @@ export default function BillingPageClient({
                           >
                             <div>
                               <p className="font-medium text-gray-900">
-                                {item.description ?? formatUsageMode(item.mode)}
+                                {item.description ?? formatUsageMode(item.mode, initialLanguage)}
                               </p>
                               <p className="mt-1 text-xs text-gray-500">
                                 {item.filename ?? item.job_id ?? item.source_id}
@@ -1275,7 +1334,7 @@ export default function BillingPageClient({
                             </div>
                             <div className="font-medium text-rose-600">-{item.credits_used} credits</div>
                             <div>{item.balance_after} credits</div>
-                            <div className="text-gray-500">{formatDate(item.created_at)}</div>
+                            <div className="text-gray-500">{formatDate(item.created_at, initialLanguage)}</div>
                           </div>
                         );
                       })}
@@ -1290,26 +1349,29 @@ export default function BillingPageClient({
                     <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
                       Job History
                     </p>
-                    <h2 className="mt-2 text-2xl font-semibold text-gray-900">작업 내역</h2>
+                    <h2 className="mt-2 text-2xl font-semibold text-gray-900">{t("작업 내역", "Job History")}</h2>
                   </div>
                   <p className="text-sm text-gray-500">
-                    이미지 생성과 보정 작업 상태를 최근 순서대로 확인할 수 있습니다.
+                    {t(
+                      "이미지 생성과 보정 작업 상태를 최근 순서대로 확인할 수 있습니다.",
+                      "Review the latest status of your image generation and enhancement jobs."
+                    )}
                   </p>
                 </div>
 
                 {!isAuthenticated ? (
                   <div className="mt-6 rounded-3xl border border-dashed border-gray-200 px-6 py-12 text-center">
-                    <p className="text-sm text-gray-500">로그인하면 최근 작업 내역을 함께 확인할 수 있습니다.</p>
+                    <p className="text-sm text-gray-500">{t("로그인하면 최근 작업 내역을 함께 확인할 수 있습니다.", "Sign in to view your recent jobs.")}</p>
                     <Link
                       href={loginHref}
                       className="mt-4 inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-indigo-500"
                     >
-                      로그인하기
+                      {t("로그인하기", "Log in")}
                     </Link>
                   </div>
                 ) : jobHistory.length === 0 ? (
                   <div className="mt-6 rounded-3xl border border-dashed border-gray-200 px-6 py-12 text-center text-sm text-gray-500">
-                    아직 작업 내역이 없습니다.
+                    {t("아직 작업 내역이 없습니다.", "No job history yet.")}
                   </div>
                 ) : (
                   <div className="mt-6 overflow-hidden rounded-3xl border border-gray-200">
@@ -1328,14 +1390,14 @@ export default function BillingPageClient({
                           className="grid grid-cols-1 gap-3 px-5 py-4 text-sm text-gray-400 sm:grid-cols-[1.1fr_0.7fr_1.5fr_0.8fr_1fr_0.7fr]"
                         >
                           <div className="font-mono text-xs text-gray-500">{job.filename}</div>
-                          <div>{job.mode ? JOB_MODE_LABEL[job.mode] : "—"}</div>
+                          <div>{job.mode ? jobModeLabel[job.mode] : "—"}</div>
                           <div className="text-gray-500">{summarizePrompt(job.prompt) ?? "—"}</div>
                           <div>
                             <span className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${JOB_STATUS_COLOR[job.status]}`}>
-                              {JOB_STATUS_LABEL[job.status]}
+                              {jobStatusLabel[job.status]}
                             </span>
                           </div>
-                          <div className="text-gray-500">{formatDate(job.created_at)}</div>
+                          <div className="text-gray-500">{formatDate(job.created_at, initialLanguage)}</div>
                           <div>
                             {job.status === "done" && job.output_url ? (
                               <a
@@ -1344,7 +1406,7 @@ export default function BillingPageClient({
                                 rel="noopener noreferrer"
                                 className="text-xs text-indigo-600 transition-colors hover:text-indigo-500 hover:underline"
                               >
-                                다운로드
+                                {t("다운로드", "Download")}
                               </a>
                             ) : (
                               <span className="text-xs text-gray-400">—</span>

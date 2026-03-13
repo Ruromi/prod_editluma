@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import BillingPageClient from "@/components/BillingPageClient";
+import { LANDING_LANGUAGE_COOKIE, normalizeLandingLanguage } from "@/lib/landing-language";
 import { createSeoMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createSeoMetadata({
@@ -21,10 +23,15 @@ function MyPageFallback() {
   );
 }
 
-export default function MyPage() {
+export default async function MyPage() {
+  const cookieStore = await cookies();
+  const initialLanguage = normalizeLandingLanguage(
+    cookieStore.get(LANDING_LANGUAGE_COOKIE)?.value
+  );
+
   return (
     <Suspense fallback={<MyPageFallback />}>
-      <BillingPageClient view="mypage" />
+      <BillingPageClient view="mypage" initialLanguage={initialLanguage} />
     </Suspense>
   );
 }

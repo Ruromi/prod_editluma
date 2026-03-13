@@ -1,12 +1,23 @@
 "use client";
 
 import { useRef } from "react";
+import type { HeaderLanguage } from "@/lib/landing-language";
 import { signup, loginWithGoogle } from "../actions";
 
-const PASSWORD_POLICY_TITLE = "8자 이상, 대문자/숫자/특수문자를 각각 1개 이상 포함해야 합니다.";
-const PASSWORD_CONFIRMATION_MESSAGE = "비밀번호가 일치하지 않습니다.";
+type SignupFormProps = {
+  initialLanguage?: HeaderLanguage;
+};
 
-export default function SignupForm() {
+export default function SignupForm({ initialLanguage = "en" }: SignupFormProps) {
+  const language = initialLanguage;
+  const passwordPolicyTitle =
+    language === "ko"
+      ? "8자 이상, 대문자/숫자/특수문자를 각각 1개 이상 포함해야 합니다."
+      : "Use at least 8 characters with 1 uppercase letter, 1 number, and 1 special character.";
+  const passwordConfirmationMessage =
+    language === "ko"
+      ? "비밀번호가 일치하지 않습니다."
+      : "Passwords do not match.";
   const passwordRef = useRef<HTMLInputElement>(null);
   const confirmPasswordRef = useRef<HTMLInputElement>(null);
 
@@ -19,7 +30,7 @@ export default function SignupForm() {
     }
 
     if (confirmPasswordInput.value && confirmPasswordInput.value !== password) {
-      confirmPasswordInput.setCustomValidity(PASSWORD_CONFIRMATION_MESSAGE);
+      confirmPasswordInput.setCustomValidity(passwordConfirmationMessage);
       return;
     }
 
@@ -30,8 +41,8 @@ export default function SignupForm() {
     <>
       <form action={signup} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm text-gray-400 mb-1">
-            이메일
+            <label htmlFor="email" className="block text-sm text-gray-400 mb-1">
+            {language === "ko" ? "이메일" : "Email"}
           </label>
           <input
             id="email"
@@ -44,7 +55,7 @@ export default function SignupForm() {
         </div>
         <div>
           <label htmlFor="password" className="block text-sm text-gray-400 mb-1">
-            비밀번호
+            {language === "ko" ? "비밀번호" : "Password"}
           </label>
           <input
             id="password"
@@ -54,18 +65,24 @@ export default function SignupForm() {
             required
             minLength={8}
             pattern="^(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$"
-            title={PASSWORD_POLICY_TITLE}
+            title={passwordPolicyTitle}
             className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-800 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            placeholder="8자 이상, 대문자/숫자/특수문자 포함"
+            placeholder={
+              language === "ko"
+                ? "8자 이상, 대문자/숫자/특수문자 포함"
+                : "8+ characters, uppercase, number, symbol"
+            }
             onInput={syncPasswordConfirmation}
           />
           <p className="mt-2 text-xs leading-5 text-gray-500">
-            8자 이상, 대문자 1개 이상, 숫자 1개 이상, 특수문자 1개 이상이 필요합니다.
+            {language === "ko"
+              ? "8자 이상, 대문자 1개 이상, 숫자 1개 이상, 특수문자 1개 이상이 필요합니다."
+              : "Use at least 8 characters, including 1 uppercase letter, 1 number, and 1 special character."}
           </p>
         </div>
         <div>
           <label htmlFor="confirm-password" className="block text-sm text-gray-400 mb-1">
-            비밀번호 확인
+            {language === "ko" ? "비밀번호 확인" : "Confirm password"}
           </label>
           <input
             id="confirm-password"
@@ -74,9 +91,13 @@ export default function SignupForm() {
             type="password"
             required
             minLength={8}
-            title={PASSWORD_CONFIRMATION_MESSAGE}
+            title={passwordConfirmationMessage}
             className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-800 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            placeholder="비밀번호를 다시 입력하세요"
+            placeholder={
+              language === "ko"
+                ? "비밀번호를 다시 입력하세요"
+                : "Enter your password again"
+            }
             onInput={syncPasswordConfirmation}
             onBlur={syncPasswordConfirmation}
           />
@@ -85,7 +106,7 @@ export default function SignupForm() {
           type="submit"
           className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 font-medium text-gray-900 hover:bg-indigo-500 transition-colors"
         >
-          회원가입
+          {language === "ko" ? "회원가입" : "Sign up"}
         </button>
       </form>
 
@@ -94,7 +115,7 @@ export default function SignupForm() {
           <div className="w-full border-t border-gray-300" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-white px-2 text-gray-500">또는</span>
+          <span className="bg-white px-2 text-gray-500">{language === "ko" ? "또는" : "Or"}</span>
         </div>
       </div>
 
@@ -121,7 +142,7 @@ export default function SignupForm() {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-          Google로 회원가입
+          {language === "ko" ? "Google로 회원가입" : "Sign up with Google"}
         </button>
       </form>
     </>

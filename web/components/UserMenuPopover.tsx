@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { logout } from "@/app/auth/actions";
 import { clearStoredCreditBalance, CREDIT_BALANCE_UPDATED_EVENT, broadcastCreditBalance, readStoredCreditBalance } from "@/lib/credits";
+import type { HeaderLanguage } from "@/lib/landing-language";
 import { createClient } from "@/lib/supabase/client";
+import { useAppLanguage } from "@/lib/use-app-language";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type UserMenuPopoverProps = {
@@ -11,6 +13,7 @@ type UserMenuPopoverProps = {
   displayName: string;
   email?: string | null;
   showAdminLink?: boolean;
+  initialLanguage?: HeaderLanguage;
 };
 
 type CreditSummary = {
@@ -24,8 +27,10 @@ export default function UserMenuPopover({
   displayName,
   email,
   showAdminLink = false,
+  initialLanguage = "en",
 }: UserMenuPopoverProps) {
   const [supabase] = useState(() => createClient());
+  const language = useAppLanguage(initialLanguage);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
@@ -44,7 +49,7 @@ export default function UserMenuPopover({
       const accessToken = data.session?.access_token;
 
       if (!accessToken) {
-        throw new Error("세션이 만료되었습니다.");
+        throw new Error(language === "ko" ? "세션이 만료되었습니다." : "Your session has expired.");
       }
 
       const response = await fetch(`${apiUrl}/api/credits/me`, {
@@ -54,7 +59,11 @@ export default function UserMenuPopover({
       });
 
       if (!response.ok) {
-        throw new Error("크레딧 정보를 불러오지 못했습니다.");
+        throw new Error(
+          language === "ko"
+            ? "크레딧 정보를 불러오지 못했습니다."
+            : "Could not load your credit balance."
+        );
       }
 
       const payload: CreditSummary = await response.json();
@@ -63,19 +72,21 @@ export default function UserMenuPopover({
       setInitialCredits(payload.initial_credits);
       broadcastCreditBalance(payload.balance);
     } catch (error) {
-      setCreditError(error instanceof Error ? error.message : "크레딧 정보를 불러오지 못했습니다.");
+      setCreditError(
+        error instanceof Error
+          ? error.message
+          : language === "ko"
+            ? "크레딧 정보를 불러오지 못했습니다."
+            : "Could not load your credit balance."
+      );
     } finally {
       setIsLoadingCredits(false);
     }
-  }, [apiUrl, supabase]);
+  }, [apiUrl, language, supabase]);
 
   useEffect(() => {
     setCreditBalance(readStoredCreditBalance());
   }, []);
-
-  useEffect(() => {
-    void refreshCredits();
-  }, [refreshCredits]);
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -142,7 +153,11 @@ export default function UserMenuPopover({
         <div className="hidden min-w-0 sm:block">
           <p className="max-w-[96px] truncate text-sm text-gray-500">{displayName}</p>
           <p className="text-[11px] uppercase tracking-[0.14em] text-gray-500">
-            {typeof creditBalance === "number" ? `${creditBalance} credits` : "Profile"}
+            {typeof creditBalance === "number"
+              ? `${creditBalance} credits`
+              : language === "ko"
+                ? "프로필"
+                : "Profile"}
           </p>
         </div>
         <div className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-1 text-[11px] font-semibold text-indigo-600 sm:hidden">
@@ -167,7 +182,9 @@ export default function UserMenuPopover({
             )}
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-gray-900">{displayName}</p>
-              <p className="truncate text-xs text-gray-500">{email ?? "로그인된 사용자"}</p>
+              <p className="truncate text-xs text-gray-500">
+                {email ?? (language === "ko" ? "로그인된 사용자" : "Signed-in user")}
+              </p>
             </div>
           </div>
 
@@ -179,10 +196,16 @@ export default function UserMenuPopover({
               </p>
             </div>
             <p className="mt-3 text-xs text-gray-500">
-              신규 계정은 {initialCredits} 크레딧으로 시작합니다.
+              {language === "ko"
+                ? `신규 계정은 ${initialCredits} 크레딧으로 시작합니다.`
+                : `New accounts start with ${initialCredits} credits.`}
             </p>
             {isLoadingCredits && (
-              <p className="mt-3 text-xs text-gray-500">크레딧 정보를 새로고침 중입니다.</p>
+              <p className="mt-3 text-xs text-gray-500">
+                {language === "ko"
+                  ? "크레딧 정보를 새로고침 중입니다."
+                  : "Refreshing your credit balance."}
+              </p>
             )}
             {creditError && (
               <p className="mt-3 text-xs text-red-600">{creditError}</p>
@@ -194,7 +217,7 @@ export default function UserMenuPopover({
             onClick={() => setIsOpen(false)}
             className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-medium text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-900"
           >
-            마이페이지
+            {language === "ko" ? "마이페이지" : "My Page"}
           </Link>
 
           <Link
@@ -202,7 +225,7 @@ export default function UserMenuPopover({
             onClick={() => setIsOpen(false)}
             className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-3 py-2.5 text-sm font-medium text-gray-900 transition-colors hover:bg-indigo-500"
           >
-            크레딧 충전하기
+            {language === "ko" ? "크레딧 충전하기" : "Buy credits"}
           </Link>
 
           {showAdminLink && (
@@ -211,7 +234,7 @@ export default function UserMenuPopover({
               onClick={() => setIsOpen(false)}
               className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-medium text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-900"
             >
-              관리자 페이지
+              {language === "ko" ? "관리자 페이지" : "Admin"}
             </Link>
           )}
 
@@ -226,7 +249,7 @@ export default function UserMenuPopover({
               type="submit"
               className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-400 transition-colors hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-600"
             >
-              로그아웃
+              {language === "ko" ? "로그아웃" : "Log out"}
             </button>
           </form>
         </div>
