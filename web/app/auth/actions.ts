@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 
 const PASSWORD_POLICY_MESSAGE =
   "비밀번호는 8자 이상이며 대문자, 숫자, 특수문자를 각각 1개 이상 포함해야 합니다.";
+const PASSWORD_CONFIRMATION_MESSAGE = "비밀번호 확인이 일치하지 않습니다.";
 
 function resolveNextPath(rawNext: FormDataEntryValue | null, fallback: string) {
   if (typeof rawNext !== "string" || !rawNext.startsWith("/") || rawNext.startsWith("//")) {
@@ -63,6 +64,11 @@ export async function signup(formData: FormData) {
   const supabase = await createServerClient();
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirm_password") ?? "");
+
+  if (password !== confirmPassword) {
+    redirect(`/auth/signup?error=${encodeURIComponent(PASSWORD_CONFIRMATION_MESSAGE)}`);
+  }
 
   if (!isValidSignupPassword(password)) {
     redirect(`/auth/signup?error=${encodeURIComponent(PASSWORD_POLICY_MESSAGE)}`);
