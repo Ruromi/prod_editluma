@@ -5,9 +5,6 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? "",
   },
-  devIndicators: {
-    buildActivity: false,
-  },
 };
 
 export default nextConfig;
