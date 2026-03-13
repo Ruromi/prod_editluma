@@ -2,9 +2,6 @@ type HeadersLike = {
   get(name: string): string | null;
 };
 
-const DEFAULT_ADMIN_IPS = ["211.204.0.211"];
-const DEFAULT_ADMIN_EMAILS = ["oasis_0421@naver.com"];
-
 function normalizeIp(ip: string) {
   const trimmed = ip.trim();
   if (!trimmed) return "";
@@ -30,7 +27,7 @@ function normalizeIp(ip: string) {
 
 export function getAllowedAdminIps() {
   const raw = process.env.ADMIN_ALLOWED_IPS?.trim();
-  const values = (raw ? raw.split(",") : DEFAULT_ADMIN_IPS)
+  const values = (raw ? raw.split(",") : [])
     .map((value) => normalizeIp(value))
     .filter(Boolean);
 
@@ -47,7 +44,7 @@ function normalizeEmail(email: string) {
 
 export function getAllowedAdminEmails() {
   const raw = process.env.ADMIN_EMAILS?.trim();
-  const values = (raw ? raw.split(",") : DEFAULT_ADMIN_EMAILS)
+  const values = (raw ? raw.split(",") : [])
     .map((value) => normalizeEmail(value))
     .filter(Boolean);
 
