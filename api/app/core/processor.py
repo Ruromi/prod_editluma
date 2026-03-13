@@ -212,7 +212,9 @@ def run_generate(job: dict) -> tuple[str, str]:
         img_resp.raise_for_status()
         image_bytes = img_resp.content
 
-    output_key = f"outputs/generated/{_uuid.uuid4()}.png"
+    user_id = str(job.get("user_id") or "").strip()
+    output_prefix = f"outputs/{user_id}/generated" if user_id else "outputs/generated"
+    output_key = f"{output_prefix}/{_uuid.uuid4()}.png"
     _upload_bytes_to_s3(output_key, image_bytes, "image/png")
     logger.info("Uploaded generated image to %s for job %s", output_key, job["id"])
     return output_key, enhanced_prompt
@@ -281,7 +283,9 @@ def run_enhance(job: dict) -> tuple[str, str]:
         img_resp.raise_for_status()
         result_bytes = img_resp.content
 
-    output_key = f"outputs/enhanced/{_uuid.uuid4()}.png"
+    user_id = str(job.get("user_id") or "").strip()
+    output_prefix = f"outputs/{user_id}/enhanced" if user_id else "outputs/enhanced"
+    output_key = f"{output_prefix}/{_uuid.uuid4()}.png"
     _upload_bytes_to_s3(output_key, result_bytes, "image/png")
     logger.info("Uploaded enhanced image to %s for job %s", output_key, job["id"])
     return output_key, prompt

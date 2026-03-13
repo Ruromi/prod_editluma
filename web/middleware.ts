@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasAdminAccess } from "@/lib/admin";
+import { ACCOUNT_DELETED_ERROR_MESSAGE, isDeletedAccountMetadata } from "@/lib/account-status";
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -30,13 +31,18 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const isDeletedUser = isDeletedAccountMetadata(user);
 
   const { pathname } = request.nextUrl;
 
   // Protect app pages — redirect unauthenticated users to login
-  if ((pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) && !user) {
+  if ((pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) && (!user || isDeletedUser)) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
+    if (isDeletedUser) {
+      url.searchParams.set("error", ACCOUNT_DELETED_ERROR_MESSAGE);
+      return NextResponse.redirect(url);
+    }
     url.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(url);
   }
@@ -46,7 +52,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect authenticated users away from auth pages
-  if (pathname.startsWith("/auth") && user) {
+  if (pathname.startsWith("/auth") && user && !isDeletedUser) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

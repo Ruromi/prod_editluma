@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 import {
   broadcastCreditBalance,
   clearStoredCreditBalance,
   readStoredCreditBalance,
 } from "@/lib/credits";
 import { createClient } from "@/lib/supabase/client";
+import { deleteAccount } from "@/app/auth/actions";
 
 type CreditSummary = {
   balance: number;
@@ -245,6 +247,26 @@ function isWithinRefundWindow(value: string, days = 7) {
   }
 
   return Date.now() - createdAt.getTime() <= days * 24 * 60 * 60 * 1000;
+}
+
+function DeleteAccountSubmitButton({ language }: { language: "en" | "ko" }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="inline-flex items-center justify-center rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50"
+    >
+      {pending
+        ? language === "ko"
+          ? "탈퇴 처리 중..."
+          : "Deactivating..."
+        : language === "ko"
+          ? "회원 탈퇴"
+          : "Deactivate account"}
+    </button>
+  );
 }
 
 export default function BillingPageClient({
@@ -1466,6 +1488,70 @@ export default function BillingPageClient({
                   </div>
                 )}
               </section>
+
+              {isAuthenticated && (
+                <section className="rounded-[32px] border border-rose-200 bg-rose-50/70 p-6 sm:p-8">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-rose-600">
+                        Danger Zone
+                      </p>
+                      <h2 className="mt-2 text-2xl font-semibold text-gray-900">
+                        {t("회원 탈퇴", "Deactivate account")}
+                      </h2>
+                    </div>
+                    <p className="max-w-2xl text-sm leading-relaxed text-gray-600">
+                      {t(
+                        "회원 탈퇴를 진행하면 계정은 soft delete 상태로 전환되고, 기존 결제/사용 이력은 운영 목적상 DB에 보존됩니다. 다시 이용하려면 문의 메일로 연락해야 합니다.",
+                        "When you deactivate your account, it is soft deleted and your billing and usage history remains in the database for operational records. Contact support if you need the account restored."
+                      )}
+                    </p>
+                  </div>
+
+                  <form
+                    action={deleteAccount}
+                    className="mt-6 space-y-4 rounded-3xl border border-rose-200 bg-white/90 p-5"
+                    onSubmit={(event) => {
+                      const confirmed = window.confirm(
+                        t(
+                          "정말 회원 탈퇴하시겠습니까? 탈퇴 후에는 동일 계정으로 바로 다시 로그인할 수 없습니다.",
+                          "Are you sure you want to deactivate this account? You will not be able to sign back in right away."
+                        )
+                      );
+
+                      if (!confirmed) {
+                        event.preventDefault();
+                        return;
+                      }
+
+                      clearStoredCreditBalance();
+                    }}
+                  >
+                    <label className="block text-sm font-medium text-gray-700">
+                      {t("탈퇴 사유", "Reason for deactivation")}
+                      <textarea
+                        name="reason"
+                        rows={4}
+                        maxLength={500}
+                        placeholder={t(
+                          "탈퇴 사유를 남겨주시면 서비스 개선에 참고하겠습니다.",
+                          "Tell us why you're leaving so we can use it to improve the service."
+                        )}
+                        className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition-colors focus:border-rose-300"
+                      />
+                    </label>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-xs leading-6 text-gray-500">
+                        {t(
+                          "탈퇴 즉시 현재 세션은 종료되며, 앱과 API에서 삭제 계정으로 처리됩니다.",
+                          "Your current session ends immediately, and the app plus API will treat the account as deleted."
+                        )}
+                      </p>
+                      <DeleteAccountSubmitButton language={initialLanguage} />
+                    </div>
+                  </form>
+                </section>
+              )}
             </>
           )}
         </div>

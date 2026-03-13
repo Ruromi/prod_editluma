@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createAdminClient, createServerClient, dbSchema } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { siteUrl } from "@/lib/site";
+import { ACCOUNT_DELETED_ERROR_MESSAGE } from "@/lib/account-status";
+import { isSoftDeletedAccount } from "@/lib/account-status.server";
 
 const PASSWORD_POLICY_MESSAGE =
   "비밀번호는 8자 이상이며 대문자, 숫자, 특수문자를 각각 1개 이상 포함해야 합니다.";
@@ -191,13 +193,18 @@ export async function login(formData: FormData) {
   const supabase = await createServerClient();
   const next = resolveNextPath(formData.get("next"), "/dashboard");
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email: formData.get("email") as string,
     password: formData.get("password") as string,
   });
 
   if (error) {
     redirect(`/auth/login?error=${encodeURIComponent(error.message)}&next=${encodeURIComponent(next)}`);
+  }
+
+  if (await isSoftDeletedAccount(data.user)) {
+    await supabase.auth.signOut();
+    redirect(`/auth/login?error=${encodeURIComponent(ACCOUNT_DELETED_ERROR_MESSAGE)}`);
   }
 
   revalidatePath("/", "layout");
@@ -264,4 +271,81 @@ export async function logout() {
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
   redirect("/");
+}
+
+export async function deleteAccount(formData: FormData) {
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(`/auth/login?error=${encodeURIComponent("로그인이 필요합니다.")}`);
+  }
+
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 500) || "user_requested_deletion";
+  const deletedAt = new Date().toISOString();
+  const admin = createAdminClient();
+  const adminDb = admin.schema(dbSchema());
+
+  const existingProfile = await adminDb
+    .from("profiles")
+    .select("user_id, email, user_credits")
+    .eq("user_id", user.id)
+    .limit(1)
+    .maybeSingle();
+
+  const profilePayload = {
+    user_id: user.id,
+    email: user.email ?? existingProfile.data?.email ?? null,
+    user_credits: typeof existingProfile.data?.user_credits === "number" ? existingProfile.data.user_credits : 0,
+    account_status: "deleted",
+    deleted_at: deletedAt,
+    deleted_reason: reason,
+  };
+
+  if (existingProfile.error) {
+    throw existingProfile.error;
+  }
+
+  if (existingProfile.data) {
+    const updateResult = await adminDb
+      .from("profiles")
+      .update({
+        account_status: "deleted",
+        deleted_at: deletedAt,
+        deleted_reason: reason,
+      })
+      .eq("user_id", user.id);
+
+    if (updateResult.error) {
+      throw updateResult.error;
+    }
+  } else {
+    const insertResult = await adminDb.from("profiles").insert(profilePayload);
+    if (insertResult.error) {
+      throw insertResult.error;
+    }
+  }
+
+  const authUpdateResult = await admin.auth.admin.updateUserById(user.id, {
+    app_metadata: {
+      ...(user.app_metadata ?? {}),
+      account_status: "deleted",
+      deleted_at: deletedAt,
+    },
+    user_metadata: {
+      ...(user.user_metadata ?? {}),
+      account_status: "deleted",
+      deleted_at: deletedAt,
+    },
+  });
+
+  if (authUpdateResult.error) {
+    throw authUpdateResult.error;
+  }
+
+  await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  redirect(`/?message=${encodeURIComponent("회원 탈퇴가 완료되었습니다.")}`);
 }
