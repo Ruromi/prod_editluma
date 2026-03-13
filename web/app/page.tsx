@@ -1,7 +1,4 @@
-import FeaturesSection from "@/components/landing/FeaturesSection";
-import GallerySection from "@/components/landing/GallerySection";
-import HeroSection from "@/components/landing/HeroSection";
-import LandingFooter from "@/components/landing/LandingFooter";
+import LandingPageContent from "@/components/landing/LandingPageContent";
 import { createServerClient } from "@/lib/supabase/server";
 
 export default async function Home() {
@@ -11,13 +8,6 @@ export default async function Home() {
   } = await supabase.auth.getUser();
 
   return (
-    <>
-      <div className="flex flex-col gap-28 pb-28">
-        <HeroSection isAuthenticated={Boolean(user)} />
-        <FeaturesSection />
-        <GallerySection />
-      </div>
-      <LandingFooter />
-    </>
+    <LandingPageContent isAuthenticated={Boolean(user)} />
   );
 }

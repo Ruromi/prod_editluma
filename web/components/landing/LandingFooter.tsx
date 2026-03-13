@@ -1,12 +1,21 @@
-import Link from "next/link";
+"use client";
 
-export default function LandingFooter() {
+import Link from "next/link";
+import { landingCopy, type LandingLanguage } from "@/components/landing/copy";
+
+type LandingFooterProps = {
+  language: LandingLanguage;
+};
+
+export default function LandingFooter({ language }: LandingFooterProps) {
+  const copy = landingCopy[language].footer;
+
   return (
     <footer className="bg-gray-950">
       <div className="mx-auto flex max-w-5xl flex-col gap-4 px-6 py-8 text-sm text-gray-400 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="font-medium text-white">EditLuma</p>
-          <p className="mt-1">AI 이미지 생성과 보정을 위한 크레딧 기반 서비스</p>
+          <p className="mt-1">{copy.description}</p>
         </div>
 
         <div className="flex items-center gap-5 text-sm">
@@ -14,19 +23,19 @@ export default function LandingFooter() {
             href="/pricing"
             className="transition-colors hover:text-white"
           >
-            요금제
+            {copy.pricing}
           </Link>
           <Link
             href="/privacy"
             className="transition-colors hover:text-white"
           >
-            개인정보처리방침
+            {copy.privacy}
           </Link>
           <Link
             href="/terms"
             className="transition-colors hover:text-white"
           >
-            이용약관
+            {copy.terms}
           </Link>
         </div>
       </div>

@@ -1,0 +1,340 @@
+export type LandingLanguage = "en" | "ko" | "fr";
+
+export const landingCopy = {
+  en: {
+    languageLabel: "Language",
+    hero: {
+      titleLine1: "The difference one photo can make,",
+      titleHighlight: "powered by AI",
+      subtitleLine1: "From portrait enhancement with one upload",
+      subtitleLine2: "to image generation from a single prompt.",
+      primaryCtaSignedOut: "Start for free",
+      primaryCtaSignedIn: "Create now",
+      secondaryCta: "See features",
+    },
+    features: {
+      heading: "What You Can Do",
+      subheading: "AI handles the hard parts without a complex editing workflow.",
+      koreanPromptInputLabel: "Prompt input",
+      koreanPromptInputText: "Une ruelle de Kyoto sous des pétales de cerisier",
+      koreanPromptOutputLabel: "Model-ready prompt",
+      koreanPromptOutputText: "A narrow alley in Kyoto with cherry blossom petals falling",
+      koreanPromptResultLabel: "Image ready",
+      koreanPromptResultMeta: "Supports Korean, English, French",
+      items: [
+        {
+          img: "/landing/feature-enhance-portrait.png",
+          title: "Portrait enhancement",
+          desc: "Retouch skin, clarity, and color naturally with AI.",
+        },
+        {
+          img: "/landing/ai-landing_2.png",
+          title: "Image generation",
+          desc: "Turn a short prompt into a ready-to-use visual in seconds.",
+        },
+        {
+          img: "/landing/features/selfie-retouch.png",
+          title: "Selfie retouch",
+          desc: "Clean pores, blemishes, and skin tone without overprocessing.",
+        },
+        {
+          img: "/landing/features/upscale-4k.png",
+          title: "4K upscaling",
+          desc: "Restore low-resolution photos into sharper, high-quality results.",
+        },
+        {
+          img: "",
+          title: "Multilingual prompt support",
+          desc: "Write prompts in Korean, English, or French and let the model normalize them for generation.",
+        },
+        {
+          img: "/landing/features/style-transfer.png",
+          title: "Style transfer",
+          desc: "Reimagine your photos with different artistic directions.",
+        },
+        {
+          img: "/landing/features/easy-upload.png",
+          title: "Quick upload",
+          desc: "Drag, drop, and start enhancing immediately.",
+        },
+        {
+          img: "/landing/features/fast-process.png",
+          title: "Fast processing",
+          desc: "Most jobs finish in just a few seconds.",
+        },
+      ],
+    },
+    gallery: {
+      heading: "Preview the Output",
+      subheading: "See enhancement and generation results side by side.",
+      items: [
+        {
+          src: "/landing/gallery-enhance.png",
+          alt: "Before and after AI enhancement example",
+          label: "Enhancement",
+          summary: "Restore blur into a sharper, cleaner image.",
+        },
+        {
+          src: "/landing/ai-landing.png",
+          alt: "AI generated image example",
+          label: "AI generation",
+          summary: "Create a concept image from a single prompt.",
+        },
+        {
+          src: "/landing/hero-main.png",
+          alt: "AI portrait enhancement result",
+          label: "Portrait retouch",
+          summary: "Refine skin tone and fine details while keeping the image natural.",
+        },
+        {
+          src: "/landing/ai-landing_2.png",
+          alt: "Fantasy style AI generated image example",
+          label: "Concept art",
+          summary: "Build mood-driven scenes from atmosphere-first prompts.",
+        },
+        {
+          src: "/landing/features/selfie-retouch.png",
+          alt: "Selfie retouch result example",
+          label: "Selfie retouch",
+          summary: "Clean imperfections without flattening the skin texture.",
+        },
+        {
+          src: "/landing/features/style-transfer.png",
+          alt: "Style transfer result example",
+          label: "Style transfer",
+          summary: "Keep the original mood while shifting the visual language.",
+        },
+      ],
+    },
+    footer: {
+      description: "Credit-based AI image generation and enhancement service",
+      pricing: "Pricing",
+      privacy: "Privacy Policy",
+      terms: "Terms of Service",
+    },
+  },
+  ko: {
+    languageLabel: "언어",
+    hero: {
+      titleLine1: "사진 한 장의 차이,",
+      titleHighlight: "AI가 만듭니다",
+      subtitleLine1: "업로드 한 번으로 인물 보정부터",
+      subtitleLine2: "프롬프트 한 줄로 이미지 생성까지.",
+      primaryCtaSignedOut: "무료로 시작하기",
+      primaryCtaSignedIn: "생성하기",
+      secondaryCta: "기능 보기",
+    },
+    features: {
+      heading: "이런 걸 할 수 있어요",
+      subheading: "복잡한 편집 없이, AI가 알아서 처리합니다",
+      koreanPromptInputLabel: "프롬프트 입력",
+      koreanPromptInputText: "Une ruelle de Kyoto sous des pétales de cerisier",
+      koreanPromptOutputLabel: "생성용 프롬프트 정규화",
+      koreanPromptOutputText: "A narrow alley in Kyoto with cherry blossom petals falling",
+      koreanPromptResultLabel: "이미지 생성 준비 완료",
+      koreanPromptResultMeta: "한국어 / 영어 / 프랑스어 지원",
+      items: [
+        {
+          img: "/landing/feature-enhance-portrait.png",
+          title: "인물 보정",
+          desc: "피부 질감, 선명도, 색감까지 AI가 자연스럽게 보정",
+        },
+        {
+          img: "/landing/ai-landing_2.png",
+          title: "이미지 생성",
+          desc: "원하는 장면을 텍스트로 입력하면 AI가 바로 생성",
+        },
+        {
+          img: "/landing/features/selfie-retouch.png",
+          title: "셀피 피부 보정",
+          desc: "모공, 잡티, 피부톤을 자연스럽게 정리",
+        },
+        {
+          img: "/landing/features/upscale-4k.png",
+          title: "4K 업스케일링",
+          desc: "저해상도 사진을 고화질로 복원",
+        },
+        {
+          img: "",
+          title: "다중언어 프롬프트 지원",
+          desc: "한국어, 영어, 프랑스어 프롬프트를 입력하면 생성용 형식으로 정리해줍니다.",
+        },
+        {
+          img: "/landing/features/style-transfer.png",
+          title: "스타일 변환",
+          desc: "사진을 다양한 아트 스타일로 변환",
+        },
+        {
+          img: "/landing/features/easy-upload.png",
+          title: "간편 업로드",
+          desc: "드래그 앤 드롭으로 바로 보정 시작",
+        },
+        {
+          img: "/landing/features/fast-process.png",
+          title: "빠른 처리",
+          desc: "대부분의 작업이 수 초 내에 완료",
+        },
+      ],
+    },
+    gallery: {
+      heading: "결과물 미리보기",
+      subheading: "생성과 보정 결과를 한 번에 둘러볼 수 있습니다",
+      items: [
+        {
+          src: "/landing/gallery-enhance.png",
+          alt: "AI 화질 보정 비포 앤 애프터",
+          label: "화질 보정",
+          summary: "흐릿한 사진을 더 또렷하고 선명하게 복원",
+        },
+        {
+          src: "/landing/ai-landing.png",
+          alt: "AI 생성 이미지 예시",
+          label: "AI 생성",
+          summary: "프롬프트 한 줄로 완성한 콘셉트 이미지",
+        },
+        {
+          src: "/landing/hero-main.png",
+          alt: "AI 인물 보정 결과",
+          label: "인물 보정",
+          summary: "피부톤과 디테일을 자연스럽게 정리한 결과",
+        },
+        {
+          src: "/landing/ai-landing_2.png",
+          alt: "AI 생성 판타지 이미지 예시",
+          label: "컨셉 아트",
+          summary: "분위기 중심 프롬프트로 만든 감성 장면",
+        },
+        {
+          src: "/landing/features/selfie-retouch.png",
+          alt: "셀피 리터치 결과 예시",
+          label: "셀피 리터치",
+          summary: "잡티와 피부 질감을 과하지 않게 보정",
+        },
+        {
+          src: "/landing/features/style-transfer.png",
+          alt: "스타일 변환 결과 예시",
+          label: "스타일 변환",
+          summary: "원본 분위기를 살리면서 스타일만 재해석",
+        },
+      ],
+    },
+    footer: {
+      description: "AI 이미지 생성과 보정을 위한 크레딧 기반 서비스",
+      pricing: "요금제",
+      privacy: "개인정보처리방침",
+      terms: "이용약관",
+    },
+  },
+  fr: {
+    languageLabel: "Langue",
+    hero: {
+      titleLine1: "La différence qu’une seule photo peut créer,",
+      titleHighlight: "amplifiée par l’IA",
+      subtitleLine1: "De la retouche portrait en un upload",
+      subtitleLine2: "à la génération d’images à partir d’un simple prompt.",
+      primaryCtaSignedOut: "Commencer gratuitement",
+      primaryCtaSignedIn: "Créer",
+      secondaryCta: "Voir les fonctionnalités",
+    },
+    features: {
+      heading: "Ce Que Vous Pouvez Faire",
+      subheading: "L’IA gère les tâches complexes sans workflow d’édition compliqué.",
+      koreanPromptInputLabel: "Saisie du prompt",
+      koreanPromptInputText: "Une ruelle de Kyoto sous des pétales de cerisier",
+      koreanPromptOutputLabel: "Prompt prêt pour le modèle",
+      koreanPromptOutputText: "A narrow alley in Kyoto with cherry blossom petals falling",
+      koreanPromptResultLabel: "Image prête",
+      koreanPromptResultMeta: "Coréen / anglais / français",
+      items: [
+        {
+          img: "/landing/feature-enhance-portrait.png",
+          title: "Retouche portrait",
+          desc: "Corrigez peau, netteté et couleurs naturellement avec l’IA.",
+        },
+        {
+          img: "/landing/ai-landing_2.png",
+          title: "Génération d’image",
+          desc: "Transformez un court prompt en visuel prêt à l’emploi en quelques secondes.",
+        },
+        {
+          img: "/landing/features/selfie-retouch.png",
+          title: "Retouche selfie",
+          desc: "Nettoyez pores, imperfections et teint sans excès.",
+        },
+        {
+          img: "/landing/features/upscale-4k.png",
+          title: "Upscaling 4K",
+          desc: "Restaurez des photos basse résolution en résultats plus nets et détaillés.",
+        },
+        {
+          img: "",
+          title: "Support des prompts multilingues",
+          desc: "Rédigez vos prompts en coréen, en anglais ou en français et laissez le modèle les normaliser avant la génération.",
+        },
+        {
+          img: "/landing/features/style-transfer.png",
+          title: "Transfert de style",
+          desc: "Réinterprétez vos photos avec différentes directions artistiques.",
+        },
+        {
+          img: "/landing/features/easy-upload.png",
+          title: "Upload rapide",
+          desc: "Glissez-déposez et commencez l’amélioration immédiatement.",
+        },
+        {
+          img: "/landing/features/fast-process.png",
+          title: "Traitement rapide",
+          desc: "La plupart des tâches se terminent en quelques secondes.",
+        },
+      ],
+    },
+    gallery: {
+      heading: "Aperçu des Résultats",
+      subheading: "Découvrez côte à côte les résultats de génération et d’amélioration.",
+      items: [
+        {
+          src: "/landing/gallery-enhance.png",
+          alt: "Exemple avant-après d’amélioration IA",
+          label: "Amélioration",
+          summary: "Transformez un flou en image plus nette et plus propre.",
+        },
+        {
+          src: "/landing/ai-landing.png",
+          alt: "Exemple d’image générée par IA",
+          label: "Génération IA",
+          summary: "Créez une image conceptuelle à partir d’un seul prompt.",
+        },
+        {
+          src: "/landing/hero-main.png",
+          alt: "Résultat de retouche portrait par IA",
+          label: "Retouche portrait",
+          summary: "Affinez la peau et les détails tout en gardant un rendu naturel.",
+        },
+        {
+          src: "/landing/ai-landing_2.png",
+          alt: "Exemple d’image fantastique générée par IA",
+          label: "Concept art",
+          summary: "Construisez des scènes guidées par l’ambiance et le ton.",
+        },
+        {
+          src: "/landing/features/selfie-retouch.png",
+          alt: "Exemple de retouche selfie",
+          label: "Retouche selfie",
+          summary: "Nettoyez les imperfections sans lisser la texture de peau.",
+        },
+        {
+          src: "/landing/features/style-transfer.png",
+          alt: "Exemple de transfert de style",
+          label: "Transfert de style",
+          summary: "Conservez l’atmosphère d’origine tout en changeant le langage visuel.",
+        },
+      ],
+    },
+    footer: {
+      description: "Service de génération et d’amélioration d’images par IA basé sur des crédits",
+      pricing: "Tarifs",
+      privacy: "Politique de confidentialité",
+      terms: "Conditions d’utilisation",
+    },
+  },
+} as const;
