@@ -400,6 +400,55 @@ async def create_refund_request(
     return _map_refund_request_row(inserted.data)
 
 
+@router.delete("/refund-requests/{refund_request_id}")
+async def cancel_refund_request(
+    refund_request_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    refund_request_id = refund_request_id.strip()
+    if not refund_request_id:
+        raise HTTPException(status_code=400, detail="취소할 환불 요청 정보를 찾지 못했습니다.")
+
+    db = get_supabase().schema(db_schema())
+    try:
+        existing_request = (
+            db.table("refund_requests")
+            .select("*")
+            .eq("id", refund_request_id)
+            .eq("user_id", user.id)
+            .limit(1)
+            .execute()
+        )
+    except Exception as exc:
+        if _is_missing_refund_requests_error(exc):
+            raise HTTPException(
+                status_code=503,
+                detail="환불 요청 기능을 사용하려면 최신 환불 SQL을 먼저 적용해야 합니다.",
+            ) from exc
+        raise HTTPException(status_code=503, detail="환불 요청 정보를 불러오지 못했습니다.") from exc
+
+    existing_rows = existing_request.data or []
+    existing_row = existing_rows[0] if existing_rows else None
+    if not existing_row:
+        raise HTTPException(status_code=404, detail="취소할 환불 요청을 찾지 못했습니다.")
+
+    status = str(existing_row.get("status") or "requested")
+    if status != "requested":
+        raise HTTPException(status_code=409, detail="이미 처리 중이거나 완료된 환불 요청은 취소할 수 없습니다.")
+
+    try:
+        db.table("refund_requests").delete().eq("id", refund_request_id).eq("user_id", user.id).execute()
+    except Exception as exc:
+        if _is_missing_refund_requests_error(exc):
+            raise HTTPException(
+                status_code=503,
+                detail="환불 요청 기능을 사용하려면 최신 환불 SQL을 먼저 적용해야 합니다.",
+            ) from exc
+        raise HTTPException(status_code=503, detail="환불 요청을 취소하지 못했습니다.") from exc
+
+    return {"cancelled": True, "refund_request_id": refund_request_id}
+
+
 @router.post("/webhooks/polar", response_model=WebhookResponse)
 async def polar_webhook(request: Request):
     payload = await request.body()

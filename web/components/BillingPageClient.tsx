@@ -119,7 +119,7 @@ function summarizePrompt(prompt?: string | null) {
 function formatRefundStatus(status?: string | null) {
   switch (status) {
     case "requested":
-      return "환불 요청됨";
+      return "요청 중";
     case "pending":
       return "환불 처리 중";
     case "completed":
@@ -558,6 +558,52 @@ export default function BillingPageClient() {
     refreshRefundRequests,
   ]);
 
+  const handleCancelRefundRequest = useCallback(
+    async (refundRequestId: string) => {
+      setRequestingRefundLedgerId(refundRequestId);
+      setError(null);
+
+      try {
+        const accessToken = await getAccessToken();
+        if (!accessToken) {
+          window.location.assign(loginHref);
+          return;
+        }
+
+        const response = await apiFetchWithToken(
+          `/api/billing/refund-requests/${refundRequestId}`,
+          accessToken,
+          { method: "DELETE" }
+        );
+
+        if (!response.ok) {
+          let detail = "환불 요청을 취소하지 못했습니다.";
+          try {
+            const payload = await response.json();
+            if (payload?.detail) {
+              detail = payload.detail;
+            }
+          } catch {
+            // ignore JSON parse failure
+          }
+          throw new Error(detail);
+        }
+
+        await refreshRefundRequests(accessToken);
+        setStatusMessage("환불 요청을 취소했습니다.");
+      } catch (cancelError) {
+        setError(
+          cancelError instanceof Error
+            ? cancelError.message
+            : "환불 요청을 취소하지 못했습니다."
+        );
+      } finally {
+        setRequestingRefundLedgerId(null);
+      }
+    },
+    [apiFetchWithToken, getAccessToken, loginHref, refreshRefundRequests]
+  );
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
       <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -880,6 +926,23 @@ export default function BillingPageClient() {
                                       ? "이전 환불 요청 이력이 있습니다. 지원팀에 문의하세요."
                                       : "관리자가 요청을 검토 중입니다."}
                               </p>
+                              {existingRefundRequest.status === "requested" && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleCancelRefundRequest(existingRefundRequest.id)}
+                                    disabled={requestingRefundLedgerId === existingRefundRequest.id}
+                                    className="inline-flex items-center justify-center rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50"
+                                  >
+                                    {requestingRefundLedgerId === existingRefundRequest.id
+                                      ? "취소 중..."
+                                      : "요청 취소"}
+                                  </button>
+                                  <p className="text-xs font-medium text-red-600">
+                                    7일 이내 환불 요청 가능
+                                  </p>
+                                </>
+                              )}
                             </>
                           ) : openRefundLedgerId === item.id ? (
                             <div className="rounded-2xl border border-sky-200 bg-sky-50/80 p-3">
