@@ -178,6 +178,15 @@ function formatDate(value: string) {
       }).format(date);
 }
 
+function isWithinRefundWindow(value: string, days = 7) {
+  const createdAt = new Date(value);
+  if (Number.isNaN(createdAt.getTime())) {
+    return false;
+  }
+
+  return Date.now() - createdAt.getTime() <= days * 24 * 60 * 60 * 1000;
+}
+
 export default function BillingPageClient() {
   const [supabase] = useState(() => createClient());
   const pathname = usePathname();
@@ -822,12 +831,14 @@ export default function BillingPageClient() {
                     const existingRefundRequest =
                       refundRequestsByLedgerId.get(item.id) ??
                       (item.order_id ? refundRequestsByOrderId.get(item.order_id) : undefined);
+                    const isRefundWindowOpen = isWithinRefundWindow(item.created_at, 7);
                     const canRequestRefund =
                       !existingRefundRequest &&
                       item.credits_added > 0 &&
                       typeof item.amount === "number" &&
                       item.amount > 0 &&
-                      Boolean(item.order_id);
+                      Boolean(item.order_id) &&
+                      isRefundWindowOpen;
 
                     return (
                       <div
@@ -916,13 +927,31 @@ export default function BillingPageClient() {
                               </div>
                             </div>
                           ) : canRequestRefund ? (
-                            <button
-                              type="button"
-                              onClick={() => openRefundRequestForm(item.id)}
-                              className="inline-flex items-center justify-center rounded-xl border border-sky-300 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700 transition-colors hover:bg-sky-100"
-                            >
-                              환불 요청
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => openRefundRequestForm(item.id)}
+                                className="inline-flex items-center justify-center rounded-xl border border-sky-300 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700 transition-colors hover:bg-sky-100"
+                              >
+                                환불 요청
+                              </button>
+                              <p className="text-xs font-medium text-red-600">
+                                7일 이내 환불 요청 가능
+                              </p>
+                            </>
+                          ) : !existingRefundRequest && !isRefundWindowOpen ? (
+                            <>
+                              <button
+                                type="button"
+                                disabled
+                                className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-400"
+                              >
+                                환불 요청
+                              </button>
+                              <p className="text-xs font-medium text-red-600">
+                                7일 이내 환불 요청 가능
+                              </p>
+                            </>
                           ) : (
                             <p className="text-xs leading-5 text-gray-500">
                               이 결제 건은 현재 자동 환불 요청을 지원하지 않습니다.
