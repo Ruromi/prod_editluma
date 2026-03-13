@@ -1,5 +1,6 @@
 export const siteName = "EditLuma";
 export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.editluma.com").replace(/\/$/, "");
+export const contactEmail = (process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "support@example.com").trim();
 export const defaultDescription =
   "EditLuma is an AI image generator and photo enhancer for portraits, retouching, upscaling, and fast credit-based image editing.";
 export const defaultOgImagePath = "/opengraph-image";

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { createSeoMetadata } from "@/lib/seo";
+import { contactEmail } from "@/lib/site";
 
 export const metadata: Metadata = createSeoMetadata({
   title: "Contact",
@@ -58,10 +59,10 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
               {content.supportEmailLabel}
             </p>
             <a
-              href="mailto:rurumi1991@gmail.com"
+              href={`mailto:${contactEmail}`}
               className="mt-3 inline-flex text-lg font-semibold text-white transition-colors hover:text-indigo-300"
             >
-              rurumi1991@gmail.com
+              {contactEmail}
             </a>
             <p className="mt-4 text-sm leading-7 text-gray-400">
               {content.supportHint}

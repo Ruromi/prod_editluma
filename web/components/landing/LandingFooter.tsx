@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { landingCopy, type LandingLanguage } from "@/components/landing/copy";
+import { contactEmail } from "@/lib/site";
 
 type LandingFooterProps = {
   language: LandingLanguage;
@@ -10,7 +11,6 @@ type LandingFooterProps = {
 export default function LandingFooter({ language }: LandingFooterProps) {
   const copy = landingCopy[language].footer;
   const policyLang = language === "ko" ? "ko" : "en";
-  const contactEmail = "rurumi1991@gmail.com";
 
   return (
     <footer className="bg-gray-950">
