@@ -604,6 +604,16 @@ function DashboardPageContent() {
     return () => clearTimeout(timer);
   }, [jobs, fetchJobs]);
 
+  // 새로고침 후에도 가장 최근 진행 중 작업을 다시 활성 프리뷰로 잡아 픽셀 생성 연출을 유지
+  useEffect(() => {
+    if (activeJobId) return;
+    const latestActiveJob =
+      jobs.find((j) => j.status === "pending" || j.status === "processing") ?? null;
+    if (latestActiveJob) {
+      setActiveJobId(latestActiveJob.id);
+    }
+  }, [jobs, activeJobId]);
+
   // activeJob 완료 시 2초 후 갤러리로 이동
   useEffect(() => {
     if (!activeJobId) return;
