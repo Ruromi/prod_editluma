@@ -38,13 +38,13 @@ export default function LandingFooter({ language }: LandingFooterProps) {
               {copy.pricing}
             </Link>
             <Link
-              href="/refund-policy"
+              href={`/refund-policy?lang=${policyLang}`}
               className="transition-colors hover:text-white"
             >
               {copy.refundPolicy}
             </Link>
             <Link
-              href="/contact"
+              href={`/contact?lang=${policyLang}`}
               className="transition-colors hover:text-white"
             >
               {copy.contactPage}
