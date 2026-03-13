@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import { adjustCredits, refundPayment } from "./actions";
+import { adjustCredits, reactivateAccount, refundPayment } from "./actions";
 import { hasAdminAccess } from "@/lib/admin";
 import { createAdminClient, createServerClient, dbSchema } from "@/lib/supabase/server";
 
@@ -26,6 +26,15 @@ type AdminUserSummary = {
   email?: string | null;
   created_at: string;
   last_sign_in_at?: string | null;
+};
+
+type DeletedAccountRow = {
+  user_id: string;
+  email: string;
+  user_credits: number;
+  deleted_at: string;
+  deleted_reason: string | null;
+  lastSignInAt?: string | null;
 };
 
 const dateTime = new Intl.DateTimeFormat("ko-KR", {
@@ -121,12 +130,18 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
   const admin = createAdminClient();
   const adminDb = admin.schema(dbSchema());
-  const [{ users, total: totalUsers }, creditAccountsResult, paymentRowsResult, refundRequestsResult] =
+  const [{ users, total: totalUsers }, creditAccountsResult, paymentRowsResult, refundRequestsResult, deletedProfilesResult] =
     await Promise.all([
       listAdminUsers(),
       adminDb.from("user_credits").select("user_id", { count: "exact", head: true }),
       adminDb.from("credit_ledger").select("*").eq("source", "polar_topup").order("created_at", { ascending: false }).limit(30),
       adminDb.from("refund_requests").select("*").order("created_at", { ascending: false }).limit(30),
+      adminDb
+        .from("profiles")
+        .select("user_id, email, user_credits, account_status, deleted_at, deleted_reason")
+        .eq("account_status", "deleted")
+        .order("deleted_at", { ascending: false })
+        .limit(50),
     ]);
 
   const userMap = new Map(
@@ -214,6 +229,20 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
   const refundByOrderId = new Map(refundRows.map((row) => [row.orderId, row]));
   const managedCreditTotal = creditRows.reduce((sum, row) => sum + row.balance, 0);
+  const deletedAccounts: DeletedAccountRow[] =
+    !deletedProfilesResult.error
+      ? ((deletedProfilesResult.data ?? []) as Array<Record<string, unknown>>).map((row) => ({
+          user_id: String(row.user_id),
+          email: String(row.email ?? userMap.get(String(row.user_id))?.email ?? "알 수 없음"),
+          user_credits: Number(row.user_credits ?? 0),
+          deleted_at: String(row.deleted_at ?? new Date().toISOString()),
+          deleted_reason:
+            typeof row.deleted_reason === "string" && row.deleted_reason.trim()
+              ? row.deleted_reason
+              : null,
+          lastSignInAt: userMap.get(String(row.user_id))?.lastSignInAt ?? null,
+        }))
+      : [];
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10 space-y-8">
@@ -261,6 +290,67 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         <div className="rounded-2xl border border-gray-200 bg-white p-5">
           <p className="text-xs uppercase tracking-[0.16em] text-gray-500">표시 중 잔액 합계</p>
           <p className="mt-3 text-3xl font-semibold text-gray-900">{managedCreditTotal}</p>
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-gray-200 bg-white p-6 space-y-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">탈퇴 계정 관리</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              soft delete 처리된 계정을 다시 활성화할 수 있습니다.
+            </p>
+          </div>
+          <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700">
+            {deletedAccounts.length}명
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead className="text-left text-xs uppercase tracking-[0.14em] text-gray-500">
+              <tr className="border-b border-gray-200">
+                <th className="pb-3 font-medium">이메일</th>
+                <th className="pb-3 font-medium">보유 크레딧</th>
+                <th className="pb-3 font-medium">최근 로그인</th>
+                <th className="pb-3 font-medium">탈퇴 시각</th>
+                <th className="pb-3 font-medium">탈퇴 사유</th>
+                <th className="pb-3 font-medium text-right">액션</th>
+              </tr>
+            </thead>
+            <tbody>
+              {deletedAccounts.map((row) => (
+                <tr key={row.user_id} className="border-b border-gray-100 last:border-0">
+                  <td className="py-3 pr-4 text-gray-900">{row.email}</td>
+                  <td className="py-3 pr-4 font-medium text-gray-900">{row.user_credits}</td>
+                  <td className="py-3 pr-4 text-gray-500">
+                    {row.lastSignInAt ? dateTime.format(new Date(row.lastSignInAt)) : "-"}
+                  </td>
+                  <td className="py-3 pr-4 text-gray-500">{dateTime.format(new Date(row.deleted_at))}</td>
+                  <td className="py-3 pr-4 text-gray-500">{row.deleted_reason ?? "-"}</td>
+                  <td className="py-3 text-right">
+                    <form action={reactivateAccount} className="inline-flex">
+                      <input type="hidden" name="user_id" value={row.user_id} />
+                      <input type="hidden" name="email" value={row.email} />
+                      <button
+                        type="submit"
+                        className="inline-flex items-center justify-center rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
+                      >
+                        다시 활성화
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+              {deletedAccounts.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-6 text-center text-gray-500">
+                    현재 탈퇴 처리된 계정이 없습니다.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </section>
 

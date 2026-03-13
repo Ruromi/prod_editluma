@@ -304,6 +304,7 @@ export default function BillingPageClient({
   const [openRefundLedgerId, setOpenRefundLedgerId] = useState<string | null>(null);
   const [refundReason, setRefundReason] = useState("customer_request");
   const [refundComment, setRefundComment] = useState("");
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const autoCheckoutPackageRef = useRef<string | null>(null);
@@ -1490,70 +1491,107 @@ export default function BillingPageClient({
               </section>
 
               {isAuthenticated && (
-                <section className="rounded-[32px] border border-rose-200 bg-rose-50/70 p-6 sm:p-8">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <section className="rounded-[28px] border border-gray-200 bg-white/80 p-5">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-rose-600">
-                        Danger Zone
+                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+                        Account
                       </p>
-                      <h2 className="mt-2 text-2xl font-semibold text-gray-900">
+                      <h2 className="mt-2 text-lg font-semibold text-gray-900">
                         {t("회원 탈퇴", "Deactivate account")}
                       </h2>
-                    </div>
-                    <p className="max-w-2xl text-sm leading-relaxed text-gray-600">
-                      {t(
-                        "회원 탈퇴를 진행하면 계정은 soft delete 상태로 전환되고, 기존 결제/사용 이력은 운영 목적상 DB에 보존됩니다. 다시 이용하려면 문의 메일로 연락해야 합니다.",
-                        "When you deactivate your account, it is soft deleted and your billing and usage history remains in the database for operational records. Contact support if you need the account restored."
-                      )}
-                    </p>
-                  </div>
-
-                  <form
-                    action={deleteAccount}
-                    className="mt-6 space-y-4 rounded-3xl border border-rose-200 bg-white/90 p-5"
-                    onSubmit={(event) => {
-                      const confirmed = window.confirm(
-                        t(
-                          "정말 회원 탈퇴하시겠습니까? 탈퇴 후에는 동일 계정으로 바로 다시 로그인할 수 없습니다.",
-                          "Are you sure you want to deactivate this account? You will not be able to sign back in right away."
-                        )
-                      );
-
-                      if (!confirmed) {
-                        event.preventDefault();
-                        return;
-                      }
-
-                      clearStoredCreditBalance();
-                    }}
-                  >
-                    <label className="block text-sm font-medium text-gray-700">
-                      {t("탈퇴 사유", "Reason for deactivation")}
-                      <textarea
-                        name="reason"
-                        rows={4}
-                        maxLength={500}
-                        placeholder={t(
-                          "탈퇴 사유를 남겨주시면 서비스 개선에 참고하겠습니다.",
-                          "Tell us why you're leaving so we can use it to improve the service."
-                        )}
-                        className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition-colors focus:border-rose-300"
-                      />
-                    </label>
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-xs leading-6 text-gray-500">
+                      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
                         {t(
-                          "탈퇴 즉시 현재 세션은 종료되며, 앱과 API에서 삭제 계정으로 처리됩니다.",
-                          "Your current session ends immediately, and the app plus API will treat the account as deleted."
+                          "필요할 때만 버튼을 눌러 탈퇴 팝업을 열 수 있습니다.",
+                          "Open the deactivation modal only when you need it."
                         )}
                       </p>
-                      <DeleteAccountSubmitButton language={initialLanguage} />
                     </div>
-                  </form>
+                    <button
+                      type="button"
+                      onClick={() => setIsDeleteAccountModalOpen(true)}
+                      className="inline-flex items-center justify-center rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-100"
+                    >
+                      {t("회원 탈퇴", "Deactivate account")}
+                    </button>
+                  </div>
                 </section>
               )}
             </>
           )}
+        </div>
+      )}
+
+      {isAuthenticated && isDeleteAccountModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-6 py-10">
+          <div className="absolute inset-0" onClick={() => setIsDeleteAccountModalOpen(false)} />
+          <div className="relative z-10 w-full max-w-xl rounded-[32px] border border-rose-200 bg-white p-6 shadow-2xl shadow-black/30 sm:p-8">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-rose-600">
+                  Danger Zone
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-gray-900">
+                  {t("회원 탈퇴", "Deactivate account")}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDeleteAccountModalOpen(false)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-900"
+                aria-label={t("팝업 닫기", "Close modal")}
+              >
+                ×
+              </button>
+            </div>
+
+            <p className="mt-4 text-sm leading-relaxed text-gray-600">
+              {t(
+                "회원 탈퇴를 진행하면 계정은 soft delete 상태로 전환되고, 기존 결제/사용 이력은 운영 목적상 DB에 보존됩니다. 다시 이용하려면 문의 메일로 연락해야 합니다.",
+                "When you deactivate your account, it is soft deleted and your billing and usage history remains in the database for operational records. Contact support if you need the account restored."
+              )}
+            </p>
+
+            <form
+              action={deleteAccount}
+              className="mt-6 space-y-4 rounded-3xl border border-rose-200 bg-rose-50/50 p-5"
+              onSubmit={() => {
+                clearStoredCreditBalance();
+              }}
+            >
+              <label className="block text-sm font-medium text-gray-700">
+                {t("탈퇴 사유", "Reason for deactivation")}
+                <textarea
+                  name="reason"
+                  rows={4}
+                  maxLength={500}
+                  placeholder={t(
+                    "탈퇴 사유를 남겨주시면 서비스 개선에 참고하겠습니다.",
+                    "Tell us why you're leaving so we can use it to improve the service."
+                  )}
+                  className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition-colors focus:border-rose-300"
+                />
+              </label>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs leading-6 text-gray-500">
+                  {t(
+                    "탈퇴 즉시 현재 세션은 종료되며, 앱과 API에서 삭제 계정으로 처리됩니다.",
+                    "Your current session ends immediately, and the app plus API will treat the account as deleted."
+                  )}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsDeleteAccountModalOpen(false)}
+                    className="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50"
+                  >
+                    {t("취소", "Cancel")}
+                  </button>
+                  <DeleteAccountSubmitButton language={initialLanguage} />
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

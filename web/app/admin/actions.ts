@@ -573,3 +573,70 @@ export async function refundPayment(formData: FormData) {
   revalidatePath("/admin");
   adminRedirect({ message: `주문 ${orderId} 환불을 요청했습니다.` });
 }
+
+export async function reactivateAccount(formData: FormData) {
+  const { user, adminDb } = await requireAdminAccess();
+  const targetUserId = String(formData.get("user_id") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+
+  if (!targetUserId) {
+    adminRedirect({ error: "재활성화할 계정을 찾지 못했습니다." });
+  }
+
+  const profileResult = await adminDb
+    .from("profiles")
+    .select("user_id, email")
+    .eq("user_id", targetUserId)
+    .limit(1)
+    .maybeSingle();
+
+  if (profileResult.error) {
+    adminRedirect({ error: "프로필 상태를 불러오지 못했습니다." });
+  }
+
+  if (!profileResult.data) {
+    adminRedirect({ error: "프로필 정보를 찾지 못했습니다." });
+  }
+
+  const profileUpdate = await adminDb
+    .from("profiles")
+    .update({
+      account_status: "active",
+      deleted_at: null,
+      deleted_reason: null,
+    })
+    .eq("user_id", targetUserId);
+
+  if (profileUpdate.error) {
+    adminRedirect({ error: "프로필 재활성화 처리 중 오류가 발생했습니다." });
+  }
+
+  const adminClient = createAdminClient();
+  const userResult = await adminClient.auth.admin.getUserById(targetUserId);
+  if (userResult.error || !userResult.data.user) {
+    adminRedirect({ error: "인증 계정 정보를 불러오지 못했습니다." });
+  }
+
+  const targetUser = userResult.data.user;
+  const authUpdateResult = await adminClient.auth.admin.updateUserById(targetUserId, {
+    app_metadata: {
+      ...(targetUser.app_metadata ?? {}),
+      account_status: "active",
+      deleted_at: null,
+      reactivated_by: user.email ?? null,
+      reactivated_at: new Date().toISOString(),
+    },
+    user_metadata: {
+      ...(targetUser.user_metadata ?? {}),
+      account_status: "active",
+      deleted_at: null,
+    },
+  });
+
+  if (authUpdateResult.error) {
+    adminRedirect({ error: "인증 계정 재활성화 처리 중 오류가 발생했습니다." });
+  }
+
+  revalidatePath("/admin");
+  adminRedirect({ message: `${email || profileResult.data.email || targetUserId} 계정을 다시 활성화했습니다.` });
+}
