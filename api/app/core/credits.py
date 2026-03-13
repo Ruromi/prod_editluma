@@ -390,10 +390,10 @@ async def get_or_create_credit_balance(user_id: str) -> int:
         )
         return int(payload["balance"])
     except RpcError as exc:
-        if not _is_missing_rpc_function(exc, "ensure_user_credits"):
-            logger.exception("ensure_user_credits RPC failed for user %s", user_id)
-            raise HTTPException(status_code=503, detail=_CREDIT_BALANCE_ERROR) from exc
-        logger.warning("Falling back to direct credit balance query: %s", exc)
+        if _is_missing_rpc_function(exc, "ensure_user_credits"):
+            logger.warning("Falling back to direct credit balance query after missing RPC: %s", exc)
+        else:
+            logger.exception("ensure_user_credits RPC failed for user %s; trying direct fallback", user_id)
         try:
             return _direct_get_or_create_credit_balance(user_id)
         except HTTPException:
@@ -438,10 +438,13 @@ async def charge_and_create_job(
                 status_code=402,
                 detail=f"크레딧이 부족합니다. 이미지 1장당 {settings.image_request_credit_cost} 크레딧이 필요합니다.",
             ) from exc
-        if not _is_missing_rpc_function(exc, "create_credit_charged_job_with_ledger"):
-            logger.exception("create_credit_charged_job_with_ledger RPC failed for user %s", user.id)
-            raise HTTPException(status_code=503, detail=_CREDIT_PROCESSING_ERROR) from exc
-        logger.warning("Falling back to direct credit charge flow after RPC error: %s", exc)
+        if _is_missing_rpc_function(exc, "create_credit_charged_job_with_ledger"):
+            logger.warning("Falling back to direct credit charge flow after missing RPC: %s", exc)
+        else:
+            logger.exception(
+                "create_credit_charged_job_with_ledger RPC failed for user %s; trying direct fallback",
+                user.id,
+            )
         try:
             return _direct_charge_and_create_job(
                 user=user,
@@ -489,10 +492,10 @@ async def record_credit_ledger_entry(
         )
         return payload
     except RpcError as exc:
-        if not _is_missing_rpc_function(exc, "record_credit_ledger_entry"):
-            logger.exception("record_credit_ledger_entry RPC failed for user %s", user_id)
-            raise HTTPException(status_code=503, detail=_CREDIT_LEDGER_ERROR) from exc
-        logger.warning("Falling back to direct credit ledger flow: %s", exc)
+        if _is_missing_rpc_function(exc, "record_credit_ledger_entry"):
+            logger.warning("Falling back to direct credit ledger flow after missing RPC: %s", exc)
+        else:
+            logger.exception("record_credit_ledger_entry RPC failed for user %s; trying direct fallback", user_id)
         try:
             return _direct_record_credit_ledger_entry(
                 user_id=user_id,
