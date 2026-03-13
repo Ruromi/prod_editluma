@@ -182,6 +182,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           status: String(row.status ?? "requested"),
           amount: Number(row.amount ?? 0),
           reason: String(row.reason ?? "-"),
+          comment: String(row.comment ?? ""),
           delta: Number(row.credits_reversed ?? 0) * -1,
           created_at: String(row.created_at ?? new Date().toISOString()),
         }))
@@ -204,6 +205,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             status: String(metadata.refund_status ?? "recorded"),
             amount: Number(metadata.amount ?? 0),
             reason: String(metadata.reason ?? "-"),
+            comment: String(metadata.comment ?? ""),
             delta: ledgerRow.delta,
             created_at: ledgerRow.created_at,
           };
@@ -485,6 +487,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               <tr className="border-b border-gray-200">
                 <th className="pb-3 font-medium">이메일</th>
                 <th className="pb-3 font-medium">주문 ID</th>
+                <th className="pb-3 font-medium">사유 / 메모</th>
                 <th className="pb-3 font-medium">환불 금액</th>
                 <th className="pb-3 font-medium">회수 크레딧</th>
                 <th className="pb-3 font-medium">상태</th>
@@ -496,6 +499,10 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                 <tr key={row.id} className="border-b border-gray-100 last:border-0">
                   <td className="py-3 pr-4 text-gray-900">{row.email}</td>
                   <td className="py-3 pr-4 font-mono text-xs text-gray-500">{row.orderId || "-"}</td>
+                  <td className="py-3 pr-4 text-gray-500">
+                    <p className="font-medium text-gray-900">{row.reason}</p>
+                    <p className="mt-1 text-xs leading-5 text-gray-500">{row.comment || "-"}</p>
+                  </td>
                   <td className="py-3 pr-4 text-gray-900">{row.amount > 0 ? currency.format(row.amount / 100) : "-"}</td>
                   <td className="py-3 pr-4 text-gray-900">{row.delta}</td>
                   <td className="py-3 pr-4 text-gray-500">{row.status}</td>
@@ -504,7 +511,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               ))}
               {refundRows.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-gray-500">
+                  <td colSpan={7} className="py-6 text-center text-gray-500">
                     아직 환불 기록이 없습니다.
                   </td>
                 </tr>
