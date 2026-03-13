@@ -531,10 +531,20 @@ export default function BillingPageClient() {
         } catch {
           // ignore JSON parse failure
         }
-        throw new Error(detail);
-      }
+          throw new Error(detail);
+        }
 
-      await refreshRefundRequests(accessToken);
+      const payload: RefundRequestItem = await response.json();
+      setRefundRequests((current) => {
+        const next = current.filter(
+          (item) =>
+            item.id !== payload.id &&
+            item.payment_ledger_id !== payload.payment_ledger_id &&
+            item.order_id !== payload.order_id
+        );
+        return [payload, ...next];
+      });
+      void refreshRefundRequests(accessToken);
       setStatusMessage("환불 요청이 접수되었습니다. 관리자가 확인 후 처리합니다.");
       setOpenRefundLedgerId(null);
       setRefundComment("");
@@ -589,7 +599,8 @@ export default function BillingPageClient() {
           throw new Error(detail);
         }
 
-        await refreshRefundRequests(accessToken);
+        setRefundRequests((current) => current.filter((item) => item.id !== refundRequestId));
+        void refreshRefundRequests(accessToken);
         setStatusMessage("환불 요청을 취소했습니다.");
       } catch (cancelError) {
         setError(
