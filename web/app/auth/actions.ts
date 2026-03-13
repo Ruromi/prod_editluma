@@ -10,7 +10,7 @@ import { isSoftDeletedAccount, isSoftDeletedEmail } from "@/lib/account-status.s
 import { provisionSignupCreditsForUser } from "@/lib/signup-credits.server";
 
 const PASSWORD_POLICY_MESSAGE =
-  "비밀번호는 8자 이상이며 대문자, 숫자, 특수문자를 각각 1개 이상 포함해야 합니다.";
+  "비밀번호는 8자 이상이며 영문, 숫자, 특수문자를 각각 1개 이상 포함해야 합니다.";
 const PASSWORD_CONFIRMATION_MESSAGE = "비밀번호 확인이 일치하지 않습니다.";
 const EMAIL_VERIFICATION_REQUIRED_MESSAGE =
   "가입 확인 이메일의 인증 링크를 완료한 뒤 로그인해주세요.";
@@ -67,7 +67,7 @@ function resolveRequestOrigin(headersList: Awaited<ReturnType<typeof headers>>) 
 function isValidSignupPassword(password: string) {
   return (
     password.length >= 8 &&
-    /[A-Z]/.test(password) &&
+    /[A-Za-z]/.test(password) &&
     /\d/.test(password) &&
     /[^A-Za-z0-9]/.test(password)
   );

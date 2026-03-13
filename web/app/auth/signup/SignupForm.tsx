@@ -12,8 +12,8 @@ export default function SignupForm({ initialLanguage = "en" }: SignupFormProps) 
   const language = initialLanguage;
   const passwordPolicyTitle =
     language === "ko"
-      ? "8자 이상, 대문자/숫자/특수문자를 각각 1개 이상 포함해야 합니다."
-      : "Use at least 8 characters with 1 uppercase letter, 1 number, and 1 special character.";
+      ? "8자 이상, 영문/숫자/특수문자를 각각 1개 이상 포함해야 합니다."
+      : "Use at least 8 characters with 1 letter, 1 number, and 1 special character.";
   const passwordConfirmationMessage =
     language === "ko"
       ? "비밀번호가 일치하지 않습니다."
@@ -69,20 +69,20 @@ export default function SignupForm({ initialLanguage = "en" }: SignupFormProps) 
             type="password"
             required
             minLength={8}
-            pattern="^(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$"
+            pattern="^(?=.*[A-Za-z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$"
             title={passwordPolicyTitle}
             className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-800 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             placeholder={
               language === "ko"
-                ? "8자 이상, 대문자/숫자/특수문자 포함"
-                : "8+ characters, uppercase, number, symbol"
+                ? "8자 이상, 영문/숫자/특수문자 포함"
+                : "8+ characters, letter, number, symbol"
             }
             onInput={syncPasswordConfirmation}
           />
           <p className="mt-2 text-xs leading-5 text-gray-500">
             {language === "ko"
-              ? "8자 이상, 대문자 1개 이상, 숫자 1개 이상, 특수문자 1개 이상이 필요합니다."
-              : "Use at least 8 characters, including 1 uppercase letter, 1 number, and 1 special character."}
+              ? "8자 이상, 영문 1개 이상, 숫자 1개 이상, 특수문자 1개 이상이 필요합니다."
+              : "Use at least 8 characters, including 1 letter, 1 number, and 1 special character."}
           </p>
         </div>
         <div>
