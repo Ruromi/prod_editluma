@@ -65,63 +65,65 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="mx-auto max-w-4xl px-6 py-10 sm:py-14">
-      <div className="mb-8 rounded-[32px] border border-gray-800 bg-gray-950/80 p-6 sm:p-8">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-          Privacy Policy
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-          EditLuma 개인정보처리방침
-        </h1>
-        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-gray-400 sm:text-base">
-          본 방침은 EditLuma가 제공하는 로그인, 이미지 생성 및 보정, 결제와 관련하여 어떤 정보를 수집하고 어떻게 사용하는지 설명합니다.
-        </p>
-        <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-gray-500">
-          <span className="rounded-full border border-gray-800 bg-gray-900/70 px-3 py-1">
-            시행일: {effectiveDate}
-          </span>
-          <Link
-            href="/"
-            className="rounded-full border border-gray-800 bg-gray-900/70 px-3 py-1 transition-colors hover:border-gray-700 hover:text-white"
-          >
-            메인으로 돌아가기
-          </Link>
+    <div className="min-h-screen bg-gray-950">
+      <div className="mx-auto max-w-4xl px-6 py-10 sm:py-14">
+        <div className="mb-8 rounded-[32px] border border-gray-800 bg-gray-950/80 p-6 sm:p-8">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+            Privacy Policy
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            EditLuma 개인정보처리방침
+          </h1>
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-gray-400 sm:text-base">
+            본 방침은 EditLuma가 제공하는 로그인, 이미지 생성 및 보정, 결제와 관련하여 어떤 정보를 수집하고 어떻게 사용하는지 설명합니다.
+          </p>
+          <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-gray-500">
+            <span className="rounded-full border border-gray-800 bg-gray-900/70 px-3 py-1">
+              시행일: {effectiveDate}
+            </span>
+            <Link
+              href="/"
+              className="rounded-full border border-gray-800 bg-gray-900/70 px-3 py-1 transition-colors hover:border-gray-700 hover:text-white"
+            >
+              메인으로 돌아가기
+            </Link>
+          </div>
         </div>
-      </div>
 
-      <div className="space-y-4">
-        {sections.map((section) => (
-          <section
-            key={section.title}
-            className="rounded-[28px] border border-gray-800 bg-gray-950/80 p-6 sm:p-7"
-          >
-            <h2 className="text-lg font-semibold text-white sm:text-xl">
-              {section.title}
-            </h2>
+        <div className="space-y-4">
+          {sections.map((section) => (
+            <section
+              key={section.title}
+              className="rounded-[28px] border border-gray-800 bg-gray-950/80 p-6 sm:p-7"
+            >
+              <h2 className="text-lg font-semibold text-white sm:text-xl">
+                {section.title}
+              </h2>
 
-            {section.paragraphs?.length ? (
-              <div className="mt-4 space-y-3 text-sm leading-7 text-gray-600 sm:text-[15px]">
-                {section.paragraphs.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
-                ))}
-              </div>
-            ) : null}
+              {section.paragraphs?.length ? (
+                <div className="mt-4 space-y-3 text-sm leading-7 text-gray-300 sm:text-[15px]">
+                  {section.paragraphs.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                </div>
+              ) : null}
 
-            {section.items?.length ? (
-              <ul className="mt-4 list-disc space-y-3 pl-5 text-sm leading-7 text-gray-600 sm:text-[15px]">
-                {section.items.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            ) : null}
+              {section.items?.length ? (
+                <ul className="mt-4 list-disc space-y-3 pl-5 text-sm leading-7 text-gray-300 sm:text-[15px]">
+                  {section.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              ) : null}
 
-            {section.note ? (
-              <div className="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm leading-6 text-amber-700">
-                {section.note}
-              </div>
-            ) : null}
-          </section>
-        ))}
+              {section.note ? (
+                <div className="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm leading-6 text-amber-200">
+                  {section.note}
+                </div>
+              ) : null}
+            </section>
+          ))}
+        </div>
       </div>
     </div>
   );
