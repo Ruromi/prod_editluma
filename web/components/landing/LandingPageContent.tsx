@@ -1,19 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import GallerySection from "@/components/landing/GallerySection";
 import HeroSection from "@/components/landing/HeroSection";
 import LandingFooter from "@/components/landing/LandingFooter";
 import { landingCopy, type LandingLanguage } from "@/components/landing/copy";
+import {
+  persistLandingLanguage,
+  readBrowserLandingLanguage,
+  type HeaderLanguage,
+} from "@/lib/landing-language";
 
 type LandingPageContentProps = {
   isAuthenticated: boolean;
 };
 
 export default function LandingPageContent({ isAuthenticated }: LandingPageContentProps) {
-  const [language, setLanguage] = useState<LandingLanguage>("en");
+  const [language, setLanguage] = useState<HeaderLanguage>("en");
   const copy = landingCopy[language];
+
+  useEffect(() => {
+    setLanguage(readBrowserLandingLanguage());
+  }, []);
+
+  function handleLanguageChange(nextLanguage: HeaderLanguage) {
+    setLanguage(nextLanguage);
+    persistLandingLanguage(nextLanguage);
+  }
 
   return (
     <>
@@ -25,7 +39,7 @@ export default function LandingPageContent({ isAuthenticated }: LandingPageConte
             </span>
             <button
               type="button"
-              onClick={() => setLanguage("en")}
+              onClick={() => handleLanguageChange("en")}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
                 language === "en" ? "bg-gray-950 text-white" : "text-gray-500 hover:text-gray-900"
               }`}
@@ -34,7 +48,7 @@ export default function LandingPageContent({ isAuthenticated }: LandingPageConte
             </button>
             <button
               type="button"
-              onClick={() => setLanguage("ko")}
+              onClick={() => handleLanguageChange("ko")}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
                 language === "ko" ? "bg-gray-950 text-white" : "text-gray-500 hover:text-gray-900"
               }`}

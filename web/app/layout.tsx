@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import DashboardNav from "@/components/DashboardNav";
 import UserMenu from "@/components/UserMenu";
+import {
+  LANDING_LANGUAGE_COOKIE,
+  normalizeLandingLanguage,
+} from "@/lib/landing-language";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,13 +17,18 @@ export const metadata: Metadata = {
 
 const isDevelopment = process.env.NEXT_PUBLIC_ENVIRONMENT === "dev";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const initialLanguage = normalizeLandingLanguage(
+    cookieStore.get(LANDING_LANGUAGE_COOKIE)?.value
+  );
+
   return (
-    <html lang="ko">
+    <html lang={initialLanguage}>
       <body className="bg-white text-gray-800 min-h-screen">
         <header className="sticky top-0 z-40 border-b border-gray-200/50 bg-white/80 backdrop-blur-md px-6 h-14 flex items-center">
           {/* 좌: 로고 */}
@@ -31,13 +41,13 @@ export default function RootLayout({
           {/* 중앙: 대시보드 탭 nav */}
           <div className="flex-1 flex justify-center">
             <Suspense>
-              <DashboardNav />
+              <DashboardNav initialLanguage={initialLanguage} />
             </Suspense>
           </div>
           {/* 우: 사용자 메뉴 */}
           <div className="w-40 flex justify-end">
             <Suspense>
-              <UserMenu />
+              <UserMenu initialLanguage={initialLanguage} />
             </Suspense>
           </div>
         </header>

@@ -3,8 +3,15 @@ import { hasAdminAccess } from "@/lib/admin";
 import Link from "next/link";
 import UserMenuPopover from "@/components/UserMenuPopover";
 import { headers } from "next/headers";
+import type { HeaderLanguage } from "@/lib/landing-language";
 
-export default async function UserMenu() {
+type UserMenuProps = {
+  initialLanguage?: HeaderLanguage;
+};
+
+export default async function UserMenu({
+  initialLanguage = "en",
+}: UserMenuProps) {
   const supabase = await createServerClient();
   const headerList = await headers();
   const {
@@ -17,7 +24,7 @@ export default async function UserMenu() {
         href="/auth/login"
         className="text-sm text-gray-400 hover:text-indigo-400 transition-colors"
       >
-        로그인
+        {initialLanguage === "ko" ? "로그인" : "Log in"}
       </Link>
     );
   }
