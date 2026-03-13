@@ -10,7 +10,7 @@ type LandingFooterProps = {
 export default function LandingFooter({ language }: LandingFooterProps) {
   const copy = landingCopy[language].footer;
   const policyLang = language === "ko" ? "ko" : "en";
-  const contactEmail = "oasis_0421@naver.com";
+  const contactEmail = "rurumi1991@gmail.com";
 
   return (
     <footer className="bg-gray-950">
