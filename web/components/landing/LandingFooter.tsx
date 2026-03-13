@@ -9,6 +9,7 @@ type LandingFooterProps = {
 
 export default function LandingFooter({ language }: LandingFooterProps) {
   const copy = landingCopy[language].footer;
+  const policyLang = language === "ko" ? "ko" : "en";
 
   return (
     <footer className="bg-gray-950">
@@ -26,13 +27,13 @@ export default function LandingFooter({ language }: LandingFooterProps) {
             {copy.pricing}
           </Link>
           <Link
-            href="/privacy"
+            href={`/privacy?lang=${policyLang}`}
             className="transition-colors hover:text-white"
           >
             {copy.privacy}
           </Link>
           <Link
-            href="/terms"
+            href={`/terms?lang=${policyLang}`}
             className="transition-colors hover:text-white"
           >
             {copy.terms}
