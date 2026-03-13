@@ -1572,18 +1572,18 @@ export default function BillingPageClient({
                   className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition-colors focus:border-rose-300"
                 />
               </label>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs leading-6 text-gray-500">
-                  {t(
-                    "탈퇴 즉시 현재 세션은 종료되며, 앱과 API에서 삭제 계정으로 처리됩니다.",
-                    "Your current session ends immediately, and the app plus API will treat the account as deleted."
-                  )}
-                </p>
-                <div className="flex gap-2">
+              <p className="text-xs leading-6 text-gray-500">
+                {t(
+                  "탈퇴 즉시 현재 세션은 종료되며, 앱과 API에서 삭제 계정으로 처리됩니다.",
+                  "Your current session ends immediately, and the app plus API will treat the account as deleted."
+                )}
+              </p>
+              <div className="flex items-center justify-end gap-2 whitespace-nowrap pt-1">
+                <div className="flex items-center gap-2 whitespace-nowrap">
                   <button
                     type="button"
                     onClick={() => setIsDeleteAccountModalOpen(false)}
-                    className="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50"
+                    className="inline-flex min-w-[92px] items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50"
                   >
                     {t("취소", "Cancel")}
                   </button>
