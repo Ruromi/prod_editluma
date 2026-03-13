@@ -7,7 +7,6 @@ from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.credits import charge_and_create_job
 from app.core.storage import generate_presigned_download_url
 from app.core.supabase import db_schema, get_supabase
-from worker.tasks.process import process_job
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 
@@ -70,7 +69,6 @@ async def create_job(
             mode="enhance",
             prompt=body.prompt,
         )
-        process_job.delay(payload["id"])
     except HTTPException:
         raise
     except Exception as exc:

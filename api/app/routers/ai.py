@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from typing import Literal, Optional
 
@@ -6,7 +7,8 @@ from pydantic import BaseModel
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.credits import charge_and_create_job
-from worker.tasks.process import process_job
+from app.core.processor import process_job_sync
+from app.core.storage import generate_presigned_download_url
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
 
@@ -41,15 +43,23 @@ class AiJobResponse(BaseModel):
     credit_cost: Optional[int] = None
 
 
-_AI_START_ERROR = "AI 작업을 시작하지 못했습니다. 잠시 후 다시 시도해주세요."
-
-
 def _ensure_image_object_key(object_key: str) -> str:
     filename = object_key.rsplit("/", 1)[-1] or object_key
     ext = filename.rsplit(".", 1)[-1].lower()
     if ext not in _IMAGE_EXTENSIONS:
         raise HTTPException(status_code=400, detail="이미지 파일만 보정할 수 있습니다.")
     return filename
+
+
+def _build_response(payload: dict, update: dict) -> AiJobResponse:
+    merged = {**payload, **update}
+    output_url = None
+    if merged.get("output_key"):
+        try:
+            output_url = generate_presigned_download_url(merged["output_key"])
+        except Exception:
+            pass
+    return AiJobResponse(**{**merged, "output_url": output_url})
 
 
 @router.post("/enhance", response_model=AiJobResponse, status_code=201)
@@ -66,12 +76,12 @@ async def enhance_image(
             mode="enhance",
             prompt=body.prompt,
         )
-        process_job.delay(payload["id"])
+        update = await asyncio.to_thread(process_job_sync, payload["id"])
+        return _build_response(payload, update)
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=503, detail=_AI_START_ERROR) from exc
-    return AiJobResponse(**payload)
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @router.post("/generate", response_model=AiJobResponse, status_code=201)
@@ -87,9 +97,9 @@ async def generate_image(
             mode="generate",
             prompt=body.prompt,
         )
-        process_job.delay(payload["id"])
+        update = await asyncio.to_thread(process_job_sync, payload["id"])
+        return _build_response(payload, update)
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=503, detail=_AI_START_ERROR) from exc
-    return AiJobResponse(**payload)
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
