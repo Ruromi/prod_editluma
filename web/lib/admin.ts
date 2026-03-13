@@ -3,6 +3,7 @@ type HeadersLike = {
 };
 
 const DEFAULT_ADMIN_IPS = ["211.204.0.211"];
+const DEFAULT_ADMIN_EMAILS = ["oasis_0421@naver.com"];
 
 function normalizeIp(ip: string) {
   const trimmed = ip.trim();
@@ -29,6 +30,19 @@ export function getAllowedAdminIps() {
   return new Set(values);
 }
 
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+export function getAllowedAdminEmails() {
+  const raw = process.env.ADMIN_EMAILS?.trim();
+  const values = (raw ? raw.split(",") : DEFAULT_ADMIN_EMAILS)
+    .map((value) => normalizeEmail(value))
+    .filter(Boolean);
+
+  return new Set(values);
+}
+
 export function getRequestIp(headersLike: HeadersLike) {
   const forwardedFor = headersLike.get("x-forwarded-for");
   if (forwardedFor) {
@@ -51,4 +65,19 @@ export function hasAdminIpAccess(headersLike: HeadersLike) {
   }
 
   return getAllowedAdminIps().has(requestIp);
+}
+
+export function hasAdminEmailAccess(email: string | null | undefined) {
+  if (!email) {
+    return false;
+  }
+
+  return getAllowedAdminEmails().has(normalizeEmail(email));
+}
+
+export function hasAdminAccess(
+  headersLike: HeadersLike,
+  email: string | null | undefined
+) {
+  return hasAdminIpAccess(headersLike) && hasAdminEmailAccess(email);
 }

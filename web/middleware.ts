@@ -1,6 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { hasAdminIpAccess } from "@/lib/admin";
+import { hasAdminAccess } from "@/lib/admin";
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -41,7 +41,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (pathname.startsWith("/admin") && !hasAdminIpAccess(request.headers)) {
+  if (pathname.startsWith("/admin") && !hasAdminAccess(request.headers, user?.email)) {
     return new NextResponse("Not Found", { status: 404 });
   }
 

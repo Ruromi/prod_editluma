@@ -2,7 +2,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { adjustCredits, refundPayment } from "./actions";
-import { hasAdminIpAccess } from "@/lib/admin";
+import { hasAdminAccess } from "@/lib/admin";
 import { createAdminClient, createServerClient, dbSchema } from "@/lib/supabase/server";
 
 type AdminPageProps = {
@@ -79,18 +79,18 @@ async function listAdminUsers() {
 }
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
-  const headerList = await headers();
-  if (!hasAdminIpAccess(headerList)) {
-    notFound();
-  }
-
   const supabase = await createServerClient();
+  const headerList = await headers();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
     redirect("/auth/login?next=/admin");
+  }
+
+  if (!hasAdminAccess(headerList, user.email)) {
+    notFound();
   }
 
   const params = (await searchParams) ?? {};

@@ -1,5 +1,5 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { hasAdminIpAccess } from "@/lib/admin";
+import { hasAdminAccess } from "@/lib/admin";
 import Link from "next/link";
 import UserMenuPopover from "@/components/UserMenuPopover";
 import { headers } from "next/headers";
@@ -27,7 +27,7 @@ export default async function UserMenu() {
     user.email?.split("@")[0] ||
     "사용자";
   const avatarUrl = user.user_metadata?.avatar_url;
-  const showAdminLink = hasAdminIpAccess(headerList);
+  const showAdminLink = hasAdminAccess(headerList, user.email);
 
   return (
     <UserMenuPopover

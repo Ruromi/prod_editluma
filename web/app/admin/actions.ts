@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createAdminClient, createServerClient, dbSchema } from "@/lib/supabase/server";
-import { hasAdminIpAccess } from "@/lib/admin";
+import { hasAdminAccess } from "@/lib/admin";
 
 const REFUND_REASONS = new Set([
   "duplicate",
@@ -34,10 +34,6 @@ function adminRedirect(params: { message?: string; error?: string }): never {
 
 async function requireAdminAccess() {
   const headerList = await headers();
-  if (!hasAdminIpAccess(headerList)) {
-    redirect("/dashboard");
-  }
-
   const supabase = await createServerClient();
   const {
     data: { user },
@@ -45,6 +41,10 @@ async function requireAdminAccess() {
 
   if (!user) {
     redirect("/auth/login?next=/admin");
+  }
+
+  if (!hasAdminAccess(headerList, user.email)) {
+    redirect("/dashboard");
   }
 
   return { user, adminDb: createAdminClient().schema(dbSchema()) };
