@@ -42,26 +42,31 @@ const ALLOWED_UPLOAD_TYPES = new Set([
 const PROMPT_EXAMPLES = [
   {
     label: "컨셉 아트",
+    image: "/landing/ai-landing_2.png",
     prompt:
       "A cinematic fantasy city floating above the ocean at sunset, glowing bridges, soft mist, ultra detailed concept art",
   },
   {
     label: "인물 보정 무드",
+    image: "/landing/feature-enhance-portrait.png",
     prompt:
       "Editorial beauty portrait of a young woman with natural glowing skin, soft studio lighting, clean background, high detail",
   },
   {
     label: "스타일 변환",
+    image: "/landing/features/style-transfer.png",
     prompt:
       "A rainy Seoul street at night reimagined as dreamy watercolor concept art, neon reflections, pastel palette",
   },
   {
     label: "감성 장면",
+    image: "/landing/hero-main.png",
     prompt:
       "따뜻한 햇살이 비치는 카페 창가, 라떼와 책 한 권, 필름 사진 같은 부드러운 분위기",
   },
   {
     label: "다중언어 예시",
+    image: "/landing/gallery-enhance.png",
     prompt:
       "Une ruelle de Kyoto sous des pétales de cerisier, lumière dorée, ambiance cinématographique",
   },
@@ -876,38 +881,6 @@ function DashboardPageContent() {
                 className="w-full bg-transparent px-5 pt-5 pb-3 text-base text-gray-900 placeholder-gray-400 focus:outline-none resize-none disabled:opacity-50"
               />
 
-              <div className="px-4 pb-3">
-                <div className="rounded-xl border border-gray-200 bg-white/80 px-3 py-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">
-                      프롬프트 예시
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      클릭하면 입력창에 바로 들어갑니다
-                    </span>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {PROMPT_EXAMPLES.map((example) => (
-                      <button
-                        key={example.label}
-                        type="button"
-                        onClick={() => {
-                          setPrompt(example.prompt);
-                          setError(null);
-                        }}
-                        disabled={submitting}
-                        className="group rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-left transition-colors hover:border-indigo-500/40 hover:bg-indigo-500/10 disabled:opacity-50"
-                      >
-                        <p className="text-[11px] font-semibold text-indigo-600">{example.label}</p>
-                        <p className="mt-1 max-w-[14rem] text-xs leading-5 text-gray-500 group-hover:text-gray-400">
-                          {example.prompt}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
               {/* 하단 툴바 */}
               <div className="flex items-center justify-between px-4 pb-4 pt-1">
                 {/* 좌: 첨부 */}
@@ -977,6 +950,49 @@ function DashboardPageContent() {
                 {error}
               </div>
             )}
+
+            <div className="w-full rounded-2xl border border-gray-200 bg-white/85 p-4 shadow-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">
+                  프롬프트 예시
+                </span>
+                <span className="text-xs text-gray-500">
+                  아래 카드를 누르면 프롬프트와 함께 이미지 톤도 참고할 수 있습니다
+                </span>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {PROMPT_EXAMPLES.map((example) => (
+                  <button
+                    key={example.label}
+                    type="button"
+                    onClick={() => {
+                      setPrompt(example.prompt);
+                      setError(null);
+                    }}
+                    disabled={submitting}
+                    className="group overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 text-left transition-all hover:border-indigo-500/40 hover:bg-indigo-500/5 hover:shadow-lg hover:shadow-indigo-900/10 disabled:opacity-50"
+                  >
+                    <div className="relative h-40 w-full overflow-hidden bg-gray-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={example.image}
+                        alt={example.label}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 p-3">
+                        <p className="text-sm font-semibold text-white">{example.label}</p>
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <p className="text-sm leading-6 text-gray-600 group-hover:text-gray-900">
+                        {example.prompt}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         );
       })()}
