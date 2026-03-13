@@ -45,10 +45,15 @@ export default async function SignupPage({
               name="password"
               type="password"
               required
-              minLength={6}
+              minLength={8}
+              pattern="^(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$"
+              title="8자 이상, 대문자/숫자/특수문자를 각각 1개 이상 포함해야 합니다."
               className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-800 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              placeholder="6자 이상"
+              placeholder="8자 이상, 대문자/숫자/특수문자 포함"
             />
+            <p className="mt-2 text-xs leading-5 text-gray-500">
+              8자 이상, 대문자 1개 이상, 숫자 1개 이상, 특수문자 1개 이상이 필요합니다.
+            </p>
           </div>
           <button
             type="submit"

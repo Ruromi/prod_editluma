@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 
+const PASSWORD_POLICY_MESSAGE =
+  "비밀번호는 8자 이상이며 대문자, 숫자, 특수문자를 각각 1개 이상 포함해야 합니다.";
+
 function resolveNextPath(rawNext: FormDataEntryValue | null, fallback: string) {
   if (typeof rawNext !== "string" || !rawNext.startsWith("/") || rawNext.startsWith("//")) {
     return fallback;
@@ -30,6 +33,15 @@ function resolveRequestOrigin(headersList: Awaited<ReturnType<typeof headers>>) 
   return "http://localhost:3001";
 }
 
+function isValidSignupPassword(password: string) {
+  return (
+    password.length >= 8 &&
+    /[A-Z]/.test(password) &&
+    /\d/.test(password) &&
+    /[^A-Za-z0-9]/.test(password)
+  );
+}
+
 export async function login(formData: FormData) {
   const supabase = await createServerClient();
   const next = resolveNextPath(formData.get("next"), "/dashboard");
@@ -49,10 +61,16 @@ export async function login(formData: FormData) {
 
 export async function signup(formData: FormData) {
   const supabase = await createServerClient();
+  const email = String(formData.get("email") ?? "");
+  const password = String(formData.get("password") ?? "");
+
+  if (!isValidSignupPassword(password)) {
+    redirect(`/auth/signup?error=${encodeURIComponent(PASSWORD_POLICY_MESSAGE)}`);
+  }
 
   const { error } = await supabase.auth.signUp({
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
+    email,
+    password,
   });
 
   if (error) {
