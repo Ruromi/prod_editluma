@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.config import settings
-from app.core.credits import record_credit_ledger_entry
+from app.core.credits import get_or_create_credit_balance, record_credit_ledger_entry
 from app.core.polar import (
     create_checkout_for_package,
     get_billing_package,
@@ -14,6 +14,7 @@ from app.core.polar import (
     get_billing_packages,
     verify_and_parse_webhook,
 )
+from app.core.storage import generate_presigned_download_url
 from app.core.supabase import db_schema, get_supabase
 
 logger = logging.getLogger(__name__)
@@ -91,10 +92,31 @@ class RefundRequestItem(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+class BillingSnapshotJobItem(BaseModel):
+    id: str
+    filename: str
+    type: str
+    mode: str | None = None
+    prompt: str | None = None
+    status: str
+    created_at: str
+    output_url: str | None = None
+
+
 class BillingPackagesResponse(BaseModel):
     packages: list[BillingPackageResponse]
     provider: str = "polar"
     mode: str
+
+
+class MyPageSnapshotResponse(BaseModel):
+    balance: int
+    cost_per_image: int
+    initial_credits: int
+    history: list[BillingHistoryItem] = Field(default_factory=list)
+    usage_history: list[UsageHistoryItem] = Field(default_factory=list)
+    refund_requests: list[RefundRequestItem] = Field(default_factory=list)
+    jobs: list[BillingSnapshotJobItem] = Field(default_factory=list)
 
 
 class CreateCheckoutRequest(BaseModel):
@@ -195,6 +217,27 @@ def _map_refund_request_row(row: dict[str, Any]) -> RefundRequestItem:
     )
 
 
+def _map_job_history_row(row: dict[str, Any]) -> BillingSnapshotJobItem:
+    output_url = None
+    output_key = row.get("output_key")
+    if output_key:
+        try:
+            output_url = generate_presigned_download_url(str(output_key))
+        except Exception:
+            output_url = None
+
+    return BillingSnapshotJobItem(
+        id=str(row["id"]),
+        filename=str(row.get("filename") or ""),
+        type=str(row.get("type") or "image"),
+        mode=str(row["mode"]) if row.get("mode") else None,
+        prompt=str(row["prompt"]) if row.get("prompt") else None,
+        status=str(row.get("status") or "pending"),
+        created_at=str(row["created_at"]),
+        output_url=output_url,
+    )
+
+
 @router.get("/packages", response_model=BillingPackagesResponse)
 async def list_billing_packages():
     return BillingPackagesResponse(
@@ -290,6 +333,88 @@ async def list_refund_requests(user: AuthenticatedUser = Depends(get_current_use
         raise HTTPException(status_code=503, detail="환불 요청 내역을 불러오지 못했습니다.") from exc
 
     return [_map_refund_request_row(row) for row in (result.data or [])]
+
+
+@router.get("/mypage", response_model=MyPageSnapshotResponse)
+async def get_mypage_snapshot(user: AuthenticatedUser = Depends(get_current_user)):
+    db = get_supabase().schema(db_schema())
+
+    try:
+        balance = await get_or_create_credit_balance(user.id)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="크레딧 정보를 불러오지 못했습니다.") from exc
+
+    try:
+        ledger_result = (
+            db.table("credit_ledger")
+            .select("id, source, source_id, delta, balance_after, description, created_at, metadata")
+            .eq("user_id", user.id)
+            .order("created_at", desc=True)
+            .limit(80)
+            .execute()
+        )
+    except Exception as exc:
+        if _is_missing_credit_ledger_error(exc):
+            logger.warning("Billing snapshot ledger unavailable, returning empty ledger data: %s", exc)
+            ledger_rows = []
+        else:
+            raise HTTPException(status_code=503, detail="마이페이지 내역을 불러오지 못했습니다.") from exc
+    else:
+        ledger_rows = ledger_result.data or []
+
+    try:
+        refund_result = (
+            db.table("refund_requests")
+            .select("id, payment_ledger_id, order_id, refund_id, status, reason, amount, credits_reversed, comment, created_at, updated_at, metadata")
+            .eq("user_id", user.id)
+            .order("created_at", desc=True)
+            .limit(20)
+            .execute()
+        )
+    except Exception as exc:
+        if _is_missing_refund_requests_error(exc):
+            logger.warning("Billing snapshot refund requests unavailable, returning empty list: %s", exc)
+            refund_rows = []
+        else:
+            raise HTTPException(status_code=503, detail="환불 요청 내역을 불러오지 못했습니다.") from exc
+    else:
+        refund_rows = refund_result.data or []
+
+    try:
+        jobs_result = (
+            db.table("jobs")
+            .select("id, filename, type, mode, prompt, status, created_at, output_key")
+            .eq("user_id", user.id)
+            .order("created_at", desc=True)
+            .limit(20)
+            .execute()
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="작업 내역을 불러오지 못했습니다.") from exc
+
+    history_rows: list[BillingHistoryItem] = []
+    usage_rows: list[UsageHistoryItem] = []
+    for row in ledger_rows:
+        source = str(row.get("source") or "")
+        if source == "polar_topup" and len(history_rows) < 20:
+            history_rows.append(_map_history_row(row))
+        elif source == "image_charge" and len(usage_rows) < 30:
+            usage_rows.append(_map_usage_row(row))
+
+        if len(history_rows) >= 20 and len(usage_rows) >= 30:
+            break
+
+    return MyPageSnapshotResponse(
+        balance=balance,
+        cost_per_image=settings.image_request_credit_cost,
+        initial_credits=settings.initial_user_credits,
+        history=history_rows,
+        usage_history=usage_rows,
+        refund_requests=[_map_refund_request_row(row) for row in refund_rows],
+        jobs=[_map_job_history_row(row) for row in (jobs_result.data or [])],
+    )
 
 
 @router.post("/refund-requests", response_model=RefundRequestItem)

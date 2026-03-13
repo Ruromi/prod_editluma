@@ -94,6 +94,16 @@ type BillingPackagesResponse = {
   mode: string;
 };
 
+type MyPageSnapshotResponse = {
+  balance: number;
+  cost_per_image: number;
+  initial_credits: number;
+  history: BillingHistoryItem[];
+  usage_history: UsageHistoryItem[];
+  refund_requests: RefundRequestItem[];
+  jobs: JobHistoryItem[];
+};
+
 type BillingPageView = "pricing" | "mypage";
 
 type BillingPageClientProps = {
@@ -373,57 +383,6 @@ export default function BillingPageClient({
     setPackages(payload.packages);
   }, [apiUrl]);
 
-  const refreshHistory = useCallback(async (accessToken?: string | null) => {
-    const token = accessToken ?? (await getAccessToken());
-    if (!token) {
-      setHistory([]);
-      return false;
-    }
-
-    const response = await apiFetchWithToken("/api/billing/history", token);
-    if (!response.ok) {
-      throw new Error("결제 내역을 불러오지 못했습니다.");
-    }
-
-    const payload: BillingHistoryItem[] = await response.json();
-    setHistory(payload);
-    return true;
-  }, [apiFetchWithToken, getAccessToken]);
-
-  const refreshUsageHistory = useCallback(async (accessToken?: string | null) => {
-    const token = accessToken ?? (await getAccessToken());
-    if (!token) {
-      setUsageHistory([]);
-      return false;
-    }
-
-    const response = await apiFetchWithToken("/api/billing/usage-history", token);
-    if (!response.ok) {
-      throw new Error("사용 내역을 불러오지 못했습니다.");
-    }
-
-    const payload: UsageHistoryItem[] = await response.json();
-    setUsageHistory(payload);
-    return true;
-  }, [apiFetchWithToken, getAccessToken]);
-
-  const refreshJobHistory = useCallback(async (accessToken?: string | null) => {
-    const token = accessToken ?? (await getAccessToken());
-    if (!token) {
-      setJobHistory([]);
-      return false;
-    }
-
-    const response = await apiFetchWithToken("/api/jobs", token);
-    if (!response.ok) {
-      throw new Error("작업 내역을 불러오지 못했습니다.");
-    }
-
-    const payload: JobHistoryItem[] = await response.json();
-    setJobHistory(payload);
-    return true;
-  }, [apiFetchWithToken, getAccessToken]);
-
   const refreshRefundRequests = useCallback(async (accessToken?: string | null) => {
     const token = accessToken ?? (await getAccessToken());
     if (!token) {
@@ -441,6 +400,34 @@ export default function BillingPageClient({
     return true;
   }, [apiFetchWithToken, getAccessToken]);
 
+  const refreshMyPageSnapshot = useCallback(async (accessToken?: string | null) => {
+    const token = accessToken ?? (await getAccessToken());
+    if (!token) {
+      setCreditBalance(null);
+      setHistory([]);
+      setUsageHistory([]);
+      setJobHistory([]);
+      setRefundRequests([]);
+      clearStoredCreditBalance();
+      return false;
+    }
+
+    const response = await apiFetchWithToken("/api/billing/mypage", token);
+    if (!response.ok) {
+      throw new Error("마이페이지 정보를 불러오지 못했습니다.");
+    }
+
+    const payload: MyPageSnapshotResponse = await response.json();
+    setCreditBalance(payload.balance);
+    setCreditCost(payload.cost_per_image);
+    setHistory(payload.history);
+    setUsageHistory(payload.usage_history);
+    setRefundRequests(payload.refund_requests);
+    setJobHistory(payload.jobs);
+    broadcastCreditBalance(payload.balance);
+    return true;
+  }, [apiFetchWithToken, getAccessToken]);
+
   const loadBillingPage = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -454,14 +441,10 @@ export default function BillingPageClient({
       }
 
       if (accessToken) {
-        requests.push(
-          refreshCredits(accessToken),
-          refreshHistory(accessToken),
-          refreshUsageHistory(accessToken),
-          refreshRefundRequests(accessToken),
-        );
-        if (!isPricingView) {
-          requests.push(refreshJobHistory(accessToken));
+        if (isPricingView) {
+          requests.push(refreshCredits(accessToken));
+        } else {
+          requests.push(refreshMyPageSnapshot(accessToken));
         }
       } else {
         setCreditBalance(null);
@@ -486,11 +469,8 @@ export default function BillingPageClient({
     getAccessToken,
     isPricingView,
     refreshCredits,
-    refreshHistory,
-    refreshJobHistory,
+    refreshMyPageSnapshot,
     refreshPackages,
-    refreshRefundRequests,
-    refreshUsageHistory,
   ]);
 
   useEffect(() => {
@@ -517,7 +497,10 @@ export default function BillingPageClient({
     let attempts = 0;
     const intervalId = window.setInterval(() => {
       attempts += 1;
-      void Promise.all([refreshCredits(), refreshHistory(), refreshUsageHistory(), refreshRefundRequests()]).catch((pollError) => {
+      const refreshPromise = isPricingView
+        ? refreshCredits()
+        : refreshMyPageSnapshot();
+      void refreshPromise.catch((pollError) => {
         setError(
           pollError instanceof Error
             ? pollError.message
@@ -529,7 +512,10 @@ export default function BillingPageClient({
       }
     }, 3000);
 
-    void Promise.all([refreshCredits(), refreshHistory(), refreshUsageHistory(), refreshRefundRequests()]).catch((pollError) => {
+    const refreshPromise = isPricingView
+      ? refreshCredits()
+      : refreshMyPageSnapshot();
+    void refreshPromise.catch((pollError) => {
       setError(
         pollError instanceof Error
           ? pollError.message
@@ -540,7 +526,7 @@ export default function BillingPageClient({
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [refreshCredits, refreshHistory, refreshRefundRequests, refreshUsageHistory]);
+  }, [isPricingView, refreshCredits, refreshMyPageSnapshot]);
 
   const handleCheckout = useCallback(
     async (packageId: string) => {
@@ -702,7 +688,11 @@ export default function BillingPageClient({
         );
         return [payload, ...next];
       });
-      void refreshRefundRequests(accessToken);
+      if (isPricingView) {
+        void refreshRefundRequests(accessToken);
+      } else {
+        void refreshMyPageSnapshot(accessToken);
+      }
       setStatusMessage(
         t(
           "환불 요청이 접수되었습니다. 관리자가 확인 후 처리합니다.",
@@ -728,6 +718,8 @@ export default function BillingPageClient({
     openRefundLedgerId,
     refundComment,
     refundReason,
+    isPricingView,
+    refreshMyPageSnapshot,
     refreshRefundRequests,
   ]);
 
@@ -763,7 +755,11 @@ export default function BillingPageClient({
         }
 
         setRefundRequests((current) => current.filter((item) => item.id !== refundRequestId));
-        void refreshRefundRequests(accessToken);
+        if (isPricingView) {
+          void refreshRefundRequests(accessToken);
+        } else {
+          void refreshMyPageSnapshot(accessToken);
+        }
         setStatusMessage(t("환불 요청을 취소했습니다.", "Your refund request was canceled."));
       } catch (cancelError) {
         setError(
@@ -775,7 +771,7 @@ export default function BillingPageClient({
         setRequestingRefundLedgerId(null);
       }
     },
-    [apiFetchWithToken, getAccessToken, loginHref, refreshRefundRequests]
+    [apiFetchWithToken, getAccessToken, isPricingView, loginHref, refreshMyPageSnapshot, refreshRefundRequests]
   );
 
   return (
