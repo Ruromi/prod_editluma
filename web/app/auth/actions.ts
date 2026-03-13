@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createAdminClient, createServerClient, dbSchema } from "@/lib/supabase/server";
 import { headers } from "next/headers";
+import { siteUrl } from "@/lib/site";
 
 const PASSWORD_POLICY_MESSAGE =
   "비밀번호는 8자 이상이며 대문자, 숫자, 특수문자를 각각 1개 이상 포함해야 합니다.";
@@ -18,9 +19,26 @@ function resolveNextPath(rawNext: FormDataEntryValue | null, fallback: string) {
   return rawNext;
 }
 
+function isAllowedAppOrigin(candidate: string) {
+  try {
+    const parsed = new URL(candidate);
+    const normalized = parsed.origin;
+    const allowedOrigins = new Set<string>([siteUrl]);
+
+    if (process.env.NODE_ENV !== "production") {
+      allowedOrigins.add("http://localhost:3001");
+      allowedOrigins.add("http://127.0.0.1:3001");
+    }
+
+    return allowedOrigins.has(normalized);
+  } catch {
+    return false;
+  }
+}
+
 function resolveRequestOrigin(headersList: Awaited<ReturnType<typeof headers>>) {
   const origin = headersList.get("origin");
-  if (origin) {
+  if (origin && isAllowedAppOrigin(origin)) {
     return origin;
   }
 
@@ -29,10 +47,17 @@ function resolveRequestOrigin(headersList: Awaited<ReturnType<typeof headers>>) 
     const proto =
       headersList.get("x-forwarded-proto") ??
       (host.includes("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
-    return `${proto}://${host}`;
+    const candidate = `${proto}://${host}`;
+    if (isAllowedAppOrigin(candidate)) {
+      return candidate;
+    }
   }
 
-  return "http://localhost:3001";
+  if (process.env.NODE_ENV !== "production") {
+    return "http://localhost:3001";
+  }
+
+  return siteUrl;
 }
 
 function isValidSignupPassword(password: string) {

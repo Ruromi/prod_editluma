@@ -30,4 +30,4 @@ app.include_router(billing.router)
 
 @app.get("/")
 async def root():
-    return {"service": "EditLuma API", "version": "0.1.0", "env": settings.environment}
+    return {"service": "EditLuma API", "version": "0.1.0"}

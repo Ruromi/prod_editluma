@@ -43,3 +43,13 @@ def generate_presigned_download_url(object_key: str) -> str:
         ExpiresIn=settings.presign_download_expiry_seconds,
     )
     return url
+
+
+def get_object_metadata(object_key: str) -> dict[str, str | int | None]:
+    client = _get_s3_client()
+    result = client.head_object(Bucket=settings.storage_bucket, Key=object_key)
+    return {
+        "content_type": result.get("ContentType"),
+        "content_length": result.get("ContentLength"),
+        "etag": result.get("ETag"),
+    }

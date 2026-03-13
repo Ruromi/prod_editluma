@@ -30,6 +30,16 @@ interface CreditSummary {
   initial_credits: number;
 }
 
+const MAX_UPLOAD_FILE_SIZE_BYTES = 15 * 1024 * 1024;
+const ALLOWED_UPLOAD_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/heic",
+  "image/heif",
+]);
+
 async function readApiError(response: Response, fallback: string) {
   try {
     const payload = await response.json();
@@ -636,8 +646,13 @@ function DashboardPageContent() {
       return;
     }
 
-    if (attachedFile && !attachedFile.type.startsWith("image/")) {
-      setError("이미지 파일만 첨부할 수 있습니다.");
+    if (attachedFile && !ALLOWED_UPLOAD_TYPES.has(attachedFile.type)) {
+      setError("JPG, PNG, WEBP, GIF, HEIC 파일만 첨부할 수 있습니다.");
+      return;
+    }
+
+    if (attachedFile && attachedFile.size > MAX_UPLOAD_FILE_SIZE_BYTES) {
+      setError("업로드 가능한 최대 파일 크기는 15MB입니다.");
       return;
     }
 
@@ -658,7 +673,11 @@ function DashboardPageContent() {
         try {
           presignRes = await apiFetch("/api/upload/presign", {
             method: "POST",
-            body: JSON.stringify({ filename: attachedFile.name, content_type: attachedFile.type }),
+            body: JSON.stringify({
+              filename: attachedFile.name,
+              content_type: attachedFile.type,
+              file_size: attachedFile.size,
+            }),
           });
         } catch (err) {
           throw new Error(err instanceof Error ? err.message : apiConnErrMsg);

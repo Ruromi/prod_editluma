@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3001", "http://127.0.0.1:3001"]
     presign_upload_expiry_seconds: int = 300
     presign_download_expiry_seconds: int = 3600
+    max_upload_file_size_bytes: int = 15 * 1024 * 1024
     initial_user_credits: int = 100
     image_request_credit_cost: int = 10
 
