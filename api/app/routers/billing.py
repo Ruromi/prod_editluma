@@ -385,11 +385,10 @@ async def create_refund_request(
                     },
                 }
             )
-            .select("*")
-            .single()
             .execute()
         )
     except Exception as exc:
+        logger.exception("Failed to insert refund request for user %s and payment %s", user.id, payment_ledger_id)
         if _is_missing_refund_requests_error(exc):
             raise HTTPException(
                 status_code=503,
@@ -397,7 +396,11 @@ async def create_refund_request(
             ) from exc
         raise HTTPException(status_code=503, detail="환불 요청을 저장하지 못했습니다.") from exc
 
-    return _map_refund_request_row(inserted.data)
+    inserted_rows = inserted.data or []
+    if not inserted_rows:
+        raise HTTPException(status_code=503, detail="환불 요청을 저장하지 못했습니다.")
+
+    return _map_refund_request_row(inserted_rows[0])
 
 
 @router.delete("/refund-requests/{refund_request_id}")
