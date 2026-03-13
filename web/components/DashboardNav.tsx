@@ -6,7 +6,6 @@ import { usePathname, useSearchParams, useRouter } from "next/navigation";
 const TABS = [
   { id: "generate", label: "생성" },
   { id: "gallery", label: "갤러리" },
-  { id: "history", label: "작업 내역" },
 ] as const;
 
 export default function DashboardNav() {

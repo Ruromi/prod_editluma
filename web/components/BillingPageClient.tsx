@@ -59,6 +59,20 @@ type UsageHistoryItem = {
   created_at: string;
 };
 
+type JobStatus = "pending" | "processing" | "done" | "failed";
+type JobMode = "enhance" | "generate";
+
+type JobHistoryItem = {
+  id: string;
+  filename: string;
+  type: "image";
+  mode?: JobMode;
+  prompt?: string;
+  status: JobStatus;
+  created_at: string;
+  output_url?: string;
+};
+
 type RefundRequestItem = {
   id: string;
   payment_ledger_id?: string | null;
@@ -85,6 +99,25 @@ type BillingPageClientProps = {
 };
 
 const ZERO_DECIMAL_CURRENCIES = new Set(["KRW", "JPY"]);
+
+const JOB_STATUS_LABEL: Record<JobStatus, string> = {
+  pending: "대기 중",
+  processing: "처리 중",
+  done: "완료",
+  failed: "실패",
+};
+
+const JOB_STATUS_COLOR: Record<JobStatus, string> = {
+  pending: "text-yellow-700 bg-yellow-400/10",
+  processing: "text-blue-600 bg-blue-400/10",
+  done: "text-green-600 bg-green-400/10",
+  failed: "text-red-600 bg-red-400/10",
+};
+
+const JOB_MODE_LABEL: Record<JobMode, string> = {
+  enhance: "AI 보정",
+  generate: "AI 생성",
+};
 
 function normalizeCurrencyAmount(amount: number, currency?: string | null) {
   const normalizedCurrency = (currency ?? "").toUpperCase();
@@ -203,6 +236,7 @@ export default function BillingPageClient({
   const [packages, setPackages] = useState<BillingPackage[]>([]);
   const [history, setHistory] = useState<BillingHistoryItem[]>([]);
   const [usageHistory, setUsageHistory] = useState<UsageHistoryItem[]>([]);
+  const [jobHistory, setJobHistory] = useState<JobHistoryItem[]>([]);
   const [refundRequests, setRefundRequests] = useState<RefundRequestItem[]>([]);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [creditCost, setCreditCost] = useState(10);
@@ -316,6 +350,23 @@ export default function BillingPageClient({
     return true;
   }, [apiFetchWithToken, getAccessToken]);
 
+  const refreshJobHistory = useCallback(async (accessToken?: string | null) => {
+    const token = accessToken ?? (await getAccessToken());
+    if (!token) {
+      setJobHistory([]);
+      return false;
+    }
+
+    const response = await apiFetchWithToken("/api/jobs", token);
+    if (!response.ok) {
+      throw new Error("작업 내역을 불러오지 못했습니다.");
+    }
+
+    const payload: JobHistoryItem[] = await response.json();
+    setJobHistory(payload);
+    return true;
+  }, [apiFetchWithToken, getAccessToken]);
+
   const refreshRefundRequests = useCallback(async (accessToken?: string | null) => {
     const token = accessToken ?? (await getAccessToken());
     if (!token) {
@@ -342,16 +393,21 @@ export default function BillingPageClient({
       await refreshPackages();
 
       if (accessToken) {
-        await Promise.all([
+        const requests: Promise<boolean>[] = [
           refreshCredits(accessToken),
           refreshHistory(accessToken),
           refreshUsageHistory(accessToken),
           refreshRefundRequests(accessToken),
-        ]);
+        ];
+        if (!isPricingView) {
+          requests.push(refreshJobHistory(accessToken));
+        }
+        await Promise.all(requests);
       } else {
         setCreditBalance(null);
         setHistory([]);
         setUsageHistory([]);
+        setJobHistory([]);
         setRefundRequests([]);
         clearStoredCreditBalance();
       }
@@ -364,7 +420,16 @@ export default function BillingPageClient({
     } finally {
       setIsLoading(false);
     }
-  }, [getAccessToken, refreshCredits, refreshHistory, refreshPackages, refreshRefundRequests, refreshUsageHistory]);
+  }, [
+    getAccessToken,
+    isPricingView,
+    refreshCredits,
+    refreshHistory,
+    refreshJobHistory,
+    refreshPackages,
+    refreshRefundRequests,
+    refreshUsageHistory,
+  ]);
 
   useEffect(() => {
     setCreditBalance(readStoredCreditBalance());
@@ -1214,6 +1279,79 @@ export default function BillingPageClient({
                           </div>
                         );
                       })}
+                    </div>
+                  </div>
+                )}
+              </section>
+
+              <section className="rounded-[32px] border border-gray-200 bg-white/80 p-6 sm:p-8">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+                      Job History
+                    </p>
+                    <h2 className="mt-2 text-2xl font-semibold text-gray-900">작업 내역</h2>
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    이미지 생성과 보정 작업 상태를 최근 순서대로 확인할 수 있습니다.
+                  </p>
+                </div>
+
+                {!isAuthenticated ? (
+                  <div className="mt-6 rounded-3xl border border-dashed border-gray-200 px-6 py-12 text-center">
+                    <p className="text-sm text-gray-500">로그인하면 최근 작업 내역을 함께 확인할 수 있습니다.</p>
+                    <Link
+                      href={loginHref}
+                      className="mt-4 inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-indigo-500"
+                    >
+                      로그인하기
+                    </Link>
+                  </div>
+                ) : jobHistory.length === 0 ? (
+                  <div className="mt-6 rounded-3xl border border-dashed border-gray-200 px-6 py-12 text-center text-sm text-gray-500">
+                    아직 작업 내역이 없습니다.
+                  </div>
+                ) : (
+                  <div className="mt-6 overflow-hidden rounded-3xl border border-gray-200">
+                    <div className="grid grid-cols-[1.1fr_0.7fr_1.5fr_0.8fr_1fr_0.7fr] gap-4 border-b border-gray-200 bg-gray-50 px-5 py-3 text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">
+                      <span>Filename</span>
+                      <span>Mode</span>
+                      <span>Prompt</span>
+                      <span>Status</span>
+                      <span>Created</span>
+                      <span>Action</span>
+                    </div>
+                    <div className="divide-y divide-gray-200">
+                      {jobHistory.map((job) => (
+                        <div
+                          key={job.id}
+                          className="grid grid-cols-1 gap-3 px-5 py-4 text-sm text-gray-400 sm:grid-cols-[1.1fr_0.7fr_1.5fr_0.8fr_1fr_0.7fr]"
+                        >
+                          <div className="font-mono text-xs text-gray-500">{job.filename}</div>
+                          <div>{job.mode ? JOB_MODE_LABEL[job.mode] : "—"}</div>
+                          <div className="text-gray-500">{summarizePrompt(job.prompt) ?? "—"}</div>
+                          <div>
+                            <span className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${JOB_STATUS_COLOR[job.status]}`}>
+                              {JOB_STATUS_LABEL[job.status]}
+                            </span>
+                          </div>
+                          <div className="text-gray-500">{formatDate(job.created_at)}</div>
+                          <div>
+                            {job.status === "done" && job.output_url ? (
+                              <a
+                                href={job.output_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-indigo-600 transition-colors hover:text-indigo-500 hover:underline"
+                              >
+                                다운로드
+                              </a>
+                            ) : (
+                              <span className="text-xs text-gray-400">—</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}

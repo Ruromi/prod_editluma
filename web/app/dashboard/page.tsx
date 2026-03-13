@@ -594,6 +594,12 @@ function DashboardPageContent() {
     fetchCredits();
   }, [fetchJobs, fetchCredits]);
 
+  useEffect(() => {
+    if (tab === "history") {
+      router.replace("/mypage");
+    }
+  }, [router, tab]);
+
   // Poll every POLL_INTERVAL_MS while any job is pending/processing
   useEffect(() => {
     const hasActive = jobs.some(
@@ -902,68 +908,6 @@ function DashboardPageContent() {
       {/* ------------------------------------------------------------------ */}
       {tab === "gallery" && <GallerySection jobs={generateJobs} />}
 
-      {/* ------------------------------------------------------------------ */}
-      {/* 작업 내역 탭                                                          */}
-      {/* ------------------------------------------------------------------ */}
-      {tab === "history" && (
-        <section className="space-y-4">
-          {jobs.length === 0 ? (
-            <div className="border border-dashed border-gray-200 rounded-2xl py-12 text-center text-gray-500 text-sm">
-              아직 작업이 없습니다
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-xl border border-gray-200">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                  <tr>
-                    <th className="px-4 py-3 text-left font-medium">파일명</th>
-                    <th className="px-4 py-3 text-left font-medium">모드</th>
-                    <th className="px-4 py-3 text-left font-medium">프롬프트</th>
-                    <th className="px-4 py-3 text-left font-medium">상태</th>
-                    <th className="px-4 py-3 text-left font-medium">생성일</th>
-                    <th className="px-4 py-3 text-left font-medium">액션</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {jobs.map((job) => (
-                    <tr key={job.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-mono text-gray-400">{job.filename}</td>
-                      <td className="px-4 py-3 text-gray-500">
-                        {job.mode ? MODE_LABEL[job.mode] : "—"}
-                      </td>
-                      <td className="px-4 py-3 max-w-xs truncate text-gray-500">
-                        {job.prompt ?? "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${STATUS_COLOR[job.status]}`}>
-                          {STATUS_LABEL[job.status]}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-400 text-xs">
-                        {new Date(job.created_at).toLocaleString("ko-KR")}
-                      </td>
-                      <td className="px-4 py-3">
-                        {job.status === "done" && job.output_url ? (
-                          <a
-                            href={job.output_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-indigo-600 hover:text-indigo-500 hover:underline text-xs transition-colors"
-                          >
-                            다운로드
-                          </a>
-                        ) : (
-                          <span className="text-gray-500 text-xs">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-      )}
     </div>
   );
 }
