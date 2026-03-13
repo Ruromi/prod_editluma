@@ -3,7 +3,9 @@
 import { Suspense, useState, useRef, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { broadcastCreditBalance } from "@/lib/credits";
+import { useAppLanguage } from "@/lib/use-app-language";
 import { createClient } from "@/lib/supabase/client";
+import type { HeaderLanguage } from "@/lib/landing-language";
 
 type JobStatus = "pending" | "processing" | "done" | "failed";
 type JobMode = "enhance" | "generate";
@@ -39,30 +41,165 @@ const ALLOWED_UPLOAD_TYPES = new Set([
   "image/heic",
   "image/heif",
 ]);
+const DASHBOARD_COPY = {
+  en: {
+    pending: "Pending",
+    processing: "Processing",
+    done: "Done",
+    failed: "Failed",
+    enhance: "AI Enhance",
+    generate: "AI Generate",
+    pixelProcessing: "AI is assembling your image...",
+    pixelPending: "Waiting...",
+    noImage: "No image",
+    download: "Download",
+    close: "Close",
+    inputPrompt: "Input Prompt",
+    aiPrompt: "AI Refined Prompt",
+    generatedGallery: "Generated Gallery",
+    generatingCount: (count: number) => `${count} generating`,
+    noImagesYet: "No generated images yet",
+    createFirstImage: "Enter a prompt to create your first image",
+    sessionExpired: "Your session has expired. Please sign in again.",
+    apiConnErrWithUrl: (apiUrl: string) =>
+      `Cannot connect to the API server (${apiUrl}). Check the server URL and network status.`,
+    apiConnErrRelative:
+      "Cannot connect to the API server. Make sure the Next.js and FastAPI servers are running.",
+    promptRequired: "Enter a prompt.",
+    loadingUser: "Loading your account. Please try again in a moment.",
+    invalidFileType: "Only JPG, PNG, WEBP, GIF, and HEIC files are supported.",
+    maxFileSize: "The maximum upload size is 15MB.",
+    uploading: "Uploading...",
+    generating: "Generating...",
+    generateAction: "Generate",
+    generationFailed: "Generation failed",
+    uploadPrepFailed: (status: number) => `Failed to prepare upload (HTTP ${status})`,
+    uploadNetworkFailed: "File upload failed. Check your network connection.",
+    uploadFailed: (status: number, detail?: string) =>
+      detail ? `File upload failed (HTTP ${status}): ${detail}` : `File upload failed (HTTP ${status})`,
+    requestFailed: (status: number) => `Request failed (HTTP ${status})`,
+    aiRequestFailed: (status: number) =>
+      `AI generation request failed (HTTP ${status}). Please try again in a moment.`,
+    redirectingToGallery: "Redirecting to gallery...",
+    promptPlaceholder: "Example: a cyberpunk city at night, a cozy cafe window in warm sunlight...",
+    attachImage: "Attach image",
+    cancelAttachment: "Remove attachment",
+    attachTitle: "Attach an image for AI enhancement",
+    enterPromptTitle: "Enter a prompt",
+    insufficientCreditsTitle: "Not enough credits. Click to open pricing.",
+    unknownError: "Unknown error",
+    promptExamples: "Prompt Examples",
+    promptExamplesHint:
+      "Click a card to apply the prompt and preview the intended visual tone.",
+    hidePrompt: "Hide prompt",
+    clickImage: "Click image",
+    appliedToInput: "Applied to the input box",
+    expandPrompt: "View full image + show prompt",
+    promptLabel: "Prompt",
+    loadingDashboard: "Loading dashboard...",
+  },
+  ko: {
+    pending: "대기 중",
+    processing: "처리 중",
+    done: "완료",
+    failed: "실패",
+    enhance: "AI 보정",
+    generate: "AI 생성",
+    pixelProcessing: "AI가 이미지를 조합하고 있어요…",
+    pixelPending: "대기 중…",
+    noImage: "이미지 없음",
+    download: "다운로드",
+    close: "닫기",
+    inputPrompt: "입력 프롬프트",
+    aiPrompt: "AI 보정 프롬프트",
+    generatedGallery: "생성 갤러리",
+    generatingCount: (count: number) => `${count}개 생성 중`,
+    noImagesYet: "아직 생성된 이미지가 없습니다",
+    createFirstImage: "프롬프트를 입력하여 첫 번째 이미지를 만들어 보세요",
+    sessionExpired: "세션이 만료되었습니다. 다시 로그인하세요.",
+    apiConnErrWithUrl: (apiUrl: string) =>
+      `API 서버(${apiUrl})에 연결할 수 없습니다. 서버 URL과 네트워크 상태를 확인하세요.`,
+    apiConnErrRelative:
+      "API 서버에 연결할 수 없습니다. Next.js 개발 서버와 FastAPI 서버가 실행 중인지 확인하세요.",
+    promptRequired: "프롬프트를 입력하세요.",
+    loadingUser: "사용자 정보를 불러오는 중입니다. 잠시 후 다시 시도하세요.",
+    invalidFileType: "JPG, PNG, WEBP, GIF, HEIC 파일만 첨부할 수 있습니다.",
+    maxFileSize: "업로드 가능한 최대 파일 크기는 15MB입니다.",
+    uploading: "업로드 중…",
+    generating: "생성 중…",
+    generateAction: "생성하기",
+    generationFailed: "생성 실패",
+    uploadPrepFailed: (status: number) => `업로드 준비 실패 (HTTP ${status})`,
+    uploadNetworkFailed: "파일 업로드에 실패했습니다. 네트워크 상태를 확인하세요.",
+    uploadFailed: (status: number, detail?: string) =>
+      detail ? `파일 업로드 실패 (HTTP ${status}): ${detail}` : `파일 업로드 실패 (HTTP ${status})`,
+    requestFailed: (status: number) => `요청 실패 (HTTP ${status})`,
+    aiRequestFailed: (status: number) =>
+      `AI 생성 요청 실패 (HTTP ${status}). 잠시 후 다시 시도하세요.`,
+    redirectingToGallery: "갤러리로 이동 중…",
+    promptPlaceholder: "예: 사이버펑크 도시 야경, 따뜻한 햇살이 비치는 카페 창가…",
+    attachImage: "이미지 첨부",
+    cancelAttachment: "첨부 취소",
+    attachTitle: "이미지 첨부 (AI 보정 모드)",
+    enterPromptTitle: "프롬프트를 입력하세요",
+    insufficientCreditsTitle: "크레딧이 부족합니다. 클릭하면 요금제 페이지로 이동합니다",
+    unknownError: "알 수 없는 오류",
+    promptExamples: "프롬프트 예시",
+    promptExamplesHint:
+      "아래 카드를 누르면 프롬프트와 함께 이미지 톤도 참고할 수 있습니다",
+    hidePrompt: "프롬프트 숨기기",
+    clickImage: "이미지 클릭",
+    appliedToInput: "입력창에 적용되었습니다",
+    expandPrompt: "전체 이미지 보기 + 프롬프트 펼치기",
+    promptLabel: "Prompt",
+    loadingDashboard: "대시보드를 불러오는 중입니다…",
+  },
+} as const;
+
 const PROMPT_EXAMPLES = [
   {
-    label: "동화풍 카페 장면",
+    label: {
+      en: "Fairytale Cafe",
+      ko: "동화풍 카페 장면",
+    },
     image: "/prompt-examples/fairytale-cafe.png",
-    prompt:
-      "A fairytale princess with very long golden hair sitting at a cozy cafe table, holding a tiny espresso cup, pink dress, warm indoor lighting, shallow depth of field, whimsical cinematic detail",
+    prompt: {
+      en: "A fairytale princess with very long golden hair sitting at a cozy cafe table, holding a tiny espresso cup, pink dress, warm indoor lighting, shallow depth of field, whimsical cinematic detail",
+      ko: "아주 긴 금발 머리의 동화 속 공주가 아늑한 카페 테이블에 앉아 작은 에스프레소 잔을 들고 있는 장면, 분홍색 드레스, 따뜻한 실내 조명, 얕은 심도, 동화적인 시네마틱 디테일",
+    },
   },
   {
-    label: "뷰티 포트레이트",
+    label: {
+      en: "Beauty Portrait",
+      ko: "뷰티 포트레이트",
+    },
     image: "/prompt-examples/beauty-portrait.png",
-    prompt:
-      "Clean beauty portrait of a young East Asian woman, natural glowing skin, beige satin blouse, centered composition, soft daylight, realistic facial detail, minimal editorial styling",
+    prompt: {
+      en: "Clean beauty portrait of a young East Asian woman, natural glowing skin, beige satin blouse, centered composition, soft daylight, realistic facial detail, minimal editorial styling",
+      ko: "젊은 동아시아 여성의 클린 뷰티 포트레이트, 자연스럽게 빛나는 피부, 베이지 새틴 블라우스, 중앙 구도, 부드러운 자연광, 사실적인 얼굴 디테일, 미니멀한 에디토리얼 스타일링",
+    },
   },
   {
-    label: "팝아트 스타일 변환",
+    label: {
+      en: "Pop Art Style Shift",
+      ko: "팝아트 스타일 변환",
+    },
     image: "/prompt-examples/pop-art-grid.png",
-    prompt:
-      "A four-panel pop art portrait series of an androgynous person with round glasses, neon cyan and magenta palette, bold graphic shapes, mixed illustration styles, gallery poster composition",
+    prompt: {
+      en: "A four-panel pop art portrait series of an androgynous person with round glasses, neon cyan and magenta palette, bold graphic shapes, mixed illustration styles, gallery poster composition",
+      ko: "둥근 안경을 쓴 중성적인 인물을 네 컷으로 구성한 팝아트 포트레이트 시리즈, 네온 시안과 마젠타 팔레트, 강한 그래픽 형태, 다양한 일러스트레이션 스타일, 갤러리 포스터 구도",
+    },
   },
   {
-    label: "시네마틱 스트리트",
+    label: {
+      en: "Cinematic Street",
+      ko: "시네마틱 스트리트",
+    },
     image: "/prompt-examples/cinematic-street.png",
-    prompt:
-      "Cinematic street portrait of a stylish young woman in a beige coat, soft bokeh lights, narrow city alley, warm glow, fashion editorial mood, realistic photography",
+    prompt: {
+      en: "Cinematic street portrait of a stylish young woman in a beige coat, soft bokeh lights, narrow city alley, warm glow, fashion editorial mood, realistic photography",
+      ko: "베이지 코트를 입은 세련된 젊은 여성의 시네마틱 스트리트 포트레이트, 부드러운 보케 조명, 좁은 도시 골목, 따뜻한 광원, 패션 에디토리얼 무드, 사실적인 사진 스타일",
+    },
   },
 ];
 
@@ -78,23 +215,11 @@ async function readApiError(response: Response, fallback: string) {
   return fallback;
 }
 
-const STATUS_LABEL: Record<JobStatus, string> = {
-  pending: "대기 중",
-  processing: "처리 중",
-  done: "완료",
-  failed: "실패",
-};
-
 const STATUS_COLOR: Record<JobStatus, string> = {
   pending: "text-yellow-700 bg-yellow-400/10",
   processing: "text-blue-600 bg-blue-400/10",
   done: "text-green-600 bg-green-400/10",
   failed: "text-red-600 bg-red-400/10",
-};
-
-const MODE_LABEL: Record<JobMode, string> = {
-  enhance: "AI 보정",
-  generate: "AI 생성",
 };
 
 const POLL_INTERVAL_MS = 3000;
@@ -108,9 +233,16 @@ const MOSAIC_COLORS = [
   ["#67e8f9", "#22d3ee", "#06b6d4"],  // row 2: cyan tones
 ];
 
-function PixelAgent({ status }: { status: "pending" | "processing" }) {
+function PixelAgent({
+  status,
+  language,
+}: {
+  status: "pending" | "processing";
+  language: HeaderLanguage;
+}) {
   const isProcessing = status === "processing";
   const dur = "3.5s";
+  const copy = DASHBOARD_COPY[language];
 
   return (
     <div className="flex flex-col items-center gap-5 select-none">
@@ -230,7 +362,7 @@ function PixelAgent({ status }: { status: "pending" | "processing" }) {
           </div>
         )}
         <span className="text-xs text-gray-500 font-mono tracking-tight">
-          {isProcessing ? "AI가 이미지를 조합하고 있어요…" : "대기 중…"}
+          {isProcessing ? copy.pixelProcessing : copy.pixelPending}
         </span>
       </div>
     </div>
@@ -240,13 +372,19 @@ function PixelAgent({ status }: { status: "pending" | "processing" }) {
 // ---------------------------------------------------------------------------
 // Gallery card: skeleton shimmer for pending / processing
 // ---------------------------------------------------------------------------
-function SkeletonCard({ job }: { job: Job }) {
+function SkeletonCard({
+  job,
+  language,
+}: {
+  job: Job;
+  language: HeaderLanguage;
+}) {
   return (
     <div className="rounded-2xl overflow-hidden border border-gray-200 bg-gray-50">
       {/* Pixel agent area */}
       <div className="aspect-square relative overflow-hidden bg-white/80">
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <PixelAgent status={job.status as "pending" | "processing"} />
+          <PixelAgent language={language} status={job.status as "pending" | "processing"} />
         </div>
       </div>
       {/* Meta */}
@@ -265,9 +403,18 @@ function SkeletonCard({ job }: { job: Job }) {
 // ---------------------------------------------------------------------------
 // Image detail modal
 // ---------------------------------------------------------------------------
-function ImageDetailModal({ job, onClose }: { job: Job; onClose: () => void }) {
+function ImageDetailModal({
+  job,
+  onClose,
+  language,
+}: {
+  job: Job;
+  onClose: () => void;
+  language: HeaderLanguage;
+}) {
   const originalPrompt = job.original_prompt || job.prompt;
   const enhancedPrompt = job.enhanced_prompt;
+  const copy = DASHBOARD_COPY[language];
 
   return (
     <div
@@ -310,7 +457,7 @@ function ImageDetailModal({ job, onClose }: { job: Job; onClose: () => void }) {
           {/* Header row */}
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-400">
-              {new Date(job.created_at).toLocaleString("ko-KR")}
+              {new Date(job.created_at).toLocaleString(language === "ko" ? "ko-KR" : "en-US")}
             </span>
             <div className="flex items-center gap-3">
               {job.output_url && (
@@ -320,13 +467,13 @@ function ImageDetailModal({ job, onClose }: { job: Job; onClose: () => void }) {
                   rel="noopener noreferrer"
                   className="text-xs text-indigo-600 hover:text-indigo-500 hover:underline transition-colors"
                 >
-                  다운로드
+                  {copy.download}
                 </a>
               )}
               <button
                 onClick={onClose}
                 className="text-gray-400 hover:text-gray-400 transition-colors"
-                aria-label="닫기"
+                aria-label={copy.close}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -338,7 +485,7 @@ function ImageDetailModal({ job, onClose }: { job: Job; onClose: () => void }) {
           {/* 입력 프롬프트 */}
           <div className="space-y-1.5">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              입력 프롬프트
+              {copy.inputPrompt}
             </h3>
             <p className="text-sm text-gray-400 leading-relaxed">
               {originalPrompt || "—"}
@@ -348,7 +495,7 @@ function ImageDetailModal({ job, onClose }: { job: Job; onClose: () => void }) {
           {/* AI 보정 프롬프트 */}
           <div className="space-y-1.5">
             <h3 className="text-xs font-semibold text-indigo-500 uppercase tracking-wider">
-              AI 보정 프롬프트
+              {copy.aiPrompt}
             </h3>
             <p className="text-sm text-indigo-600 leading-relaxed">
               {enhancedPrompt || "—"}
@@ -363,9 +510,18 @@ function ImageDetailModal({ job, onClose }: { job: Job; onClose: () => void }) {
 // ---------------------------------------------------------------------------
 // Gallery card: completed / failed job
 // ---------------------------------------------------------------------------
-function GalleryCard({ job, onClick }: { job: Job; onClick: () => void }) {
+function GalleryCard({
+  job,
+  onClick,
+  language,
+}: {
+  job: Job;
+  onClick: () => void;
+  language: HeaderLanguage;
+}) {
   const isDone = job.status === "done";
   const [imgError, setImgError] = useState(false);
+  const copy = DASHBOARD_COPY[language];
 
   return (
     <div
@@ -409,7 +565,7 @@ function GalleryCard({ job, onClick }: { job: Job; onClick: () => void }) {
               />
             </svg>
             {imgError && (
-              <span className="text-xs text-indigo-400">이미지 없음</span>
+              <span className="text-xs text-indigo-400">{copy.noImage}</span>
             )}
           </div>
         ) : (
@@ -436,7 +592,7 @@ function GalleryCard({ job, onClick }: { job: Job; onClick: () => void }) {
               : "bg-red-50 text-red-600 border-red-300"
           }`}
         >
-          {isDone ? "완료" : "실패"}
+          {isDone ? copy.done : copy.failed}
         </span>
       </div>
       {/* Meta */}
@@ -445,7 +601,7 @@ function GalleryCard({ job, onClick }: { job: Job; onClick: () => void }) {
           {job.original_prompt || job.prompt || "—"}
         </p>
         <p className="text-xs text-gray-500">
-          {new Date(job.created_at).toLocaleString("ko-KR")}
+          {new Date(job.created_at).toLocaleString(language === "ko" ? "ko-KR" : "en-US")}
         </p>
       </div>
     </div>
@@ -455,8 +611,15 @@ function GalleryCard({ job, onClick }: { job: Job; onClick: () => void }) {
 // ---------------------------------------------------------------------------
 // Gallery section
 // ---------------------------------------------------------------------------
-function GallerySection({ jobs }: { jobs: Job[] }) {
+function GallerySection({
+  jobs,
+  language,
+}: {
+  jobs: Job[];
+  language: HeaderLanguage;
+}) {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const copy = DASHBOARD_COPY[language];
 
   const activeJobs = jobs.filter(
     (j) => j.status === "pending" || j.status === "processing"
@@ -469,12 +632,12 @@ function GallerySection({ jobs }: { jobs: Job[] }) {
     <section className="space-y-4">
       <div className="flex items-center gap-3">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-          생성 갤러리
+          {copy.generatedGallery}
         </h2>
         {activeJobs.length > 0 && (
           <span className="flex items-center gap-1.5 text-xs text-blue-600">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping" />
-            {activeJobs.length}개 생성 중
+            {copy.generatingCount(activeJobs.length)}
           </span>
         )}
       </div>
@@ -495,26 +658,26 @@ function GallerySection({ jobs }: { jobs: Job[] }) {
               d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
             />
           </svg>
-          <p className="text-gray-500 text-sm">아직 생성된 이미지가 없습니다</p>
+          <p className="text-gray-500 text-sm">{copy.noImagesYet}</p>
           <p className="text-gray-800 text-xs">
-            프롬프트를 입력하여 첫 번째 이미지를 만들어 보세요
+            {copy.createFirstImage}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {/* Active jobs (skeleton) shown first */}
           {activeJobs.map((job) => (
-            <SkeletonCard key={job.id} job={job} />
+            <SkeletonCard key={job.id} job={job} language={language} />
           ))}
           {/* Finished jobs */}
           {finishedJobs.map((job) => (
-            <GalleryCard key={job.id} job={job} onClick={() => setSelectedJob(job)} />
+            <GalleryCard key={job.id} job={job} language={language} onClick={() => setSelectedJob(job)} />
           ))}
         </div>
       )}
 
       {selectedJob && (
-        <ImageDetailModal job={selectedJob} onClose={() => setSelectedJob(null)} />
+        <ImageDetailModal job={selectedJob} language={language} onClose={() => setSelectedJob(null)} />
       )}
     </section>
   );
@@ -524,6 +687,8 @@ function GallerySection({ jobs }: { jobs: Job[] }) {
 // Main dashboard page
 // ---------------------------------------------------------------------------
 function DashboardPageContent() {
+  const language = useAppLanguage("en");
+  const copy = DASHBOARD_COPY[language];
   const searchParams = useSearchParams();
   const router = useRouter();
   const tab = (searchParams.get("tab") ?? "generate") as "generate" | "gallery" | "history";
@@ -550,8 +715,8 @@ function DashboardPageContent() {
 
   // 연결 실패 시 보여줄 힌트 메시지를 API_URL 설정에 맞게 생성합니다.
   const apiConnErrMsg = API_URL
-    ? `API 서버(${API_URL})에 연결할 수 없습니다. 서버 URL과 네트워크 상태를 확인하세요.`
-    : "API 서버에 연결할 수 없습니다. Next.js 개발 서버와 FastAPI 서버가 실행 중인지 확인하세요.";
+    ? copy.apiConnErrWithUrl(API_URL)
+    : copy.apiConnErrRelative;
 
   const getAccessToken = useCallback(async () => {
     const { data } = await supabase.auth.getSession();
@@ -562,7 +727,7 @@ function DashboardPageContent() {
     async (path: string, init: RequestInit = {}) => {
       const accessToken = await getAccessToken();
       if (!accessToken) {
-        throw new Error("세션이 만료되었습니다. 다시 로그인하세요.");
+        throw new Error(copy.sessionExpired);
       }
 
       const headers = new Headers(init.headers ?? undefined);
@@ -664,22 +829,22 @@ function DashboardPageContent() {
   // -------------------------------------------------------------------------
   async function handleGenerate() {
     if (!prompt.trim()) {
-      setError("프롬프트를 입력하세요.");
+      setError(copy.promptRequired);
       return;
     }
 
     if (!userId) {
-      setError("사용자 정보를 불러오는 중입니다. 잠시 후 다시 시도하세요.");
+      setError(copy.loadingUser);
       return;
     }
 
     if (attachedFile && !ALLOWED_UPLOAD_TYPES.has(attachedFile.type)) {
-      setError("JPG, PNG, WEBP, GIF, HEIC 파일만 첨부할 수 있습니다.");
+      setError(copy.invalidFileType);
       return;
     }
 
     if (attachedFile && attachedFile.size > MAX_UPLOAD_FILE_SIZE_BYTES) {
-      setError("업로드 가능한 최대 파일 크기는 15MB입니다.");
+      setError(copy.maxFileSize);
       return;
     }
 
@@ -710,7 +875,7 @@ function DashboardPageContent() {
           throw new Error(err instanceof Error ? err.message : apiConnErrMsg);
         }
         if (!presignRes.ok) {
-          throw new Error(await readApiError(presignRes, `업로드 준비 실패 (${presignRes.status})`));
+          throw new Error(await readApiError(presignRes, copy.uploadPrepFailed(presignRes.status)));
         }
         const { upload_url, object_key } = await presignRes.json();
 
@@ -721,15 +886,11 @@ function DashboardPageContent() {
             body: attachedFile,
           });
         } catch {
-          throw new Error("파일 업로드에 실패했습니다. 네트워크 상태를 확인하세요.");
+          throw new Error(copy.uploadNetworkFailed);
         }
         if (!putRes.ok) {
           const uploadErrorText = (await putRes.text()).trim().slice(0, 240);
-          throw new Error(
-            uploadErrorText
-              ? `파일 업로드 실패 (HTTP ${putRes.status}): ${uploadErrorText}`
-              : `파일 업로드 실패 (HTTP ${putRes.status})`
-          );
+          throw new Error(copy.uploadFailed(putRes.status, uploadErrorText || undefined));
         }
 
         setUploading(false);
@@ -749,7 +910,7 @@ function DashboardPageContent() {
           return;
         }
         if (!res.ok) {
-          throw new Error(await readApiError(res, `요청 실패 (HTTP ${res.status})`));
+          throw new Error(await readApiError(res, copy.requestFailed(res.status)));
         }
         const newJob: Job = await res.json();
         setJobs((prev) => [newJob, ...prev]);
@@ -761,7 +922,7 @@ function DashboardPageContent() {
         if (fileInputRef.current) fileInputRef.current.value = "";
         setPrompt("");
       } catch (err) {
-        setError(err instanceof Error ? err.message : "알 수 없는 오류");
+        setError(err instanceof Error ? err.message : copy.unknownError);
       } finally {
         setUploading(false);
         setSubmitting(false);
@@ -787,7 +948,7 @@ function DashboardPageContent() {
       }
       if (!res.ok) {
         throw new Error(
-          await readApiError(res, `AI 생성 요청 실패 (HTTP ${res.status}). 잠시 후 다시 시도하세요.`)
+          await readApiError(res, copy.aiRequestFailed(res.status))
         );
       }
       const newJob: Job = await res.json();
@@ -798,7 +959,7 @@ function DashboardPageContent() {
       setActiveJobId(newJob.id);
       setPrompt("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "알 수 없는 오류");
+      setError(err instanceof Error ? err.message : copy.unknownError);
     } finally {
       setSubmitting(false);
     }
@@ -828,11 +989,11 @@ function DashboardPageContent() {
               <div className="w-full rounded-2xl overflow-hidden border border-gray-200 shadow-2xl">
                 {showLocalPreview ? (
                   <div className="aspect-square w-full bg-white/80 flex flex-col items-center justify-center">
-                    <PixelAgent status={localPreviewStatus} />
+                    <PixelAgent language={language} status={localPreviewStatus} />
                   </div>
                 ) : previewJob && isActive ? (
                   <div className="aspect-square w-full bg-white/80 flex flex-col items-center justify-center">
-                    <PixelAgent status={previewJob.status as "pending" | "processing"} />
+                    <PixelAgent language={language} status={previewJob.status as "pending" | "processing"} />
                   </div>
                 ) : previewJob && isDone && previewJob.output_url ? (
                   <div className="aspect-square w-full relative animate-fade-in">
@@ -845,7 +1006,7 @@ function DashboardPageContent() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
                       <div className="space-y-1">
                         <p className="text-xs text-gray-400 line-clamp-2">{previewJob.original_prompt || previewJob.prompt}</p>
-                        <p className="text-xs text-indigo-600">갤러리로 이동 중…</p>
+                        <p className="text-xs text-indigo-600">{copy.redirectingToGallery}</p>
                       </div>
                     </div>
                   </div>
@@ -854,7 +1015,7 @@ function DashboardPageContent() {
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-red-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                     </svg>
-                    <p className="text-xs text-red-500">생성 실패</p>
+                    <p className="text-xs text-red-500">{copy.generationFailed}</p>
                   </div>
                 ) : null}
               </div>
@@ -872,7 +1033,7 @@ function DashboardPageContent() {
                 }}
                 disabled={submitting}
                 rows={4}
-                placeholder="예: 사이버펑크 도시 야경, 따뜻한 햇살이 비치는 카페 창가…"
+                placeholder={copy.promptPlaceholder}
                 className="w-full bg-transparent px-5 pt-5 pb-3 text-base text-gray-900 placeholder-gray-400 focus:outline-none resize-none disabled:opacity-50"
               />
 
@@ -896,7 +1057,7 @@ function DashboardPageContent() {
                       <button
                         onClick={() => { setAttachedFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
                         className="text-gray-400 hover:text-red-600 transition-colors ml-0.5"
-                        aria-label="첨부 취소"
+                        aria-label={copy.cancelAttachment}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -908,12 +1069,12 @@ function DashboardPageContent() {
                       onClick={() => fileInputRef.current?.click()}
                       disabled={submitting}
                       className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-400 bg-gray-100 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-                      title="이미지 첨부 (AI 보정 모드)"
+                      title={copy.attachTitle}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                       </svg>
-                      이미지 첨부
+                      {copy.attachImage}
                     </button>
                   )}
                 </div>
@@ -924,14 +1085,14 @@ function DashboardPageContent() {
                   disabled={submitting || !prompt.trim()}
                   title={
                     !prompt.trim()
-                      ? "프롬프트를 입력하세요"
+                      ? copy.enterPromptTitle
                       : !hasEnoughCredits
-                      ? `크레딧이 부족합니다. 클릭하면 요금제 페이지로 이동합니다`
+                      ? copy.insufficientCreditsTitle
                       : undefined
                   }
                   className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all px-5 py-2 rounded-xl font-semibold text-gray-900 text-sm shadow-lg shadow-indigo-900/40 active:scale-95"
                 >
-                  {uploading ? "업로드 중…" : submitting ? "생성 중…" : "생성하기"}
+                  {uploading ? copy.uploading : submitting ? copy.generating : copy.generateAction}
                 </button>
               </div>
             </div>
@@ -949,28 +1110,30 @@ function DashboardPageContent() {
             <div className="w-full rounded-2xl border border-gray-200 bg-white/85 p-4 shadow-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">
-                  프롬프트 예시
+                  {copy.promptExamples}
                 </span>
                 <span className="text-xs text-gray-500">
-                  아래 카드를 누르면 프롬프트와 함께 이미지 톤도 참고할 수 있습니다
+                  {copy.promptExamplesHint}
                 </span>
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {PROMPT_EXAMPLES.map((example) => {
-                  const isExpanded = expandedPromptExample === example.label;
+                  const exampleLabel = example.label[language];
+                  const examplePrompt = example.prompt[language];
+                  const isExpanded = expandedPromptExample === exampleLabel;
 
                   return (
                     <div
-                      key={example.label}
+                      key={example.label.en}
                       className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 text-left transition-all hover:border-indigo-500/40 hover:bg-indigo-500/5 hover:shadow-lg hover:shadow-indigo-900/10"
                     >
                       <button
                         type="button"
                         onClick={() => {
-                          setPrompt(example.prompt);
+                          setPrompt(examplePrompt);
                           setError(null);
                           setExpandedPromptExample((current) =>
-                            current === example.label ? null : example.label
+                            current === exampleLabel ? null : exampleLabel
                           );
                         }}
                         disabled={submitting}
@@ -982,30 +1145,30 @@ function DashboardPageContent() {
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={example.image}
-                              alt={example.label}
+                              alt={exampleLabel}
                               className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.02]"
                             />
                           </div>
                         </div>
                         <div className="border-t border-gray-200 px-3 py-3">
                           <div className="flex items-center justify-between gap-3">
-                            <p className="text-sm font-semibold text-gray-900">{example.label}</p>
+                            <p className="text-sm font-semibold text-gray-900">{exampleLabel}</p>
                             <span className="text-[11px] text-indigo-600">
-                              {isExpanded ? "프롬프트 숨기기" : "이미지 클릭"}
+                              {isExpanded ? copy.hidePrompt : copy.clickImage}
                             </span>
                           </div>
                           <p className="mt-1 text-xs text-gray-500">
-                            {isExpanded ? "입력창에 적용되었습니다" : "전체 이미지 보기 + 프롬프트 펼치기"}
+                            {isExpanded ? copy.appliedToInput : copy.expandPrompt}
                           </p>
                         </div>
                       </button>
                       {isExpanded && (
                         <div className="border-t border-gray-200 bg-white px-3 py-3">
                           <p className="text-xs font-medium uppercase tracking-[0.14em] text-gray-500">
-                            Prompt
+                            {copy.promptLabel}
                           </p>
                           <p className="mt-2 text-sm leading-6 text-gray-700">
-                            {example.prompt}
+                            {examplePrompt}
                           </p>
                         </div>
                       )}
@@ -1021,17 +1184,19 @@ function DashboardPageContent() {
       {/* ------------------------------------------------------------------ */}
       {/* 갤러리 탭                                                             */}
       {/* ------------------------------------------------------------------ */}
-      {tab === "gallery" && <GallerySection jobs={generateJobs} />}
+      {tab === "gallery" && <GallerySection jobs={generateJobs} language={language} />}
 
     </div>
   );
 }
 
 function DashboardPageFallback() {
+  const language = useAppLanguage("en");
+  const copy = DASHBOARD_COPY[language];
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
       <div className="border border-gray-200 rounded-2xl bg-gray-50 p-8 text-sm text-gray-500">
-        대시보드를 불러오는 중입니다…
+        {copy.loadingDashboard}
       </div>
     </div>
   );
