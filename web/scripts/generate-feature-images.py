@@ -9,6 +9,7 @@ import time
 
 API_KEY = os.environ.get("IDEOGRAM_API_KEY", "")
 BASE_URL = "https://api.ideogram.ai"
+RENDERING_SPEED = os.environ.get("IDEOGRAM_MODEL", "3.0-default").strip().lower()
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "public", "landing", "features")
 
 PROMPTS = [
@@ -80,19 +81,26 @@ def generate_one(prompt_info: dict) -> None:
         return
 
     print(f"  [gen]  {filename} ...")
-    payload = {
-        "image_request": {
-            "prompt": prompt_info["prompt"],
-            "model": "V_2",
-            "aspect_ratio": "ASPECT_1_1",
-        }
-    }
+    normalized_speed = {
+        "flash": "FLASH",
+        "3.0-flash": "FLASH",
+        "turbo": "TURBO",
+        "3.0-turbo": "TURBO",
+        "quality": "QUALITY",
+        "3.0-quality": "QUALITY",
+    }.get(RENDERING_SPEED, "DEFAULT")
 
     with httpx.Client(timeout=120) as client:
         resp = client.post(
-            f"{BASE_URL}/generate",
-            headers={"Api-Key": API_KEY, "Content-Type": "application/json"},
-            json=payload,
+            f"{BASE_URL}/v1/ideogram-v3/generate",
+            headers={"Api-Key": API_KEY},
+            json={
+                "prompt": prompt_info["prompt"],
+                "aspect_ratio": "1x1",
+                "rendering_speed": normalized_speed,
+                "magic_prompt": "OFF",
+                "style_type": "AUTO",
+            },
         )
         resp.raise_for_status()
         data = resp.json()

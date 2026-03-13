@@ -9,6 +9,8 @@ import boto3
 import httpx
 from botocore.config import Config
 
+from app.core.ideogram import generate_image_bytes, normalize_rendering_speed
+
 logger = logging.getLogger(__name__)
 
 
@@ -173,44 +175,16 @@ def run_generate(job: dict) -> tuple[str, str]:
     if not prompt:
         raise ValueError("생성 프롬프트가 없습니다.")
 
-    api_key = os.getenv("IDEOGRAM_API_KEY", "")
-    if not api_key:
-        raise RuntimeError("IDEOGRAM_API_KEY가 설정되지 않았습니다.")
-
-    model = os.getenv("IDEOGRAM_MODEL", "V_2")
-    logger.info("Calling Ideogram for job %s prompt=%r model=%s", job["id"], prompt, model)
-
-    with httpx.Client(timeout=_ideogram_timeout_seconds()) as client:
-        resp = client.post(
-            f"{_ideogram_base_url()}/generate",
-            headers={"Api-Key": api_key, "Content-Type": "application/json"},
-            json={
-                "image_request": {
-                    "prompt": prompt,
-                    "model": model,
-                    "aspect_ratio": "ASPECT_1_1",
-                    "magic_prompt_option": "OFF",
-                    "style_type": "AUTO",
-                }
-            },
-        )
-        try:
-            resp.raise_for_status()
-        except httpx.HTTPStatusError as exc:
-            raise RuntimeError(f"Ideogram API 오류 ({exc.response.status_code}): {exc.response.text[:300]}") from exc
-
-        data = resp.json()
-        items = data.get("data") or []
-        if not items:
-            raise RuntimeError("Ideogram API가 이미지를 반환하지 않았습니다.")
-
-        item = items[0]
-        image_url: str = item["url"]
-        enhanced_prompt = prompt
-
-        img_resp = client.get(image_url)
-        img_resp.raise_for_status()
-        image_bytes = img_resp.content
+    model = os.getenv("IDEOGRAM_MODEL", "3.0-default")
+    rendering_speed = normalize_rendering_speed(model)
+    logger.info(
+        "Calling Ideogram 3.0 generate for job %s prompt=%r rendering_speed=%s",
+        job["id"],
+        prompt,
+        rendering_speed,
+    )
+    enhanced_prompt = prompt
+    image_bytes = generate_image_bytes(prompt, width=1024, height=1024)
 
     user_id = str(job.get("user_id") or "").strip()
     output_prefix = f"outputs/{user_id}/generated" if user_id else "outputs/generated"

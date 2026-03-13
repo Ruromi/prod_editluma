@@ -36,7 +36,7 @@ class Settings(BaseSettings):
 
     # Ideogram
     ideogram_api_key: str = ""
-    ideogram_model: str = "V_2"
+    ideogram_model: str = "3.0-default"
     ideogram_base_url: str = "https://api.ideogram.ai"
     ideogram_timeout_ms: int = 120000
     groq_api_key: str = ""

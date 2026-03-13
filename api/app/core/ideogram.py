@@ -1,8 +1,10 @@
 """
 Ideogram API adapter.
-Calls POST /generate, downloads the result image, and returns raw bytes.
+Calls Ideogram 3.0 generate, downloads the result image, and returns raw bytes.
 
-Docs: https://developer.ideogram.ai/api-reference/api-reference/generate
+Docs:
+- https://developer.ideogram.ai/api-reference/api-reference/generate-v3
+- https://developer.ideogram.ai/ideogram-api/api-overview
 """
 import httpx
 
@@ -17,18 +19,59 @@ def _timeout_seconds() -> float:
     return max(settings.ideogram_timeout_ms / 1000, 1)
 
 
+def normalize_rendering_speed(value: str | None) -> str:
+    normalized = (value or "").strip().lower().replace("_", "-").replace(" ", "-")
+    if not normalized:
+        return "DEFAULT"
+
+    if normalized in {
+        "flash",
+        "3-flash",
+        "3.0-flash",
+        "v3-flash",
+        "v-3-flash",
+    }:
+        return "FLASH"
+
+    if normalized in {
+        "turbo",
+        "3-turbo",
+        "3.0-turbo",
+        "v3-turbo",
+        "v-3-turbo",
+        "v1-turbo",
+        "v-1-turbo",
+        "v2-turbo",
+        "v-2-turbo",
+        "v2a-turbo",
+        "v-2a-turbo",
+    }:
+        return "TURBO"
+
+    if normalized in {
+        "quality",
+        "3-quality",
+        "3.0-quality",
+        "v3-quality",
+        "v-3-quality",
+    }:
+        return "QUALITY"
+
+    return "DEFAULT"
+
+
 def _aspect_ratio(width: int, height: int) -> str:
-    """Map pixel dimensions to the nearest Ideogram aspect ratio token."""
+    """Map pixel dimensions to the nearest Ideogram 3.0 aspect ratio token."""
     ratio = width / max(height, 1)
     if ratio >= 1.7:
-        return "ASPECT_16_9"
+        return "16x9"
     if ratio >= 1.3:
-        return "ASPECT_4_3"
+        return "4x3"
     if ratio <= 0.6:
-        return "ASPECT_9_16"
+        return "9x16"
     if ratio <= 0.8:
-        return "ASPECT_3_4"
-    return "ASPECT_1_1"
+        return "3x4"
+    return "1x1"
 
 
 def generate_image_bytes(prompt: str, width: int = 1024, height: int = 1024) -> bytes:
@@ -43,23 +86,19 @@ def generate_image_bytes(prompt: str, width: int = 1024, height: int = 1024) -> 
         raise RuntimeError("IDEOGRAM_API_KEY가 설정되지 않았습니다.")
 
     aspect = _aspect_ratio(width, height)
-    payload = {
-        "image_request": {
-            "prompt": prompt,
-            "model": settings.ideogram_model,
-            "aspect_ratio": aspect,
-        }
-    }
+    rendering_speed = normalize_rendering_speed(settings.ideogram_model)
 
     with httpx.Client(timeout=_timeout_seconds()) as client:
-        # 1. Generate
         resp = client.post(
-            f"{_base_url()}/generate",
-            headers={
-                "Api-Key": settings.ideogram_api_key,
-                "Content-Type": "application/json",
+            f"{_base_url()}/v1/ideogram-v3/generate",
+            headers={"Api-Key": settings.ideogram_api_key},
+            json={
+                "prompt": prompt,
+                "aspect_ratio": aspect,
+                "rendering_speed": rendering_speed,
+                "magic_prompt": "OFF",
+                "style_type": "AUTO",
             },
-            json=payload,
         )
         try:
             resp.raise_for_status()
