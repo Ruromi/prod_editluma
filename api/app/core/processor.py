@@ -1,5 +1,6 @@
 """Synchronous image processing logic (Celery 없이 FastAPI에서 직접 실행)."""
 import logging
+import mimetypes
 import os
 import re
 import uuid as _uuid
@@ -9,6 +10,13 @@ import httpx
 from botocore.config import Config
 
 logger = logging.getLogger(__name__)
+
+
+def _guess_image_content_type(object_key: str, fallback: str = "image/jpeg") -> str:
+    guessed, _ = mimetypes.guess_type(object_key)
+    if guessed and guessed.startswith("image/"):
+        return guessed
+    return fallback
 
 
 def _groq_api_key() -> str:
@@ -237,6 +245,8 @@ def run_enhance(job: dict) -> tuple[str, str]:
     obj = s3.get_object(Bucket=bucket, Key=job["object_key"])
     image_bytes = obj["Body"].read()
     content_type = obj.get("ContentType", "image/jpeg")
+    if not isinstance(content_type, str) or not content_type.startswith("image/"):
+        content_type = _guess_image_content_type(job["object_key"])
 
     logger.info("Calling Ideogram V3 remix for job %s prompt=%r", job["id"], prompt)
 

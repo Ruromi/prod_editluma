@@ -676,13 +676,19 @@ function DashboardPageContent() {
         try {
           putRes = await fetch(upload_url, {
             method: "PUT",
-            headers: { "Content-Type": attachedFile.type },
             body: attachedFile,
           });
         } catch {
           throw new Error("파일 업로드에 실패했습니다. 네트워크 상태를 확인하세요.");
         }
-        if (!putRes.ok) throw new Error(`파일 업로드 실패 (HTTP ${putRes.status})`);
+        if (!putRes.ok) {
+          const uploadErrorText = (await putRes.text()).trim().slice(0, 240);
+          throw new Error(
+            uploadErrorText
+              ? `파일 업로드 실패 (HTTP ${putRes.status}): ${uploadErrorText}`
+              : `파일 업로드 실패 (HTTP ${putRes.status})`
+          );
+        }
 
         setUploading(false);
 

@@ -28,7 +28,6 @@ def generate_presigned_upload_url(object_key: str, content_type: str) -> str:
         Params={
             "Bucket": settings.storage_bucket,
             "Key": object_key,
-            "ContentType": content_type,
         },
         ExpiresIn=settings.presign_upload_expiry_seconds,
     )
