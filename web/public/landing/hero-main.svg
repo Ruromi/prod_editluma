@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f0a1e"/>
+      <stop offset="100%" style="stop-color:#1a0a2e"/>
+    </linearGradient>
+    <linearGradient id="leftBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#0e0e20"/>
+    </linearGradient>
+    <linearGradient id="rightBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a0533"/>
+      <stop offset="100%" style="stop-color:#2d0a5c"/>
+    </linearGradient>
+    <linearGradient id="divGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:0"/>
+      <stop offset="30%" style="stop-color:#a855f7;stop-opacity:1"/>
+      <stop offset="70%" style="stop-color:#7c3aed;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#4f46e5;stop-opacity:0"/>
+    </linearGradient>
+    <radialGradient id="skinB" cx="45%" cy="35%" r="60%">
+      <stop offset="0%" style="stop-color:#b09080"/>
+      <stop offset="100%" style="stop-color:#806858"/>
+    </radialGradient>
+    <radialGradient id="skinA" cx="40%" cy="32%" r="60%">
+      <stop offset="0%" style="stop-color:#f5d0a8"/>
+      <stop offset="55%" style="stop-color:#e0a878"/>
+      <stop offset="100%" style="stop-color:#c88858"/>
+    </radialGradient>
+    <radialGradient id="roomLightR" cx="50%" cy="20%" r="70%">
+      <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:0.22"/>
+      <stop offset="100%" style="stop-color:#0a0020;stop-opacity:0"/>
+    </radialGradient>
+    <filter id="blur4">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="noise" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="4" height="4" fill="none"/>
+      <circle cx="1" cy="1" r="0.6" fill="#fff" opacity="0.05"/>
+      <circle cx="3" cy="3" r="0.4" fill="#000" opacity="0.05"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="600" fill="url(#bgGrad)"/>
+
+  <!-- ============ LEFT PANEL: BEFORE ============ -->
+  <rect x="100" y="60" width="440" height="480" rx="12" fill="url(#leftBg)" stroke="#2a2a4a" stroke-width="1"/>
+  <rect x="112" y="72" width="416" height="456" rx="8" fill="#10101e"/>
+
+  <!-- Portrait BEFORE (blurry, desaturated) -->
+  <g filter="url(#blur4)" opacity="0.82">
+    <!-- Shoulders -->
+    <path d="M112,540 C165,425 218,390 320,390 C422,390 475,425 528,540 Z" fill="#202038"/>
+    <!-- Neck -->
+    <rect x="298" y="350" width="44" height="50" rx="8" fill="url(#skinB)"/>
+    <!-- Hair (dark) -->
+    <ellipse cx="320" cy="228" rx="90" ry="112" fill="#0e0c10"/>
+    <ellipse cx="238" cy="268" rx="26" ry="92" fill="#0c0a0e"/>
+    <ellipse cx="402" cy="268" rx="26" ry="92" fill="#0c0a0e"/>
+    <!-- Face -->
+    <ellipse cx="320" cy="240" rx="74" ry="90" fill="url(#skinB)"/>
+    <!-- Eyebrows -->
+    <rect x="286" y="206" width="28" height="5" rx="2.5" fill="#3a2810"/>
+    <rect x="306" y="206" width="28" height="5" rx="2.5" fill="#3a2810"/>
+    <!-- Eyes -->
+    <ellipse cx="296" cy="218" rx="13" ry="10" fill="white" opacity="0.65"/>
+    <circle cx="296" cy="218" r="7" fill="#2a1a10" opacity="0.85"/>
+    <circle cx="296" cy="218" r="4" fill="#0e0805"/>
+    <ellipse cx="344" cy="218" rx="13" ry="10" fill="white" opacity="0.65"/>
+    <circle cx="344" cy="218" r="7" fill="#2a1a10" opacity="0.85"/>
+    <circle cx="344" cy="218" r="4" fill="#0e0805"/>
+    <!-- Nose -->
+    <circle cx="309" cy="244" r="3" fill="#907060" opacity="0.5"/>
+    <circle cx="331" cy="244" r="3" fill="#907060" opacity="0.5"/>
+    <!-- Mouth -->
+    <path d="M296,268 Q320,282 344,268" fill="none" stroke="#906050" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- Low-quality overlay -->
+  <rect x="112" y="72" width="416" height="456" rx="8" fill="#08081a" opacity="0.32"/>
+  <rect x="112" y="72" width="416" height="456" rx="8" fill="url(#noise)" opacity="0.65"/>
+
+  <!-- BEFORE label -->
+  <rect x="130" y="492" width="84" height="26" rx="5" fill="#1a1a3e" stroke="#3a3a6a"/>
+  <text x="172" y="509" font-family="system-ui,sans-serif" font-size="12" fill="#6b7280" text-anchor="middle">BEFORE</text>
+  <rect x="448" y="72" width="60" height="22" rx="4" fill="#1a1a3e" stroke="#3a3a6a"/>
+  <text x="478" y="87" font-family="system-ui,sans-serif" font-size="10" fill="#6b7280" text-anchor="middle">SD 480p</text>
+
+  <!-- ============ CENTER DIVIDER ============ -->
+  <rect x="580" y="60" width="40" height="480" rx="20" fill="url(#divGrad)" opacity="0.12"/>
+  <line x1="600" y1="60" x2="600" y2="540" stroke="url(#divGrad)" stroke-width="2"/>
+  <g filter="url(#glow)">
+    <circle cx="600" cy="300" r="22" fill="#7c3aed"/>
+    <text x="600" y="306" font-family="system-ui,sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">AI</text>
+    <line x1="600" y1="268" x2="600" y2="258" stroke="#a855f7" stroke-width="2" stroke-linecap="round"/>
+    <line x1="600" y1="332" x2="600" y2="342" stroke="#a855f7" stroke-width="2" stroke-linecap="round"/>
+    <line x1="568" y1="300" x2="558" y2="300" stroke="#a855f7" stroke-width="2" stroke-linecap="round"/>
+    <line x1="632" y1="300" x2="642" y2="300" stroke="#a855f7" stroke-width="2" stroke-linecap="round"/>
+    <line x1="579" y1="279" x2="572" y2="272" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="621" y1="279" x2="628" y2="272" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="579" y1="321" x2="572" y2="328" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="621" y1="321" x2="628" y2="328" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <polygon points="544,295 556,300 544,305" fill="#6d28d9" opacity="0.8"/>
+  <polygon points="656,295 644,300 656,305" fill="#6d28d9" opacity="0.8"/>
+
+  <!-- ============ RIGHT PANEL: AFTER ============ -->
+  <rect x="660" y="60" width="440" height="480" rx="12" fill="url(#rightBg)" stroke="#4c1d95" stroke-width="1.5"/>
+  <rect x="672" y="72" width="416" height="456" rx="8" fill="#120030"/>
+  <rect x="672" y="72" width="416" height="456" rx="8" fill="url(#roomLightR)"/>
+
+  <!-- Portrait AFTER (sharp, vivid) -->
+  <!-- Shoulders / clothing -->
+  <path d="M672,540 C725,425 778,390 880,390 C982,390 1035,425 1088,540 Z" fill="#3730a3"/>
+  <!-- Collar -->
+  <path d="M848,390 L880,415 L912,390 C905,375 895,368 880,365 C865,368 855,375 848,390 Z" fill="#4f46e5" opacity="0.55"/>
+  <!-- Neck -->
+  <rect x="858" y="342" width="44" height="54" rx="8" fill="#e0a878"/>
+  <!-- Hair (back/sides) -->
+  <ellipse cx="880" cy="228" rx="90" ry="112" fill="#180d05"/>
+  <ellipse cx="796" cy="268" rx="26" ry="92" fill="#140c04"/>
+  <ellipse cx="964" cy="268" rx="26" ry="92" fill="#140c04"/>
+  <!-- Face -->
+  <ellipse cx="880" cy="240" rx="74" ry="90" fill="url(#skinA)"/>
+  <!-- Cheek warmth -->
+  <ellipse cx="836" cy="258" rx="16" ry="9" fill="#e87060" opacity="0.11"/>
+  <ellipse cx="924" cy="258" rx="16" ry="9" fill="#e87060" opacity="0.11"/>
+  <!-- Eyebrows -->
+  <path d="M843,207 Q856,202 869,205" fill="none" stroke="#2a1808" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M891,205 Q904,202 917,207" fill="none" stroke="#2a1808" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- Left eye -->
+  <ellipse cx="856" cy="220" rx="15" ry="11" fill="white"/>
+  <circle cx="856" cy="220" r="9" fill="#4a2c14"/>
+  <circle cx="856" cy="220" r="5.5" fill="#0e0805"/>
+  <circle cx="860" cy="217" r="2.5" fill="white" opacity="0.9"/>
+  <!-- Right eye -->
+  <ellipse cx="904" cy="220" rx="15" ry="11" fill="white"/>
+  <circle cx="904" cy="220" r="9" fill="#4a2c14"/>
+  <circle cx="904" cy="220" r="5.5" fill="#0e0805"/>
+  <circle cx="908" cy="217" r="2.5" fill="white" opacity="0.9"/>
+  <!-- Nose -->
+  <path d="M873,244 L871,260 Q880,265 889,260 L887,244" fill="none" stroke="#c8906a" stroke-width="1.5" stroke-linecap="round" opacity="0.65"/>
+  <!-- Lips -->
+  <path d="M858,276 Q880,285 902,276 Q880,295 858,276 Z" fill="#c86050"/>
+  <path d="M860,276 Q880,271 900,276" fill="none" stroke="#e87868" stroke-width="1.5" opacity="0.6"/>
+
+  <!-- AI face-detection overlay -->
+  <rect x="836" y="197" width="88" height="84" rx="4" fill="none" stroke="#a855f7" stroke-width="1" stroke-dasharray="6,4" opacity="0.45"/>
+  <text x="925" y="196" font-family="system-ui,sans-serif" font-size="9" fill="#c084fc" opacity="0.75">face ✓</text>
+
+  <!-- Enhancement sparkles -->
+  <g filter="url(#glow)" opacity="0.75">
+    <circle cx="828" cy="174" r="2.5" fill="#f0abfc"/>
+    <circle cx="944" cy="170" r="2" fill="#c084fc"/>
+    <text x="958" y="178" font-family="system-ui,sans-serif" font-size="12" fill="#fbbf24" opacity="0.7">✦</text>
+  </g>
+
+  <!-- AFTER label -->
+  <rect x="686" y="492" width="84" height="26" rx="5" fill="#2d0059" stroke="#7c3aed"/>
+  <text x="728" y="509" font-family="system-ui,sans-serif" font-size="12" fill="#a855f7" text-anchor="middle">AFTER</text>
+  <rect x="1040" y="72" width="52" height="22" rx="4" fill="#7c3aed" opacity="0.9"/>
+  <text x="1066" y="87" font-family="system-ui,sans-serif" font-size="10" font-weight="bold" fill="white" text-anchor="middle">4K AI</text>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="530" width="1200" height="70" fill="#0a0a1a" opacity="0.75"/>
+  <text x="600" y="567" font-family="system-ui,sans-serif" font-size="22" font-weight="bold" fill="white" text-anchor="middle">EditLuma · AI 인물 보정 — 피부·선명도·색감 업스케일</text>
+  <text x="600" y="590" font-family="system-ui,sans-serif" font-size="13" fill="#9ca3af" text-anchor="middle">셀피·인물사진을 AI가 4K로 완벽하게 보정</text>
+</svg>

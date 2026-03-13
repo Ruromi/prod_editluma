@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes shimmer {
+  from { background-position: 100% 0; }
+  to   { background-position: -100% 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@layer utilities {
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      #f3f4f6 0%,
+      #e5e7eb 40%,
+      #d1d5db 50%,
+      #e5e7eb 60%,
+      #f3f4f6 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.8s ease-in-out infinite;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out forwards;
+  }
+}
+
+/* Mosaic assembly animation */
+@keyframes mosaic-piece-0 {
+  0%   { opacity: 0; transform: translate(-40px, -30px) rotate(-20deg) scale(0.5); }
+  20%  { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+  100% { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+@keyframes mosaic-piece-1 {
+  0%, 5%   { opacity: 0; transform: translate(40px, -20px) rotate(15deg) scale(0.5); }
+  25%  { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+  100% { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+@keyframes mosaic-piece-2 {
+  0%, 10%  { opacity: 0; transform: translate(30px, 40px) rotate(25deg) scale(0.5); }
+  30%  { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+  100% { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+@keyframes mosaic-piece-3 {
+  0%, 15%  { opacity: 0; transform: translate(-35px, 35px) rotate(-30deg) scale(0.5); }
+  35%  { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+  100% { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+@keyframes mosaic-piece-4 {
+  0%, 20%  { opacity: 0; transform: translate(0, -45px) rotate(10deg) scale(0.5); }
+  40%  { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+  100% { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+@keyframes mosaic-piece-5 {
+  0%, 25%  { opacity: 0; transform: translate(-45px, 0) rotate(-15deg) scale(0.5); }
+  45%  { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+  100% { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+@keyframes mosaic-piece-6 {
+  0%, 30%  { opacity: 0; transform: translate(0, 45px) rotate(20deg) scale(0.5); }
+  50%  { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+  100% { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+@keyframes mosaic-piece-7 {
+  0%, 35%  { opacity: 0; transform: translate(45px, 0) rotate(-10deg) scale(0.5); }
+  55%  { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+  100% { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+@keyframes mosaic-piece-8 {
+  0%, 40%  { opacity: 0; transform: translate(20px, -40px) rotate(30deg) scale(0.5); }
+  60%  { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+  100% { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+@keyframes mosaic-glow {
+  0%, 60% { box-shadow: 0 0 0 rgba(129,140,248,0); }
+  75%     { box-shadow: 0 0 20px rgba(129,140,248,0.5); }
+  90%     { box-shadow: 0 0 30px rgba(129,140,248,0.7); }
+  100%    { box-shadow: 0 0 0 rgba(129,140,248,0); }
+}
+@keyframes mosaic-pulse-ring {
+  0%   { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+@keyframes mosaic-float-dot {
+  0%   { opacity: 0; transform: translateY(0) scale(0.5); }
+  50%  { opacity: 1; transform: translateY(-8px) scale(1); }
+  100% { opacity: 0; transform: translateY(-16px) scale(0.5); }
+}

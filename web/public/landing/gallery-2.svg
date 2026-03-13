@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <defs>
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f1a2e"/>
+      <stop offset="60%" style="stop-color:#1a2a4e"/>
+      <stop offset="100%" style="stop-color:#0a0e20"/>
+    </linearGradient>
+    <linearGradient id="streetGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#050815"/>
+      <stop offset="100%" style="stop-color:#020408"/>
+    </linearGradient>
+    <radialGradient id="skinStreet" cx="42%" cy="30%" r="65%">
+      <stop offset="0%" style="stop-color:#f5d0a8"/>
+      <stop offset="55%" style="stop-color:#e0a878"/>
+      <stop offset="100%" style="stop-color:#c88858"/>
+    </radialGradient>
+    <radialGradient id="lampGlow1" cx="18%" cy="60%" r="20%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:0.35"/>
+      <stop offset="100%" style="stop-color:#fbbf24;stop-opacity:0"/>
+    </radialGradient>
+    <radialGradient id="lampGlow2" cx="82%" cy="55%" r="18%">
+      <stop offset="0%" style="stop-color:#a855f7;stop-opacity:0.25"/>
+      <stop offset="100%" style="stop-color:#a855f7;stop-opacity:0"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Sky background -->
+  <rect width="400" height="300" fill="url(#skyGrad)"/>
+  <!-- Lamp glow overlays -->
+  <rect width="400" height="300" fill="url(#lampGlow1)"/>
+  <rect width="400" height="300" fill="url(#lampGlow2)"/>
+
+  <!-- Urban background buildings (silhouettes) -->
+  <rect x="0" y="110" width="40" height="190" fill="#0a0c18" opacity="0.9"/>
+  <rect x="35" y="90" width="30" height="210" fill="#080a14" opacity="0.95"/>
+  <rect x="60" y="70" width="25" height="230" fill="#0a0c18" opacity="0.9"/>
+  <rect x="80" y="100" width="20" height="200" fill="#060810" opacity="0.95"/>
+  <rect x="285" y="95" width="30" height="205" fill="#0a0c18" opacity="0.9"/>
+  <rect x="310" y="75" width="35" height="225" fill="#080a14" opacity="0.95"/>
+  <rect x="340" y="100" width="25" height="200" fill="#0a0c18" opacity="0.9"/>
+  <rect x="360" y="80" width="40" height="220" fill="#060810" opacity="0.95"/>
+
+  <!-- Building windows (lit) -->
+  <g fill="#fbbf24" opacity="0.55">
+    <rect x="38" y="96" width="4" height="4" rx="1"/>
+    <rect x="62" y="76" width="3" height="3" rx="1"/>
+    <rect x="83" y="108" width="4" height="4" rx="1"/>
+    <rect x="288" y="102" width="3" height="3" rx="1"/>
+    <rect x="312" y="82" width="4" height="4" rx="1"/>
+    <rect x="342" y="108" width="3" height="3" rx="1"/>
+    <rect x="365" y="88" width="4" height="4" rx="1"/>
+  </g>
+  <g fill="#818cf8" opacity="0.4">
+    <rect x="42" y="110" width="3" height="3" rx="1"/>
+    <rect x="68" y="92" width="3" height="3" rx="1"/>
+    <rect x="315" y="96" width="3" height="3" rx="1"/>
+    <rect x="348" y="120" width="3" height="3" rx="1"/>
+  </g>
+
+  <!-- Street (ground) -->
+  <rect x="0" y="245" width="400" height="55" fill="url(#streetGrad)"/>
+  <!-- Street reflections -->
+  <line x1="60" y1="250" x2="140" y2="250" stroke="#fbbf24" stroke-width="0.5" opacity="0.18"/>
+  <line x1="260" y1="252" x2="360" y2="252" stroke="#a855f7" stroke-width="0.5" opacity="0.14"/>
+
+  <!-- === STREET PORTRAIT (center, head-to-waist) === -->
+  <!-- Coat/jacket -->
+  <path d="M110,300 C138,252 162,238 200,238 C238,238 262,252 290,300 Z" fill="#1e293b"/>
+  <path d="M168,238 L200,258 L232,238" fill="#2d3a50" opacity="0.6"/>
+
+  <!-- Neck -->
+  <rect x="190" y="226" width="20" height="22" rx="5" fill="#e0a878"/>
+
+  <!-- Hair -->
+  <ellipse cx="200" cy="150" rx="70" ry="85" fill="#1a0f08"/>
+  <ellipse cx="134" cy="170" rx="22" ry="72" fill="#140c06"/>
+  <ellipse cx="266" cy="170" rx="22" ry="72" fill="#140c06"/>
+
+  <!-- Face -->
+  <ellipse cx="200" cy="158" rx="56" ry="66" fill="url(#skinStreet)"/>
+
+  <!-- Cheeks with ambient lamplight warm tint -->
+  <ellipse cx="158" cy="170" rx="14" ry="8" fill="#fbbf24" opacity="0.08"/>
+  <ellipse cx="242" cy="170" rx="14" ry="8" fill="#fbbf24" opacity="0.08"/>
+
+  <!-- Eyebrows -->
+  <path d="M163,143 Q174,138 184,141" fill="none" stroke="#2a1808" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M216,141 Q226,138 237,143" fill="none" stroke="#2a1808" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Left eye -->
+  <ellipse cx="174" cy="153" rx="13" ry="10" fill="white"/>
+  <circle cx="174" cy="153" r="8" fill="#4a2c14"/>
+  <circle cx="174" cy="153" r="4.5" fill="#0e0805"/>
+  <circle cx="177" cy="151" r="2" fill="white" opacity="0.9"/>
+
+  <!-- Right eye -->
+  <ellipse cx="226" cy="153" rx="13" ry="10" fill="white"/>
+  <circle cx="226" cy="153" r="8" fill="#4a2c14"/>
+  <circle cx="226" cy="153" r="4.5" fill="#0e0805"/>
+  <circle cx="229" cy="151" r="2" fill="white" opacity="0.9"/>
+
+  <!-- Nose -->
+  <path d="M193,168 L191,182 Q200,188 209,182 L207,168" fill="none" stroke="#c8906a" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Lips -->
+  <path d="M181,196 Q200,206 219,196 Q200,218 181,196 Z" fill="#c86050"/>
+  <path d="M183,196 Q200,190 217,196" fill="none" stroke="#e87868" stroke-width="1.2" opacity="0.55"/>
+
+  <!-- Street lamp post -->
+  <line x1="72" y1="60" x2="72" y2="255" stroke="#374151" stroke-width="3"/>
+  <circle cx="72" cy="62" r="6" fill="#fbbf24" filter="url(#glow)" opacity="0.9"/>
+  <line x1="72" y1="62" x2="72" y2="300" stroke="#fbbf24" stroke-width="0.5" opacity="0.15"/>
+
+  <!-- AI Enhanced badge -->
+  <rect x="10" y="272" width="100" height="20" rx="4" fill="#1a0533" opacity="0.92"/>
+  <rect x="10" y="272" width="100" height="20" rx="4" stroke="#7c3aed" stroke-width="0.5"/>
+  <text x="60" y="285" font-family="system-ui,sans-serif" font-size="9" fill="#c084fc" text-anchor="middle">✦ AI Enhanced</text>
+
+  <!-- Label -->
+  <rect x="280" y="272" width="110" height="20" rx="4" fill="#1a0533" opacity="0.92"/>
+  <rect x="280" y="272" width="110" height="20" rx="4" stroke="#4c1d95" stroke-width="0.5"/>
+  <text x="335" y="285" font-family="system-ui,sans-serif" font-size="9" fill="#9ca3af" text-anchor="middle">스트릿 포트레이트</text>
+</svg>

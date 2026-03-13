@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280" width="400" height="280">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f0c29"/>
+      <stop offset="100%" style="stop-color:#1a1060"/>
+    </linearGradient>
+    <linearGradient id="card1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e1b4b"/>
+      <stop offset="100%" style="stop-color:#312e81"/>
+    </linearGradient>
+    <linearGradient id="card2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2d0a40"/>
+      <stop offset="100%" style="stop-color:#5b1890"/>
+    </linearGradient>
+    <linearGradient id="arrowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#a855f7"/>
+    </linearGradient>
+    <radialGradient id="skinBefore" cx="45%" cy="35%" r="60%">
+      <stop offset="0%" style="stop-color:#b09080"/>
+      <stop offset="100%" style="stop-color:#806858"/>
+    </radialGradient>
+    <radialGradient id="skinAfter" cx="40%" cy="30%" r="65%">
+      <stop offset="0%" style="stop-color:#f5d0a8"/>
+      <stop offset="55%" style="stop-color:#e0a878"/>
+      <stop offset="100%" style="stop-color:#c88858"/>
+    </radialGradient>
+    <filter id="blur3">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="noise" x="0" y="0" width="3" height="3" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="0.5" fill="#fff" opacity="0.06"/>
+    </pattern>
+  </defs>
+
+  <rect width="400" height="280" rx="16" fill="url(#bg)"/>
+
+  <!-- ===== LEFT CARD: BEFORE (blurry, desaturated) ===== -->
+  <rect x="18" y="44" width="148" height="160" rx="10" fill="url(#card1)" stroke="#3730a3" stroke-width="1"/>
+
+  <!-- Portrait BEFORE -->
+  <g filter="url(#blur3)" opacity="0.80">
+    <!-- Shoulders -->
+    <path d="M18,204 C38,168 58,158 92,158 C126,158 146,168 166,204 Z" fill="#1e1b4b"/>
+    <!-- Neck -->
+    <rect x="84" y="145" width="16" height="20" rx="4" fill="url(#skinBefore)"/>
+    <!-- Hair -->
+    <ellipse cx="92" cy="112" rx="36" ry="45" fill="#100e14"/>
+    <ellipse cx="60" cy="120" rx="12" ry="36" fill="#0e0c12"/>
+    <ellipse cx="124" cy="120" rx="12" ry="36" fill="#0e0c12"/>
+    <!-- Face -->
+    <ellipse cx="92" cy="116" rx="28" ry="34" fill="url(#skinBefore)"/>
+    <!-- Eyes -->
+    <ellipse cx="82" cy="108" rx="5" ry="4" fill="white" opacity="0.55"/>
+    <circle cx="82" cy="108" r="3" fill="#2a1a10" opacity="0.8"/>
+    <ellipse cx="102" cy="108" rx="5" ry="4" fill="white" opacity="0.55"/>
+    <circle cx="102" cy="108" r="3" fill="#2a1a10" opacity="0.8"/>
+    <!-- Nose -->
+    <circle cx="88" cy="120" r="1.5" fill="#907060" opacity="0.5"/>
+    <circle cx="96" cy="120" r="1.5" fill="#907060" opacity="0.5"/>
+    <!-- Mouth -->
+    <path d="M84,132 Q92,139 100,132" fill="none" stroke="#906050" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <!-- Noise overlay -->
+  <rect x="18" y="44" width="148" height="160" rx="10" fill="#08081a" opacity="0.30"/>
+  <rect x="18" y="44" width="148" height="160" rx="10" fill="url(#noise)" opacity="0.6"/>
+  <!-- Label -->
+  <text x="92" y="220" font-family="system-ui,sans-serif" font-size="11" fill="#6366f1" text-anchor="middle">저화질 (SD)</text>
+
+  <!-- ===== ARROW ===== -->
+  <g filter="url(#glow)">
+    <line x1="178" y1="124" x2="214" y2="124" stroke="url(#arrowGrad)" stroke-width="3" stroke-linecap="round"/>
+    <polygon points="212,118 222,124 212,130" fill="#a855f7"/>
+    <text x="196" y="114" font-family="system-ui,sans-serif" font-size="16" text-anchor="middle" fill="#fbbf24">✦</text>
+    <text x="196" y="140" font-family="system-ui,sans-serif" font-size="10" text-anchor="middle" fill="#c084fc" opacity="0.85">AI</text>
+  </g>
+
+  <!-- ===== RIGHT CARD: AFTER (sharp, vivid) ===== -->
+  <rect x="234" y="44" width="148" height="160" rx="10" fill="url(#card2)" stroke="#7c3aed" stroke-width="1.5"/>
+
+  <!-- Portrait AFTER -->
+  <!-- Shoulders -->
+  <path d="M234,204 C254,168 274,156 310,156 C346,156 366,168 382,204 Z" fill="#3730a3"/>
+  <!-- Neck -->
+  <rect x="302" y="143" width="16" height="22" rx="4" fill="#e0a878"/>
+  <!-- Hair -->
+  <ellipse cx="310" cy="110" rx="36" ry="45" fill="#180d05"/>
+  <ellipse cx="278" cy="118" rx="12" ry="36" fill="#140c04"/>
+  <ellipse cx="342" cy="118" rx="12" ry="36" fill="#140c04"/>
+  <!-- Face -->
+  <ellipse cx="310" cy="114" rx="28" ry="34" fill="url(#skinAfter)"/>
+  <!-- Cheek warmth -->
+  <ellipse cx="293" cy="120" rx="7" ry="4" fill="#e87060" opacity="0.12"/>
+  <ellipse cx="327" cy="120" rx="7" ry="4" fill="#e87060" opacity="0.12"/>
+  <!-- Eyebrows -->
+  <path d="M296,105 Q302,102 308,104" fill="none" stroke="#2a1808" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M312,104 Q318,102 324,105" fill="none" stroke="#2a1808" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Left eye -->
+  <ellipse cx="300" cy="110" rx="6" ry="4.5" fill="white"/>
+  <circle cx="300" cy="110" r="3.5" fill="#4a2c14"/>
+  <circle cx="300" cy="110" r="2" fill="#0e0805"/>
+  <circle cx="302" cy="109" r="1" fill="white" opacity="0.9"/>
+  <!-- Right eye -->
+  <ellipse cx="320" cy="110" rx="6" ry="4.5" fill="white"/>
+  <circle cx="320" cy="110" r="3.5" fill="#4a2c14"/>
+  <circle cx="320" cy="110" r="2" fill="#0e0805"/>
+  <circle cx="322" cy="109" r="1" fill="white" opacity="0.9"/>
+  <!-- Nose -->
+  <path d="M306,120 Q310,125 314,120" fill="none" stroke="#c8906a" stroke-width="1" stroke-linecap="round" opacity="0.65"/>
+  <!-- Lips -->
+  <path d="M302,130 Q310,135 318,130 Q310,140 302,130 Z" fill="#c86050"/>
+  <path d="M303,130 Q310,127 317,130" fill="none" stroke="#e87868" stroke-width="1" opacity="0.6"/>
+
+  <!-- Skin analysis badge -->
+  <rect x="291" y="96" width="38" height="50" rx="3" fill="none" stroke="#a855f7" stroke-width="0.8" stroke-dasharray="3,2" opacity="0.5"/>
+  <text x="310" y="155" font-family="system-ui,sans-serif" font-size="11" fill="#c084fc" text-anchor="middle">고화질 (4K AI)</text>
+
+  <!-- Bottom title -->
+  <text x="200" y="244" font-family="system-ui,sans-serif" font-size="15" font-weight="bold" fill="white" text-anchor="middle">인물 화질 보정 · Upscale</text>
+  <text x="200" y="263" font-family="system-ui,sans-serif" font-size="11" fill="#9ca3af" text-anchor="middle">피부 선명도·색감 AI 복원, 최대 4K 업스케일</text>
+</svg>
