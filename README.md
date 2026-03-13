@@ -31,6 +31,7 @@ supabase/migrations/0003_init_public_jobs.sql
 supabase/migrations/0004_add_prompt_tracking.sql
 supabase/migrations/0005_add_user_credits.sql
 supabase/migrations/0006_add_credit_ledger.sql
+supabase/migrations/0007_add_credit_usage_ledger.sql
 ```
 
 > `0001_init_dev_schema.sql`은 dev 전용이므로 운영 배포 시 불필요합니다.

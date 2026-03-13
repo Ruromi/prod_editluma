@@ -46,6 +46,19 @@ type BillingHistoryItem = {
   created_at: string;
 };
 
+type UsageHistoryItem = {
+  id: string;
+  source_id: string;
+  credits_used: number;
+  balance_after: number;
+  description?: string | null;
+  job_id?: string | null;
+  filename?: string | null;
+  mode?: string | null;
+  prompt?: string | null;
+  created_at: string;
+};
+
 type BillingPackagesResponse = {
   packages: BillingPackage[];
   provider: string;
@@ -77,6 +90,17 @@ function formatCurrency(amount: number, currency?: string | null) {
 
 function buildLoginHref(next: string) {
   return `/auth/login?next=${encodeURIComponent(next)}`;
+}
+
+function formatUsageMode(mode?: string | null) {
+  if (mode === "generate") return "이미지 생성";
+  if (mode === "enhance") return "이미지 보정";
+  return "크레딧 사용";
+}
+
+function summarizePrompt(prompt?: string | null) {
+  if (!prompt) return null;
+  return prompt.length > 72 ? `${prompt.slice(0, 72)}…` : prompt;
 }
 
 function BillingPageSkeleton() {
@@ -115,6 +139,7 @@ export default function BillingPageClient() {
   const searchParams = useSearchParams();
   const [packages, setPackages] = useState<BillingPackage[]>([]);
   const [history, setHistory] = useState<BillingHistoryItem[]>([]);
+  const [usageHistory, setUsageHistory] = useState<UsageHistoryItem[]>([]);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [creditCost, setCreditCost] = useState(10);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -205,6 +230,23 @@ export default function BillingPageClient() {
     return true;
   }, [apiFetchWithToken, getAccessToken]);
 
+  const refreshUsageHistory = useCallback(async (accessToken?: string | null) => {
+    const token = accessToken ?? (await getAccessToken());
+    if (!token) {
+      setUsageHistory([]);
+      return false;
+    }
+
+    const response = await apiFetchWithToken("/api/billing/usage-history", token);
+    if (!response.ok) {
+      throw new Error("사용 내역을 불러오지 못했습니다.");
+    }
+
+    const payload: UsageHistoryItem[] = await response.json();
+    setUsageHistory(payload);
+    return true;
+  }, [apiFetchWithToken, getAccessToken]);
+
   const loadBillingPage = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -214,10 +256,15 @@ export default function BillingPageClient() {
       await refreshPackages();
 
       if (accessToken) {
-        await Promise.all([refreshCredits(accessToken), refreshHistory(accessToken)]);
+        await Promise.all([
+          refreshCredits(accessToken),
+          refreshHistory(accessToken),
+          refreshUsageHistory(accessToken),
+        ]);
       } else {
         setCreditBalance(null);
         setHistory([]);
+        setUsageHistory([]);
         clearStoredCreditBalance();
       }
     } catch (loadError) {
@@ -229,7 +276,7 @@ export default function BillingPageClient() {
     } finally {
       setIsLoading(false);
     }
-  }, [getAccessToken, refreshCredits, refreshHistory, refreshPackages]);
+  }, [getAccessToken, refreshCredits, refreshHistory, refreshPackages, refreshUsageHistory]);
 
   useEffect(() => {
     setCreditBalance(readStoredCreditBalance());
@@ -250,7 +297,7 @@ export default function BillingPageClient() {
     let attempts = 0;
     const intervalId = window.setInterval(() => {
       attempts += 1;
-      void Promise.all([refreshCredits(), refreshHistory()]).catch((pollError) => {
+      void Promise.all([refreshCredits(), refreshHistory(), refreshUsageHistory()]).catch((pollError) => {
         setError(
           pollError instanceof Error
             ? pollError.message
@@ -262,7 +309,7 @@ export default function BillingPageClient() {
       }
     }, 3000);
 
-    void Promise.all([refreshCredits(), refreshHistory()]).catch((pollError) => {
+    void Promise.all([refreshCredits(), refreshHistory(), refreshUsageHistory()]).catch((pollError) => {
       setError(
         pollError instanceof Error
           ? pollError.message
@@ -273,7 +320,7 @@ export default function BillingPageClient() {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [refreshCredits, refreshHistory]);
+  }, [refreshCredits, refreshHistory, refreshUsageHistory]);
 
   const handleCheckout = useCallback(
     async (packageId: string) => {
@@ -640,6 +687,73 @@ export default function BillingPageClient() {
                       <div className="text-gray-500">{formatDate(item.created_at)}</div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-[32px] border border-gray-200 bg-white/80 p-6 sm:p-8">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
+                  Usage History
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-gray-900">최근 사용 내역</h2>
+              </div>
+              <p className="text-sm text-gray-500">
+                이미지 생성과 보정으로 차감된 크레딧이 이력으로 남습니다.
+              </p>
+            </div>
+
+            {!isAuthenticated ? (
+              <div className="mt-6 rounded-3xl border border-dashed border-gray-200 px-6 py-12 text-center">
+                <p className="text-sm text-gray-500">로그인하면 최근 사용 내역을 함께 확인할 수 있습니다.</p>
+                <Link
+                  href={loginHref}
+                  className="mt-4 inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-indigo-500"
+                >
+                  로그인하기
+                </Link>
+              </div>
+            ) : usageHistory.length === 0 ? (
+              <div className="mt-6 rounded-3xl border border-dashed border-gray-200 px-6 py-12 text-center text-sm text-gray-500">
+                아직 사용 내역이 없습니다.
+              </div>
+            ) : (
+              <div className="mt-6 overflow-hidden rounded-3xl border border-gray-200">
+                <div className="grid grid-cols-[1.6fr_0.7fr_0.8fr_1fr] gap-4 border-b border-gray-200 bg-gray-50 px-5 py-3 text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">
+                  <span>Action</span>
+                  <span>Used</span>
+                  <span>Balance</span>
+                  <span>Created</span>
+                </div>
+                <div className="divide-y divide-gray-200">
+                  {usageHistory.map((item) => {
+                    const prompt = summarizePrompt(item.prompt);
+                    return (
+                      <div
+                        key={item.id}
+                        className="grid grid-cols-1 gap-3 px-5 py-4 text-sm text-gray-400 sm:grid-cols-[1.6fr_0.7fr_0.8fr_1fr]"
+                      >
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {item.description ?? formatUsageMode(item.mode)}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {item.filename ?? item.job_id ?? item.source_id}
+                          </p>
+                          {prompt && (
+                            <p className="mt-2 text-xs leading-5 text-gray-500">
+                              {prompt}
+                            </p>
+                          )}
+                        </div>
+                        <div className="font-medium text-rose-600">-{item.credits_used} credits</div>
+                        <div>{item.balance_after} credits</div>
+                        <div className="text-gray-500">{formatDate(item.created_at)}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

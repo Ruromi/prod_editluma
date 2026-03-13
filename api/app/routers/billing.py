@@ -52,6 +52,20 @@ class BillingHistoryItem(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+class UsageHistoryItem(BaseModel):
+    id: str
+    source_id: str
+    credits_used: int
+    balance_after: int
+    description: str | None = None
+    job_id: str | None = None
+    filename: str | None = None
+    mode: str | None = None
+    prompt: str | None = None
+    created_at: str
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 class BillingPackagesResponse(BaseModel):
     packages: list[BillingPackageResponse]
     provider: str = "polar"
@@ -107,6 +121,23 @@ def _map_history_row(row: dict[str, Any]) -> BillingHistoryItem:
     )
 
 
+def _map_usage_row(row: dict[str, Any]) -> UsageHistoryItem:
+    metadata = _metadata_dict(row)
+    return UsageHistoryItem(
+        id=str(row["id"]),
+        source_id=str(row["source_id"]),
+        credits_used=abs(int(row["delta"])),
+        balance_after=int(row["balance_after"]),
+        description=row.get("description"),
+        job_id=metadata.get("job_id"),
+        filename=metadata.get("filename"),
+        mode=metadata.get("mode"),
+        prompt=metadata.get("prompt"),
+        created_at=str(row["created_at"]),
+        metadata=metadata,
+    )
+
+
 @router.get("/packages", response_model=BillingPackagesResponse)
 async def list_billing_packages():
     return BillingPackagesResponse(
@@ -157,6 +188,29 @@ async def list_billing_history(user: AuthenticatedUser = Depends(get_current_use
         raise HTTPException(status_code=503, detail="결제 내역을 불러오지 못했습니다.") from exc
 
     return [_map_history_row(row) for row in (result.data or [])]
+
+
+@router.get("/usage-history", response_model=list[UsageHistoryItem])
+async def list_usage_history(user: AuthenticatedUser = Depends(get_current_user)):
+    try:
+        result = (
+            get_supabase()
+            .schema(db_schema())
+            .table("credit_ledger")
+            .select("*")
+            .eq("user_id", user.id)
+            .eq("source", "image_charge")
+            .order("created_at", desc=True)
+            .limit(30)
+            .execute()
+        )
+    except Exception as exc:
+        if _is_missing_credit_ledger_error(exc):
+            logger.warning("Usage history unavailable, returning empty list: %s", exc)
+            return []
+        raise HTTPException(status_code=503, detail="사용 내역을 불러오지 못했습니다.") from exc
+
+    return [_map_usage_row(row) for row in (result.data or [])]
 
 
 @router.post("/webhooks/polar", response_model=WebhookResponse)

@@ -47,6 +47,30 @@ def _credit_column_name(row: dict[str, Any] | None) -> str:
     return "balance"
 
 
+def _usage_description(mode: str, filename: str) -> str:
+    action = "이미지 생성" if mode == "generate" else "이미지 보정"
+    return f"{action}: {filename}"
+
+
+def _usage_metadata(
+    *,
+    job_id: str,
+    filename: str,
+    object_key: str,
+    mode: str,
+    prompt: str | None,
+    job_type: str,
+) -> dict[str, Any]:
+    return {
+        "job_id": job_id,
+        "filename": filename,
+        "object_key": object_key,
+        "mode": mode,
+        "prompt": prompt,
+        "type": job_type,
+    }
+
+
 def _select_credit_row(user_id: str) -> dict[str, Any] | None:
     result = (
         get_supabase()
@@ -148,6 +172,8 @@ def _direct_charge_and_create_job(
     else:
         raise HTTPException(status_code=409, detail="크레딧 잔액이 변경되었습니다. 다시 시도해주세요.")
 
+    job_row: dict[str, Any] | None = None
+
     try:
         job_result = (
             get_supabase()
@@ -196,8 +222,81 @@ def _direct_charge_and_create_job(
             logger.exception("Failed to restore credit balance after empty job insert result for user %s", user.id)
         raise HTTPException(status_code=503, detail="크레딧 처리 중 오류가 발생했습니다.")
 
+    job_row = job_result.data[0]
+
+    try:
+        ledger_result = (
+            get_supabase()
+            .schema(db_schema())
+            .table("credit_ledger")
+            .insert(
+                {
+                    "user_id": user.id,
+                    "source": "image_charge",
+                    "source_id": str(job_row["id"]),
+                    "delta": -credit_cost,
+                    "balance_after": next_balance,
+                    "description": _usage_description(mode, filename),
+                    "metadata": _usage_metadata(
+                        job_id=str(job_row["id"]),
+                        filename=filename,
+                        object_key=object_key,
+                        mode=mode,
+                        prompt=prompt,
+                        job_type=job_type,
+                    ),
+                }
+            )
+            .execute()
+        )
+    except Exception as exc:
+        try:
+            (
+                get_supabase()
+                .schema(db_schema())
+                .table("jobs")
+                .delete()
+                .eq("id", job_row["id"])
+                .execute()
+            )
+            (
+                get_supabase()
+                .schema(db_schema())
+                .table("user_credits")
+                .update({column: balance})
+                .eq("user_id", user.id)
+                .eq(column, next_balance)
+                .execute()
+            )
+        except Exception:
+            logger.exception("Failed to rollback job/credits after ledger insert error for user %s", user.id)
+        raise HTTPException(status_code=503, detail="크레딧 처리 중 오류가 발생했습니다.") from exc
+
+    if not ledger_result.data:
+        try:
+            (
+                get_supabase()
+                .schema(db_schema())
+                .table("jobs")
+                .delete()
+                .eq("id", job_row["id"])
+                .execute()
+            )
+            (
+                get_supabase()
+                .schema(db_schema())
+                .table("user_credits")
+                .update({column: balance})
+                .eq("user_id", user.id)
+                .eq(column, next_balance)
+                .execute()
+            )
+        except Exception:
+            logger.exception("Failed to rollback job/credits after empty ledger result for user %s", user.id)
+        raise HTTPException(status_code=503, detail="크레딧 처리 중 오류가 발생했습니다.")
+
     return {
-        **job_result.data[0],
+        **job_row,
         "remaining_credits": next_balance,
         "credit_cost": credit_cost,
     }
@@ -320,7 +419,7 @@ async def charge_and_create_job(
 ) -> dict[str, Any]:
     try:
         payload = await call_rpc(
-            "create_credit_charged_job",
+            "create_credit_charged_job_with_ledger",
             {
                 "p_user_id": user.id,
                 "p_filename": filename,
@@ -339,8 +438,8 @@ async def charge_and_create_job(
                 status_code=402,
                 detail=f"크레딧이 부족합니다. 이미지 1장당 {settings.image_request_credit_cost} 크레딧이 필요합니다.",
             ) from exc
-        if not _is_missing_rpc_function(exc, "create_credit_charged_job"):
-            logger.exception("create_credit_charged_job RPC failed for user %s", user.id)
+        if not _is_missing_rpc_function(exc, "create_credit_charged_job_with_ledger"):
+            logger.exception("create_credit_charged_job_with_ledger RPC failed for user %s", user.id)
             raise HTTPException(status_code=503, detail=_CREDIT_PROCESSING_ERROR) from exc
         logger.warning("Falling back to direct credit charge flow after RPC error: %s", exc)
         try:
