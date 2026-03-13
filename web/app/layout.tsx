@@ -8,11 +8,38 @@ import {
   LANDING_LANGUAGE_COOKIE,
   normalizeLandingLanguage,
 } from "@/lib/landing-language";
+import { defaultDescription, defaultOgImagePath, siteName, siteUrl } from "@/lib/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "EditLuma",
-  description: "AI-powered image generation and enhancement",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: `${siteName} | AI Image Generator and Photo Enhancer`,
+    template: `%s | ${siteName}`,
+  },
+  description: defaultDescription,
+  openGraph: {
+    title: `${siteName} | AI Image Generator and Photo Enhancer`,
+    description: defaultDescription,
+    url: siteUrl,
+    siteName,
+    type: "website",
+    locale: "en_US",
+    images: [
+      {
+        url: defaultOgImagePath,
+        width: 1200,
+        height: 630,
+        alt: `${siteName} Open Graph image`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${siteName} | AI Image Generator and Photo Enhancer`,
+    description: defaultDescription,
+    images: [defaultOgImagePath],
+  },
 };
 
 const isDevelopment = process.env.NEXT_PUBLIC_ENVIRONMENT === "dev";
@@ -28,7 +55,7 @@ export default async function RootLayout({
   );
 
   return (
-    <html lang={initialLanguage}>
+    <html lang="en">
       <body className="bg-white text-gray-800 min-h-screen">
         <header className="sticky top-0 z-40 border-b border-gray-200/50 bg-white/80 backdrop-blur-md px-6 h-14 flex items-center">
           {/* 좌: 로고 */}

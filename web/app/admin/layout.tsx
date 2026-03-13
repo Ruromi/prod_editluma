@@ -2,9 +2,15 @@ import type { Metadata } from "next";
 import { createSeoMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createSeoMetadata({
-  title: "Billing",
-  path: "/billing",
+  title: "Admin",
+  path: "/admin",
   noIndex: true,
 });
 
-export { default } from "../mypage/page";
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return children;
+}

@@ -1,5 +1,13 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import BillingPageClient from "@/components/BillingPageClient";
+import { createSeoMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = createSeoMetadata({
+  title: "My Page",
+  path: "/mypage",
+  noIndex: true,
+});
 
 function MyPageFallback() {
   return (

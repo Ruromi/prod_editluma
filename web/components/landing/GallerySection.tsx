@@ -19,7 +19,7 @@ export default function GallerySection({ language }: GallerySectionProps) {
         {copy.items.map((g) => (
           <div
             key={g.src}
-            className="group overflow-hidden rounded-2xl border border-gray-200 bg-gray-900/60 transition-all duration-300 hover:border-gray-300 hover:shadow-xl hover:shadow-indigo-500/5"
+            className="group overflow-hidden rounded-2xl border border-gray-200 bg-white transition-all duration-300 hover:border-gray-300 hover:shadow-xl hover:shadow-indigo-500/5"
           >
             <div className="relative aspect-square w-full overflow-hidden bg-white">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -33,10 +33,10 @@ export default function GallerySection({ language }: GallerySectionProps) {
               />
             </div>
             <div className="space-y-2 px-5 py-4">
-              <span className="inline-flex rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-medium text-gray-500">
+              <span className="inline-flex rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-500">
                 {g.label}
               </span>
-              <p className="text-sm leading-relaxed text-gray-600">{g.summary}</p>
+              <p className="text-sm leading-relaxed text-gray-700">{g.summary}</p>
             </div>
           </div>
         ))}

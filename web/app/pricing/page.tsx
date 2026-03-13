@@ -1,7 +1,17 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import BillingPageClient from "@/components/BillingPageClient";
+import { createSeoMetadata } from "@/lib/seo";
 import { createServerClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = createSeoMetadata({
+  title: "Pricing",
+  path: "/pricing",
+  description:
+    "Review EditLuma credit packages for AI image generation, enhancement, retouching, and upscaling workflows.",
+  keywords: ["AI SaaS pricing", "credit packages", "image generation pricing"],
+});
 
 function PricingFallback() {
   return (

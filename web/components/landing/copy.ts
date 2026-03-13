@@ -109,9 +109,14 @@ export const landingCopy = {
     footer: {
       description: "Credit-based AI image generation and enhancement service",
       contactLabel: "Contact",
+      contactPage: "Contact",
+      refundPolicy: "Refund Policy",
       pricing: "Pricing",
       privacy: "Privacy Policy",
       terms: "Terms of Service",
+      aiImageGenerator: "AI Image Generator",
+      aiPhotoEnhancer: "AI Photo Enhancer",
+      aiPortraitEnhancer: "AI Portrait Enhancer",
     },
   },
   ko: {
@@ -222,9 +227,14 @@ export const landingCopy = {
     footer: {
       description: "AI 이미지 생성과 보정을 위한 크레딧 기반 서비스",
       contactLabel: "문의",
+      contactPage: "문의",
+      refundPolicy: "환불 정책",
       pricing: "요금제",
       privacy: "개인정보처리방침",
       terms: "이용약관",
+      aiImageGenerator: "AI 이미지 생성기",
+      aiPhotoEnhancer: "AI 사진 보정",
+      aiPortraitEnhancer: "AI 인물 보정",
     },
   },
   fr: {
@@ -335,9 +345,14 @@ export const landingCopy = {
     footer: {
       description: "Service de génération et d’amélioration d’images par IA basé sur des crédits",
       contactLabel: "Contact",
+      contactPage: "Contact",
+      refundPolicy: "Politique de remboursement",
       pricing: "Tarifs",
       privacy: "Politique de confidentialité",
       terms: "Conditions d’utilisation",
+      aiImageGenerator: "Générateur d’images IA",
+      aiPhotoEnhancer: "Amélioration photo IA",
+      aiPortraitEnhancer: "Retouche portrait IA",
     },
   },
 } as const;
