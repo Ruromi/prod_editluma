@@ -17,6 +17,12 @@ export default function LandingFooter() {
             요금제
           </Link>
           <Link
+            href="/privacy"
+            className="transition-colors hover:text-white"
+          >
+            개인정보처리방침
+          </Link>
+          <Link
             href="/terms"
             className="transition-colors hover:text-white"
           >
