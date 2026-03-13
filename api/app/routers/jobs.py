@@ -18,6 +18,23 @@ _DB_ERROR_MSG = "데이터베이스 오류가 발생했습니다. 잠시 후 다
 _JOB_START_ERROR = "AI 작업을 시작하지 못했습니다. 잠시 후 다시 시도해주세요."
 
 
+def _normalize_prompt(prompt: str | None) -> str | None:
+    if prompt is None:
+        return None
+
+    normalized = prompt.strip()
+    if not normalized:
+        return None
+
+    if len(normalized) > settings.max_prompt_length_chars:
+        raise HTTPException(
+            status_code=400,
+            detail=f"프롬프트는 최대 {settings.max_prompt_length_chars}자까지 입력할 수 있습니다.",
+        )
+
+    return normalized
+
+
 class CreateJobRequest(BaseModel):
     object_key: str
     filename: str
@@ -89,13 +106,14 @@ async def create_job(
     _ensure_image_filename(body.filename)
     _ensure_owned_upload_key(body.object_key, user.id)
     _validate_uploaded_object(body.object_key)
+    prompt = _normalize_prompt(body.prompt)
     try:
         payload = await charge_and_create_job(
             user=user,
             filename=body.filename,
             object_key=body.object_key,
             mode="enhance",
-            prompt=body.prompt,
+            prompt=prompt,
         )
     except HTTPException:
         raise

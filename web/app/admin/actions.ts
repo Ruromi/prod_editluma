@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createAdminClient, createServerClient, dbSchema } from "@/lib/supabase/server";
 import { hasAdminAccess } from "@/lib/admin";
+import { isTrustedMutationRequest } from "@/lib/request-security";
 
 const REFUND_REASONS = new Set([
   "duplicate",
@@ -36,6 +37,10 @@ function adminRedirect(params: { message?: string; error?: string }): never {
 
 async function requireAdminAccess() {
   const headerList = await headers();
+  if (!isTrustedMutationRequest(headerList)) {
+    redirect("/dashboard");
+  }
+
   const supabase = await createServerClient();
   const {
     data: { user },
@@ -321,7 +326,7 @@ export async function adjustCredits(formData: FormData) {
   const { user, adminDb } = await requireAdminAccess();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const delta = Number(formData.get("delta") ?? 0);
-  const description = String(formData.get("description") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim().slice(0, 200);
 
   if (!email) {
     adminRedirect({ error: "대상 이메일을 입력하세요." });
@@ -372,7 +377,7 @@ export async function refundPayment(formData: FormData) {
   const { user, adminDb } = await requireAdminAccess();
   const ledgerId = String(formData.get("ledger_id") ?? "").trim();
   const reason = String(formData.get("reason") ?? "customer_request").trim();
-  const comment = String(formData.get("comment") ?? "").trim();
+  const comment = String(formData.get("comment") ?? "").trim().slice(0, 500);
 
   if (!ledgerId) {
     adminRedirect({ error: "환불할 결제 정보를 찾지 못했습니다." });

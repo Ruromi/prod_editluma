@@ -8,6 +8,17 @@ const DEFAULT_ADMIN_EMAILS = ["oasis_0421@naver.com"];
 function normalizeIp(ip: string) {
   const trimmed = ip.trim();
   if (!trimmed) return "";
+  if (trimmed.startsWith("[") && trimmed.includes("]")) {
+    const closingIndex = trimmed.indexOf("]");
+    const inner = trimmed.slice(1, closingIndex);
+    return normalizeIp(inner);
+  }
+  if (trimmed.includes(".") && trimmed.includes(":")) {
+    const maybeHost = trimmed.split(":")[0];
+    if (maybeHost) {
+      return normalizeIp(maybeHost);
+    }
+  }
   if (trimmed.startsWith("::ffff:")) {
     return trimmed.slice("::ffff:".length);
   }
@@ -44,15 +55,15 @@ export function getAllowedAdminEmails() {
 }
 
 export function getRequestIp(headersLike: HeadersLike) {
+  const realIp = headersLike.get("x-real-ip");
+  if (realIp) {
+    return normalizeIp(realIp);
+  }
+
   const forwardedFor = headersLike.get("x-forwarded-for");
   if (forwardedFor) {
     const first = forwardedFor.split(",")[0];
     return normalizeIp(first);
-  }
-
-  const realIp = headersLike.get("x-real-ip");
-  if (realIp) {
-    return normalizeIp(realIp);
   }
 
   return "";

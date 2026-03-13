@@ -20,6 +20,23 @@ _ALLOWED_UPLOAD_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif", "
 _AI_PROCESSING_ERROR = "AI 작업을 처리하지 못했습니다. 잠시 후 다시 시도해주세요."
 
 
+def _normalize_prompt(prompt: str | None) -> str | None:
+    if prompt is None:
+        return None
+
+    normalized = prompt.strip()
+    if not normalized:
+        return None
+
+    if len(normalized) > settings.max_prompt_length_chars:
+        raise HTTPException(
+            status_code=400,
+            detail=f"프롬프트는 최대 {settings.max_prompt_length_chars}자까지 입력할 수 있습니다.",
+        )
+
+    return normalized
+
+
 class EnhanceRequest(BaseModel):
     object_key: str
     prompt: Optional[str] = None
@@ -96,13 +113,14 @@ async def enhance_image(
 ):
     filename = _ensure_image_object_key(body.object_key, user.id)
     _validate_uploaded_object(body.object_key)
+    prompt = _normalize_prompt(body.prompt)
     try:
         payload = await charge_and_create_job(
             user=user,
             filename=filename,
             object_key=body.object_key,
             mode="enhance",
-            prompt=body.prompt,
+            prompt=prompt,
         )
         update = await asyncio.to_thread(process_job_sync, payload["id"])
         return _build_response(payload, update)
@@ -118,13 +136,17 @@ async def generate_image(
     body: GenerateRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
+    prompt = _normalize_prompt(body.prompt)
+    if not prompt:
+        raise HTTPException(status_code=400, detail="프롬프트를 입력해주세요.")
+
     try:
         payload = await charge_and_create_job(
             user=user,
             filename=f"generated_{uuid.uuid4().hex[:8]}.png",
             object_key="",
             mode="generate",
-            prompt=body.prompt,
+            prompt=prompt,
         )
         update = await asyncio.to_thread(process_job_sync, payload["id"])
         return _build_response(payload, update)

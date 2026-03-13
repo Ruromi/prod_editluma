@@ -29,6 +29,22 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'",
+          },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          {
+            key: "X-DNS-Prefetch-Control",
+            value: "off",
+          },
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin",
+          },
         ],
       },
     ];

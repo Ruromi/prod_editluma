@@ -4,10 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createAdminClient, createServerClient, dbSchema } from "@/lib/supabase/server";
 import { headers } from "next/headers";
-import { siteUrl } from "@/lib/site";
 import { ACCOUNT_DELETED_ERROR_MESSAGE } from "@/lib/account-status";
 import { isSoftDeletedAccount, isSoftDeletedEmail } from "@/lib/account-status.server";
 import { provisionSignupCreditsForUser } from "@/lib/signup-credits.server";
+import { isTrustedMutationRequest, resolveTrustedRequestOrigin } from "@/lib/request-security";
 
 const PASSWORD_POLICY_MESSAGE =
   "비밀번호는 8자 이상이어야 합니다.";
@@ -27,52 +27,16 @@ function resolveNextPath(rawNext: FormDataEntryValue | null, fallback: string) {
   return rawNext;
 }
 
-function isAllowedAppOrigin(candidate: string) {
-  try {
-    const parsed = new URL(candidate);
-    const normalized = parsed.origin;
-    const allowedOrigins = new Set<string>([siteUrl]);
-
-    if (process.env.NODE_ENV !== "production") {
-      allowedOrigins.add("http://localhost:3001");
-      allowedOrigins.add("http://127.0.0.1:3001");
-    }
-
-    return allowedOrigins.has(normalized);
-  } catch {
-    return false;
-  }
-}
-
-function resolveRequestOrigin(headersList: Awaited<ReturnType<typeof headers>>) {
-  const origin = headersList.get("origin");
-  if (origin && isAllowedAppOrigin(origin)) {
-    return origin;
-  }
-
-  const host = headersList.get("x-forwarded-host") ?? headersList.get("host");
-  if (host) {
-    const proto =
-      headersList.get("x-forwarded-proto") ??
-      (host.includes("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
-    const candidate = `${proto}://${host}`;
-    if (isAllowedAppOrigin(candidate)) {
-      return candidate;
-    }
-  }
-
-  if (process.env.NODE_ENV !== "production") {
-    return "http://localhost:3001";
-  }
-
-  return siteUrl;
-}
-
 function isValidSignupPassword(password: string) {
   return password.length >= 8;
 }
 
 export async function login(formData: FormData) {
+  const headersList = await headers();
+  if (!isTrustedMutationRequest(headersList)) {
+    redirect(`/auth/login?error=${encodeURIComponent("잘못된 요청입니다.")}`);
+  }
+
   const supabase = await createServerClient();
   const next = resolveNextPath(formData.get("next"), "/dashboard");
 
@@ -101,6 +65,11 @@ export async function login(formData: FormData) {
 }
 
 export async function signup(formData: FormData) {
+  const headersList = await headers();
+  if (!isTrustedMutationRequest(headersList)) {
+    redirect(`/auth/signup?error=${encodeURIComponent("잘못된 요청입니다.")}`);
+  }
+
   const supabase = await createServerClient();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
@@ -118,8 +87,7 @@ export async function signup(formData: FormData) {
     redirect(`/auth/signup?error=${encodeURIComponent(ACCOUNT_DELETED_ERROR_MESSAGE)}`);
   }
 
-  const headersList = await headers();
-  const origin = resolveRequestOrigin(headersList);
+  const origin = resolveTrustedRequestOrigin(headersList);
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -140,9 +108,13 @@ export async function signup(formData: FormData) {
 }
 
 export async function loginWithGoogle(formData: FormData) {
-  const supabase = await createServerClient();
   const headersList = await headers();
-  const origin = resolveRequestOrigin(headersList);
+  if (!isTrustedMutationRequest(headersList)) {
+    redirect(`/auth/login?error=${encodeURIComponent("잘못된 요청입니다.")}`);
+  }
+
+  const supabase = await createServerClient();
+  const origin = resolveTrustedRequestOrigin(headersList);
   const next = resolveNextPath(formData.get("next"), "/dashboard");
 
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -160,10 +132,14 @@ export async function loginWithGoogle(formData: FormData) {
 }
 
 export async function requestPasswordReset(formData: FormData) {
+  const headersList = await headers();
+  if (!isTrustedMutationRequest(headersList)) {
+    redirect(`/auth/forgot-password?error=${encodeURIComponent("잘못된 요청입니다.")}`);
+  }
+
   const supabase = await createServerClient();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const headersList = await headers();
-  const origin = resolveRequestOrigin(headersList);
+  const origin = resolveTrustedRequestOrigin(headersList);
 
   if (!email) {
     redirect(`/auth/forgot-password?error=${encodeURIComponent("이메일을 입력해주세요.")}`);
@@ -181,6 +157,11 @@ export async function requestPasswordReset(formData: FormData) {
 }
 
 export async function updatePassword(formData: FormData) {
+  const headersList = await headers();
+  if (!isTrustedMutationRequest(headersList)) {
+    redirect(`/auth/reset-password?error=${encodeURIComponent("잘못된 요청입니다.")}`);
+  }
+
   const supabase = await createServerClient();
   const password = String(formData.get("password") ?? "");
   const confirmPassword = String(formData.get("confirm_password") ?? "");
@@ -218,6 +199,11 @@ export async function updatePassword(formData: FormData) {
 }
 
 export async function logout() {
+  const headersList = await headers();
+  if (!isTrustedMutationRequest(headersList)) {
+    redirect(`/auth/login?error=${encodeURIComponent("잘못된 요청입니다.")}`);
+  }
+
   const supabase = await createServerClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
@@ -225,6 +211,11 @@ export async function logout() {
 }
 
 export async function deleteAccount(formData: FormData) {
+  const headersList = await headers();
+  if (!isTrustedMutationRequest(headersList)) {
+    redirect(`/mypage?error=${encodeURIComponent("잘못된 요청입니다.")}`);
+  }
+
   const supabase = await createServerClient();
   const {
     data: { user },
