@@ -1,7 +1,10 @@
-"use client";
 import Link from "next/link";
 
-export default function HeroSection() {
+type HeroSectionProps = {
+  isAuthenticated: boolean;
+};
+
+export default function HeroSection({ isAuthenticated }: HeroSectionProps) {
   return (
     <section className="pt-20 pb-16 sm:pt-28 sm:pb-24">
       <div className="mx-auto max-w-4xl px-6 text-center">
@@ -22,10 +25,10 @@ export default function HeroSection() {
         {/* CTA */}
         <div className="mt-10 flex items-center justify-center gap-6">
           <Link
-            href="/dashboard"
+            href={isAuthenticated ? "/dashboard?tab=generate" : "/dashboard"}
             className="rounded-lg bg-indigo-600 px-8 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-indigo-500"
           >
-            무료로 시작하기
+            {isAuthenticated ? "생성하기" : "무료로 시작하기"}
           </Link>
           <a
             href="#features"
