@@ -1,6 +1,5 @@
 "use client";
 
-import CTASection from "@/components/landing/CTASection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import GallerySection from "@/components/landing/GallerySection";
 import HeroSection from "@/components/landing/HeroSection";
@@ -62,7 +61,6 @@ export default function LandingPageContent({
         <HeroSection isAuthenticated={isAuthenticated} language={language} />
         <FeaturesSection language={language} />
         <GallerySection language={language} />
-        <CTASection isAuthenticated={isAuthenticated} language={language} />
       </div>
       <LandingFooter language={language} />
     </>

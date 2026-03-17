@@ -51,13 +51,6 @@ type LandingCopy = {
     resultUseLabel: string;
     items: LandingExample[];
   };
-  cta: {
-    eyebrow: string;
-    heading: string;
-    body: string;
-    primaryCtaSignedOut: string;
-    primaryCtaSignedIn: string;
-  };
   footer: {
     description: string;
     contactLabel: string;
@@ -215,13 +208,6 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
         },
       ],
     },
-    cta: {
-      eyebrow: "Ready To Test",
-      heading: "Try one portrait before you buy more credits",
-      body: "The goal of the funnel is simple: get to one usable result quickly, then decide whether quality and pricing justify the next step.",
-      primaryCtaSignedOut: "Create a free account",
-      primaryCtaSignedIn: "Go to dashboard",
-    },
     footer: {
       description: "Portrait-focused AI image cleanup and supporting generation workflow",
       contactLabel: "Contact",
@@ -377,13 +363,6 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
         },
       ],
     },
-    cta: {
-      eyebrow: "직접 확인해보세요",
-      heading: "크레딧을 더 사기 전에 인물 사진 한 장부터 테스트하세요",
-      body: "퍼널 목표는 복잡하지 않습니다. 먼저 결과 하나가 쓸 만한지 확인하고, 그 다음에 품질과 가격이 맞는지 판단하게 만드는 것입니다.",
-      primaryCtaSignedOut: "무료 계정 만들기",
-      primaryCtaSignedIn: "대시보드로 가기",
-    },
     footer: {
       description: "인물 보정 중심의 AI 이미지 정리와 보조 생성 워크플로우",
       contactLabel: "문의",
@@ -538,13 +517,6 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           resultUse: "Moodboards, visuels complémentaires et variations conceptuelles autour d’une offre plus claire.",
         },
       ],
-    },
-    cta: {
-      eyebrow: "Prêt à tester",
-      heading: "Testez un portrait avant d’acheter plus de crédits",
-      body: "Le but du funnel est simple: obtenir vite un résultat utilisable, puis décider si qualité et prix justifient l’étape suivante.",
-      primaryCtaSignedOut: "Créer un compte gratuit",
-      primaryCtaSignedIn: "Aller au tableau de bord",
     },
     footer: {
       description: "Workflow IA orienté portrait avec génération d’appoint",
