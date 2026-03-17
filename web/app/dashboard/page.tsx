@@ -1400,23 +1400,15 @@ function DashboardPageContent() {
                         previewRevealed ? "" : "scale-[1.01]"
                       }`}
                     />
-                    {!previewRevealed && (
-                      <>
-                        <div className="absolute inset-x-0 top-0 flex items-center justify-between px-4 py-4">
-                          <span className="rounded-full border border-white/20 bg-black/45 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-white">
-                            {language === "ko" ? "프리뷰" : "Preview"}
-                          </span>
-                          <span className="rounded-full border border-white/20 bg-black/45 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-white">
-                            {language === "ko" ? "워터마크 적용" : "Watermarked"}
-                          </span>
-                        </div>
-                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                          <span className="rotate-[-18deg] select-none text-3xl font-semibold uppercase tracking-[0.38em] text-white/18 sm:text-5xl">
-                            EditLuma Preview
-                          </span>
-                        </div>
-                        <div className="absolute inset-x-0 bottom-0 h-[42%] bg-black/28 backdrop-blur-xl" />
-                        <div className="absolute inset-x-0 bottom-0 p-4">
+	                    {!previewRevealed && (
+	                      <>
+	                        <div className="absolute inset-x-0 top-0 flex items-center px-4 py-4">
+	                          <span className="rounded-full border border-white/20 bg-black/45 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-white">
+	                            {language === "ko" ? "프리뷰" : "Preview"}
+	                          </span>
+	                        </div>
+	                        <div className="absolute inset-x-0 bottom-0 h-[42%] bg-black/28 backdrop-blur-xl" />
+	                        <div className="absolute inset-x-0 bottom-0 p-4">
                           <div className="rounded-2xl border border-white/10 bg-black/45 p-4 text-white shadow-2xl backdrop-blur">
                             <p className="text-sm font-semibold">
                               {language === "ko"
