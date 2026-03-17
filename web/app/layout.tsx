@@ -12,7 +12,7 @@ import {
 import { defaultDescription, defaultOgImagePath, siteName, siteUrl } from "@/lib/site";
 import "./globals.css";
 
-const GA_MEASUREMENT_ID = "G-23F121V79N";
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -60,19 +60,23 @@ export default async function RootLayout({
   return (
     <html lang={initialLanguage}>
       <body className="bg-white text-gray-800 min-h-screen">
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){window.dataLayer.push(arguments);}
-            window.gtag = window.gtag || gtag;
-            gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}');
-          `}
-        </Script>
+        {GA_MEASUREMENT_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){window.dataLayer.push(arguments);}
+                window.gtag = window.gtag || gtag;
+                gtag('js', new Date());
+                gtag('config', '${GA_MEASUREMENT_ID}');
+              `}
+            </Script>
+          </>
+        )}
         <header className="sticky top-0 z-40 border-b border-gray-200/50 bg-white/80 backdrop-blur-md px-6 h-14 flex items-center">
           {/* 좌: 로고 */}
           <div className="flex items-center gap-2 w-40">
