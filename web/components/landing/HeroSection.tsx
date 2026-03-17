@@ -95,14 +95,17 @@ export default function HeroSection({ isAuthenticated, language }: HeroSectionPr
                 alt={copy.titleLine1}
                 className="aspect-[4/3] w-full object-cover"
               />
-              <div className="absolute left-4 top-4 rounded-full bg-white/92 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-700 shadow-sm">
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
+              <div className="absolute left-4 top-4 rounded-full border border-white/30 bg-white/96 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-gray-900 shadow-lg">
                 {copy.imageBeforeLabel}
               </div>
-              <div className="absolute right-4 top-4 rounded-full bg-gray-950/92 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-sm">
+              <div className="absolute right-4 top-4 rounded-full border border-white/15 bg-gray-950/96 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-white shadow-lg">
                 {copy.imageAfterLabel}
               </div>
-              <div className="absolute inset-x-4 bottom-4 rounded-2xl border border-white/70 bg-white/88 px-4 py-4 backdrop-blur">
-                <p className="text-sm font-medium leading-relaxed text-gray-700">{copy.imageCaption}</p>
+              <div className="absolute inset-x-4 bottom-4 rounded-2xl border border-white/10 bg-gray-950/82 px-4 py-4 shadow-xl backdrop-blur-md">
+                <p className="text-sm font-semibold leading-relaxed text-white sm:text-[15px]">
+                  {copy.imageCaption}
+                </p>
               </div>
             </div>
           </div>
