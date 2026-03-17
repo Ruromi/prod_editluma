@@ -91,7 +91,7 @@ export default function HeroSection({ isAuthenticated, language }: HeroSectionPr
             <div className="relative overflow-hidden rounded-[1.5rem] bg-[#f4f4f1]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/landing/feature-enhance-portrait.png"
+                src="/landing/hero-profile-before-after.png"
                 alt={copy.titleLine1}
                 className="aspect-[4/3] w-full object-cover"
               />

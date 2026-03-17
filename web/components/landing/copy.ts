@@ -152,9 +152,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
       koreanPromptResultMeta: "Korean / English / French supported",
       items: [
         {
-          img: "/landing/feature-enhance-portrait.png",
-          title: "Before / after profile upgrades",
-          desc: "Show a weak casual photo next to the upgraded result so visitors judge the outcome, not the feature list.",
+          img: "/landing/ai_landing_3.png",
+          title: "Clean public-facing polish",
+          desc: "Show the kind of profile photo result that already looks credible enough for LinkedIn, team pages, and founder bios.",
         },
         {
           img: "/landing/features/selfie-retouch.png",
@@ -370,9 +370,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
       koreanPromptResultMeta: "한국어 / 영어 / 프랑스어 지원",
       items: [
         {
-          img: "/landing/feature-enhance-portrait.png",
-          title: "비포 애프터 중심 결과 확인",
-          desc: "기능 설명보다 결과 차이가 먼저 보이도록 프로필 사진 전후를 바로 보여줍니다.",
+          img: "/landing/ai_landing_3.png",
+          title: "공개용 프로필에 맞는 정돈감",
+          desc: "링크드인, 팀 페이지, 창업자 소개에 바로 붙여도 어색하지 않은 결과 느낌을 먼저 보여줍니다.",
         },
         {
           img: "/landing/features/selfie-retouch.png",
@@ -588,9 +588,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
       koreanPromptResultMeta: "Coreen / anglais / francais",
       items: [
         {
-          img: "/landing/feature-enhance-portrait.png",
-          title: "Resultats avant / apres",
-          desc: "Montrez la difference entre la photo source et le rendu final pour vendre le resultat, pas la liste des fonctions.",
+          img: "/landing/ai_landing_3.png",
+          title: "Finition publique plus credible",
+          desc: "Montrez un resultat de photo de profil qui semble deja assez propre pour LinkedIn, pages equipe et bios publiques.",
         },
         {
           img: "/landing/features/selfie-retouch.png",

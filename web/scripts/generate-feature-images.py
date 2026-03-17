@@ -22,6 +22,16 @@ OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "public")
 
 PROMPTS = [
     {
+        "relative_path": "landing/hero-profile-before-after.png",
+        "prompt": (
+            "Split-screen before-and-after comparison for a professional profile photo upgrade. "
+            "Same male founder in the same framing and pose. "
+            "Left side: casual upload with weaker light, softer facial detail, flatter contrast, and a less polished public-facing feel. "
+            "Right side: cleaner LinkedIn-ready headshot with balanced light, natural skin texture, sharper facial detail, refined contrast, and credible business profile quality. "
+            "Premium editorial headshot photography, neutral indoor background, photorealistic, no text, no watermark."
+        ),
+    },
+    {
         "relative_path": "landing/feature-enhance-portrait.png",
         "prompt": (
             "Split-screen before-and-after comparison of creator portrait cleanup. "
