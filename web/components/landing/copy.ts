@@ -1,11 +1,5 @@
 export type LandingLanguage = "en" | "ko" | "fr";
 
-type LandingMetric = {
-  label: string;
-  value: string;
-  detail: string;
-};
-
 type LandingFeature = {
   img: string;
   title: string;
@@ -44,14 +38,6 @@ type LandingCopy = {
     primaryCtaSignedIn: string;
     secondaryCta: string;
     proofPoints: string[];
-  };
-  trust: {
-    eyebrow: string;
-    heading: string;
-    subheading: string;
-    metrics: LandingMetric[];
-    limitationTitle: string;
-    limitationBody: string;
   };
   features: {
     heading: string;
@@ -110,32 +96,6 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
       primaryCtaSignedIn: "Open dashboard",
       secondaryCta: "See proof",
       proofPoints: ["Creator profile photos", "Selfie cleanup", "Prompt-guided variations"],
-    },
-    trust: {
-      eyebrow: "Trust Before Traffic",
-      heading: "Show the workflow people need to trust before they buy",
-      subheading:
-        "The landing page now leads with a narrower promise, six review-ready examples, and one visible miss instead of trying to sell every image workflow at once.",
-      metrics: [
-        {
-          label: "Review set",
-          value: "6 example cards",
-          detail: "The homepage now anchors itself with six concrete portrait and support-use examples instead of generic AI claims.",
-        },
-        {
-          label: "What is visible",
-          value: "Source + prompt + turnaround",
-          detail: "Each card now exposes the original condition, prompt direction, rough turnaround, and intended result use before checkout.",
-        },
-        {
-          label: "Risk handling",
-          value: "1 miss shown openly",
-          detail: "A known weak-input case is called out on purpose so the promise stays narrower and more believable.",
-        },
-      ],
-      limitationTitle: "Where we still say no",
-      limitationBody:
-        "Heavy motion blur, hidden faces, or badly compressed uploads can still need retries or manual touch-up. Pricing now also reflects the actual refund policy: 7 days, unused paid credits only, and no typical partial refunds.",
     },
     features: {
       heading: "What The Product Is Optimized For",
@@ -301,32 +261,6 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
       secondaryCta: "결과 보기",
       proofPoints: ["프로필 사진 보정", "셀피 정리", "프롬프트 기반 변형"],
     },
-    trust: {
-      eyebrow: "광고 전에 신뢰부터",
-      heading: "사람들이 결제 전에 확인해야 하는 정보를 먼저 보여줍니다",
-      subheading:
-        "첫 화면에서 기능을 전부 나열하는 대신, 인물 보정 중심 메시지와 6개의 검토용 사례 카드, 그리고 실패 사례 1개까지 같이 노출하는 구조로 바꿉니다.",
-      metrics: [
-        {
-          label: "검토 자산",
-          value: "사례 카드 6개",
-          detail: "홈에서 범용 AI 주장 대신 실제 인물 보정과 보조 비주얼 흐름을 바로 확인할 수 있게 정리했습니다.",
-        },
-        {
-          label: "카드 정보",
-          value: "원본 상태 + 프롬프트 + 처리 감각",
-          detail: "각 카드에서 원본 상태, 프롬프트 방향, 대략적인 처리 감각, 결과 용도를 결제 전에 먼저 판단할 수 있습니다.",
-        },
-        {
-          label: "리스크 공개",
-          value: "실패 사례 1개 공개",
-          detail: "잘 안 맞는 입력 예시를 의도적으로 같이 보여줘 과한 약속 대신 믿을 수 있는 범위를 먼저 제시합니다.",
-        },
-      ],
-      limitationTitle: "이럴 때는 재시도나 수작업이 필요합니다",
-      limitationBody:
-        "얼굴 가림이 심하거나, 움직임 블러가 크거나, 압축 손상이 심한 이미지는 한 번에 깔끔하게 나오지 않을 수 있습니다. 가격 페이지 문구도 운영 기준에 맞춰 7일 이내, 미사용 유료 크레딧만 전액 환불, 부분 환불은 원칙적으로 미지원으로 다시 맞춥니다.",
-    },
     features: {
       heading: "지금 제품이 가장 잘 맞는 흐름",
       subheading: "업로드하고, 방향을 짧게 적고, 결과를 확인하고, 쓸 만한지 빠르게 판단하는 흐름에 맞춰져 있습니다.",
@@ -489,32 +423,6 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
       primaryCtaSignedIn: "Ouvrir le tableau de bord",
       secondaryCta: "Voir les preuves",
       proofPoints: ["Photos de profil", "Nettoyage selfie", "Variations guidées par prompt"],
-    },
-    trust: {
-      eyebrow: "La confiance avant le trafic",
-      heading: "Montrez d’abord ce qu’un utilisateur doit croire avant d’acheter",
-      subheading:
-        "La page d’accueil porte désormais une promesse plus étroite, six exemples concrets et un cas d’échec visible au lieu d’essayer de vendre tous les usages IA en même temps.",
-      metrics: [
-        {
-          label: "Base de preuve",
-          value: "6 cartes d’exemple",
-          detail: "La page montre maintenant six cas concrets orientés portrait au lieu de promesses génériques.",
-        },
-        {
-          label: "Ce qui est visible",
-          value: "Source + prompt + rythme",
-          detail: "Chaque carte montre l’état initial, la direction du prompt, le rythme attendu et l’usage final visé.",
-        },
-        {
-          label: "Risque assumé",
-          value: "1 échec montré",
-          detail: "Un cas d’entrée faible est affiché volontairement pour garder une promesse plus crédible.",
-        },
-      ],
-      limitationTitle: "Quand nous préférons être clairs",
-      limitationBody:
-        "Un flou de mouvement fort, des visages cachés ou une compression trop agressive peuvent encore demander des essais ou une retouche manuelle. La page tarifaire rappelle aussi la vraie règle de remboursement: 7 jours, crédits payants non utilisés uniquement, pas de remboursement partiel habituel.",
     },
     features: {
       heading: "Le flux auquel le produit correspond le mieux",

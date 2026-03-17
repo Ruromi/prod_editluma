@@ -27,11 +27,6 @@ function resolveNextPath(rawNext: FormDataEntryValue | null, fallback: string) {
   return rawNext;
 }
 
-function appendTrackingParams(path: string, entries: Record<string, string>) {
-  const separator = path.includes("?") ? "&" : "?";
-  return `${path}${separator}${new URLSearchParams(entries).toString()}`;
-}
-
 function isValidSignupPassword(password: string) {
   return password.length >= 8;
 }
@@ -98,10 +93,7 @@ export async function signup(formData: FormData) {
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}${appendTrackingParams(next, {
-        signup: "success",
-        provider: "email",
-      })}`,
+      emailRedirectTo: `${origin}${next}`,
     },
   });
 

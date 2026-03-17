@@ -14,7 +14,6 @@ export default function SignupForm({
   nextPath = "/dashboard?tab=generate",
 }: SignupFormProps) {
   const language = initialLanguage;
-  const signupRedirectPath = `${nextPath}${nextPath.includes("?") ? "&" : "?"}signup=success&provider=google`;
   const passwordPolicyTitle =
     language === "ko"
       ? "비밀번호는 8자 이상이어야 합니다."
@@ -125,11 +124,7 @@ export default function SignupForm({
       </div>
 
       <form action={loginWithGoogle}>
-        <input
-          type="hidden"
-          name="next"
-          value={signupRedirectPath}
-        />
+        <input type="hidden" name="next" value={nextPath} />
         <button
           type="submit"
           className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 font-medium text-gray-800 hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { landingCopy, type LandingLanguage } from "@/components/landing/copy";
-import { trackEvent } from "@/lib/analytics";
 
 type CTASectionProps = {
   isAuthenticated: boolean;
@@ -41,18 +40,6 @@ export default function CTASection({ isAuthenticated, language }: CTASectionProp
           <div className="flex shrink-0 items-center">
             <Link
               href={primaryHref}
-              onClick={() => {
-                if (isAuthenticated) {
-                  return;
-                }
-
-                trackEvent("click_start_free", {
-                  cta_location: "bottom_cta",
-                  authenticated: isAuthenticated,
-                  landing_focus: "creator_portrait_cleanup",
-                  language,
-                });
-              }}
               className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20"
             >
               {isAuthenticated ? copy.primaryCtaSignedIn : copy.primaryCtaSignedOut}

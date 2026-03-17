@@ -9,7 +9,6 @@ import {
   clearStoredCreditBalance,
   readStoredCreditBalance,
 } from "@/lib/credits";
-import { trackEvent, trackEventOnce } from "@/lib/analytics";
 import { createClient } from "@/lib/supabase/client";
 import { deleteAccount } from "@/app/auth/actions";
 
@@ -393,7 +392,6 @@ export default function BillingPageClient({
   const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
   const checkoutPackageId = searchParams.get("checkoutPackage");
   const checkoutStatus = searchParams.get("checkout");
-  const checkoutId = searchParams.get("checkout_id") ?? undefined;
   const pricingSource = searchParams.get("source") ?? "direct";
   const pricingIntent = searchParams.get("intent") === "enhance" ? "enhance" : "generate";
   const navigationBasePath = pathname.startsWith("/pricing") ? "/pricing" : "/mypage";
@@ -415,7 +413,6 @@ export default function BillingPageClient({
   const paymentVerificationErrorMessage = isKo
     ? "결제 반영 상태를 확인하지 못했습니다."
     : "Could not verify the payment status.";
-  const hasTrackedPricingVisitRef = useRef(false);
 
   const getAccessToken = useCallback(async () => {
     const { data } = await supabase.auth.getSession();
@@ -577,19 +574,6 @@ export default function BillingPageClient({
   }, [loadBillingPage]);
 
   useEffect(() => {
-    if (!isPricingView || isLoading || isAuthenticated === null || hasTrackedPricingVisitRef.current) {
-      return;
-    }
-
-    hasTrackedPricingVisitRef.current = true;
-    trackEvent("visit_pricing", {
-      source: pricingSource,
-      authenticated: isAuthenticated,
-      language: initialLanguage,
-    });
-  }, [initialLanguage, isAuthenticated, isLoading, isPricingView, pricingSource]);
-
-  useEffect(() => {
     if (typeof window === "undefined") return;
 
     const params = new URLSearchParams(window.location.search);
@@ -630,19 +614,6 @@ export default function BillingPageClient({
       window.clearInterval(intervalId);
     };
   }, [isPricingView, paymentVerificationErrorMessage, paymentVerificationMessage, refreshCredits, refreshMyPageSnapshot]);
-
-  useEffect(() => {
-    if (checkoutStatus !== "success") {
-      return;
-    }
-
-    const dedupeKey = checkoutId ? `purchase_credit:${checkoutId}` : "purchase_credit:success";
-    trackEventOnce("purchase_credit", dedupeKey, {
-      checkout_id: checkoutId,
-      source: pricingSource,
-      language: initialLanguage,
-    });
-  }, [checkoutId, checkoutStatus, initialLanguage, pricingSource]);
 
   const handleCheckout = useCallback(
     async (packageId: string) => {

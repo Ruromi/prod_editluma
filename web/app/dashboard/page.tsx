@@ -3,7 +3,6 @@
 import { Suspense, useState, useRef, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { broadcastCreditBalance } from "@/lib/credits";
-import { identifyUser, trackEventOnce } from "@/lib/analytics";
 import { useAppLanguage } from "@/lib/use-app-language";
 import { createClient } from "@/lib/supabase/client";
 import type { HeaderLanguage } from "@/lib/landing-language";
@@ -906,8 +905,6 @@ function DashboardPageContent() {
   const [uploading, setUploading] = useState(false);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const initialDoneJobCountRef = useRef<number | null>(null);
-  const hasTrackedFirstImageDoneRef = useRef(false);
   const handledResumeRef = useRef<string | null>(null);
 
   // 로컬 개발: NEXT_PUBLIC_API_URL을 비워두면 상대 경로(/api/*)를 사용하며
@@ -956,38 +953,6 @@ function DashboardPageContent() {
   }, [supabase]);
 
   useEffect(() => {
-    if (!userId) {
-      return;
-    }
-
-    identifyUser(userId);
-  }, [userId]);
-
-  useEffect(() => {
-    if (!userId) {
-      return;
-    }
-
-    const signupStatus = searchParams.get("signup");
-    if (signupStatus !== "success") {
-      return;
-    }
-
-    const provider = searchParams.get("provider") ?? "unknown";
-    trackEventOnce("signup_complete", `signup_complete:${userId}`, {
-      provider,
-      language,
-    });
-    setStatusMessage(copy.signupSuccessMessage);
-
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.delete("signup");
-    nextParams.delete("provider");
-    const nextQuery = nextParams.toString();
-    router.replace(`/dashboard${nextQuery ? `?${nextQuery}` : ""}`);
-  }, [language, router, searchParams, userId]);
-
-  useEffect(() => {
     const resume = searchParams.get("resume");
     if (!resume || handledResumeRef.current === resume) {
       return;
@@ -1027,9 +992,6 @@ function DashboardPageContent() {
       const res = await apiFetch("/api/jobs");
       if (!res.ok) return;
       const data: Job[] = await res.json();
-      if (initialDoneJobCountRef.current === null) {
-        initialDoneJobCountRef.current = data.filter((job) => job.status === "done").length;
-      }
       setJobs(data);
     } catch {
       // silently ignore polling errors
@@ -1098,27 +1060,12 @@ function DashboardPageContent() {
     const activeJob = jobs.find((j) => j.id === activeJobId);
     if (activeJob?.status !== "done") return;
 
-    if (
-      userId &&
-      initialDoneJobCountRef.current === 0 &&
-      !hasTrackedFirstImageDoneRef.current
-    ) {
-      const tracked = trackEventOnce("first_image_done", `first_image_done:${userId}`, {
-        mode: activeJob.mode ?? "unknown",
-        workflow: activeJob.mode === "enhance" ? "image_enhancement" : "prompt_generation",
-        language,
-      });
-      if (tracked) {
-        hasTrackedFirstImageDoneRef.current = true;
-      }
-    }
-
     const timer = setTimeout(() => {
       router.replace("/dashboard?tab=gallery");
       setActiveJobId(null);
     }, 2000);
     return () => clearTimeout(timer);
-  }, [jobs, activeJobId, language, router, userId]);
+  }, [jobs, activeJobId, router]);
 
   // -------------------------------------------------------------------------
   // AI 요청 (이미지 첨부 시 보정, 없으면 프롬프트 기반 생성)

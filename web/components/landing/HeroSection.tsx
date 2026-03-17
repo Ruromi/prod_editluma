@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { landingCopy, type LandingLanguage } from "@/components/landing/copy";
-import { trackEvent } from "@/lib/analytics";
 
 type HeroSectionProps = {
   isAuthenticated: boolean;
@@ -48,18 +47,6 @@ export default function HeroSection({ isAuthenticated, language }: HeroSectionPr
         <div className="mt-10 flex items-center justify-center gap-6">
           <Link
             href={primaryHref}
-            onClick={() => {
-              if (isAuthenticated) {
-                return;
-              }
-
-              trackEvent("click_start_free", {
-                cta_location: "hero",
-                authenticated: isAuthenticated,
-                landing_focus: "creator_portrait_cleanup",
-                language,
-              });
-            }}
             className="rounded-lg bg-indigo-600 px-8 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
           >
             {isAuthenticated ? copy.primaryCtaSignedIn : copy.primaryCtaSignedOut}

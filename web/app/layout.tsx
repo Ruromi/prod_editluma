@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cookies } from "next/headers";
-import AnalyticsProvider from "@/components/analytics/AnalyticsProvider";
 import DashboardNav from "@/components/DashboardNav";
 import UserMenu from "@/components/UserMenu";
 import {
@@ -58,7 +57,6 @@ export default async function RootLayout({
   return (
     <html lang={initialLanguage}>
       <body className="bg-white text-gray-800 min-h-screen">
-        <AnalyticsProvider />
         <header className="sticky top-0 z-40 border-b border-gray-200/50 bg-white/80 backdrop-blur-md px-6 h-14 flex items-center">
           {/* 좌: 로고 */}
           <div className="flex items-center gap-2 w-40">

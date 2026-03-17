@@ -1,18 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import CTASection from "@/components/landing/CTASection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import GallerySection from "@/components/landing/GallerySection";
 import HeroSection from "@/components/landing/HeroSection";
 import LandingFooter from "@/components/landing/LandingFooter";
-import TrustSection from "@/components/landing/TrustSection";
 import { landingCopy } from "@/components/landing/copy";
 import {
   persistLandingLanguage,
   type HeaderLanguage,
 } from "@/lib/landing-language";
-import { trackEvent } from "@/lib/analytics";
 import { useAppLanguage } from "@/lib/use-app-language";
 
 type LandingPageContentProps = {
@@ -26,24 +23,10 @@ export default function LandingPageContent({
 }: LandingPageContentProps) {
   const language = useAppLanguage(initialLanguage);
   const copy = landingCopy[language];
-  const hasTrackedLandingVisit = useRef(false);
 
   function handleLanguageChange(nextLanguage: HeaderLanguage) {
     persistLandingLanguage(nextLanguage);
   }
-
-  useEffect(() => {
-    if (hasTrackedLandingVisit.current) {
-      return;
-    }
-
-    hasTrackedLandingVisit.current = true;
-    trackEvent("visit_landing", {
-      authenticated: isAuthenticated,
-      language: initialLanguage,
-      landing_focus: "creator_portrait_cleanup",
-    });
-  }, [initialLanguage, isAuthenticated]);
 
   return (
     <>
@@ -77,7 +60,6 @@ export default function LandingPageContent({
 
       <div className="flex flex-col gap-28 pb-28">
         <HeroSection isAuthenticated={isAuthenticated} language={language} />
-        <TrustSection language={language} />
         <FeaturesSection language={language} />
         <GallerySection language={language} />
         <CTASection isAuthenticated={isAuthenticated} language={language} />
