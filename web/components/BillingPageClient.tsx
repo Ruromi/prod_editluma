@@ -703,26 +703,15 @@ export default function BillingPageClient({
       }),
     [initialLanguage, packages]
   );
-  const packageCapacitySummary = useMemo(() => {
-    if (creditCost <= 0 || localizedPackages.length === 0) {
-      return null;
-    }
-
-    return localizedPackages
-      .map((pkg) =>
-        isKo
-          ? `${pkg.name} 약 ${Math.floor(pkg.total_credits / creditCost)}건`
-          : `${pkg.name} about ${Math.floor(pkg.total_credits / creditCost)} jobs`
-      )
-      .join(" · ");
-  }, [creditCost, isKo, localizedPackages]);
-  const packageCapacityHeadline = useMemo(() => {
-    if (creditCost <= 0 || localizedPackages.length === 0) {
-      return null;
-    }
-
-    return localizedPackages.map((pkg) => Math.floor(pkg.total_credits / creditCost)).join(" / ");
-  }, [creditCost, localizedPackages]);
+  const packageStats = useMemo(
+    () =>
+      localizedPackages.map((pkg) => ({
+        ...pkg,
+        estimatedJobs: creditCost > 0 ? Math.floor(pkg.total_credits / creditCost) : null,
+        pricePerCredit: pkg.total_credits > 0 ? pkg.price / pkg.total_credits : null,
+      })),
+    [creditCost, localizedPackages]
+  );
   const loginHref = buildLoginHref(currentPathWithSearch);
   const refundRequestsByLedgerId = useMemo(
     () =>
@@ -898,13 +887,15 @@ export default function BillingPageClient({
           </span>
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-gray-900 sm:text-4xl">
-              {isPricingView ? t("요금제", "Pricing") : t("마이페이지", "My Page")}
+              {isPricingView
+                ? t("프로필 사진 패키지 비교", "Compare profile photo packages")
+                : t("마이페이지", "My Page")}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-500 sm:text-base">
               {isPricingView
                 ? t(
-                    "필요한 만큼 크레딧을 충전하고 프로필 사진 업그레이드, 헤드샷 보정, 추가 수정에 바로 사용할 수 있습니다. 로그인한 상태라면 패키지 선택 후 바로 결제로 이어집니다.",
-                    "Top up credits and use them right away for profile photo upgrades, headshot cleanup, and follow-up edits. If you're signed in, choosing a package takes you straight to checkout."
+                    "로그인 전에도 패키지별 가격, 총 크레딧, 예상 결과물 수를 바로 비교할 수 있습니다. 원하는 패키지를 고른 뒤 로그인하고 결제를 이어가면 됩니다.",
+                    "Compare each package by price, total credits, and estimated profile photo results before you sign in. Pick the package that fits, then continue to checkout."
                   )
                 : t(
                     "보유 크레딧, 최근 충전 내역, 최근 사용 내역을 한곳에서 확인할 수 있습니다.",
@@ -990,6 +981,76 @@ export default function BillingPageClient({
                       </Link>
                     </div>
                   </div>
+                )}
+
+                {isPricingView && (
+                  packageStats.length > 0 ? (
+                    <div className="grid gap-4 lg:grid-cols-3">
+                      {packageStats.map((pkg) => (
+                        <article
+                          key={`summary-${pkg.id}`}
+                          className={`rounded-[28px] border p-5 ${
+                            pkg.highlight
+                              ? "border-indigo-500/30 bg-indigo-500/10"
+                              : "border-gray-200 bg-white/85"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
+                                {pkg.badge}
+                              </p>
+                              <h2 className="mt-2 text-xl font-semibold text-gray-900">{pkg.name}</h2>
+                            </div>
+                            {pkg.highlight && (
+                              <span className="rounded-full border border-indigo-400/30 bg-white/80 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-indigo-600">
+                                {t("가장 많이 선택", "Most picked")}
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="mt-5 text-3xl font-semibold tracking-tight text-gray-900">
+                            {formatCurrency(pkg.price, pkg.currency)}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {t("패키지 총 가격", "Total package price")}
+                          </p>
+
+                          <div className="mt-5 grid grid-cols-2 gap-3">
+                            <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-3">
+                              <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
+                                {t("총 크레딧", "Total credits")}
+                              </p>
+                              <p className="mt-2 text-lg font-semibold text-gray-900">
+                                {pkg.total_credits}
+                              </p>
+                            </div>
+                            <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-3">
+                              <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
+                                {t("예상 결과물", "Estimated results")}
+                              </p>
+                              <p className="mt-2 text-lg font-semibold text-gray-900">
+                                {pkg.estimatedJobs === null
+                                  ? "—"
+                                  : `${pkg.estimatedJobs} ${t("장", "results")}`}
+                              </p>
+                            </div>
+                          </div>
+
+                          <p className="mt-4 text-sm leading-relaxed text-gray-600">
+                            {pkg.description}
+                          </p>
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-[28px] border border-gray-200 bg-white/85 p-5 text-sm text-gray-500">
+                      {t(
+                        "패키지 정보를 불러오는 중입니다. 잠시 후 가격과 예상 결과물 수를 비교할 수 있습니다.",
+                        "Package data is loading. Price, credits, and estimated results will appear here shortly."
+                      )}
+                    </div>
+                  )
                 )}
 
                 {isPricingView ? (
@@ -1201,39 +1262,53 @@ export default function BillingPageClient({
               <section className="grid gap-4 lg:grid-cols-3">
                 <article className="rounded-[28px] border border-gray-200 bg-white/80 p-6">
                   <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
-                    {t("작업당 소모", "Per image cost")}
+                    {t("결과 1장 기준", "Per result cost")}
                   </p>
                   <p className="mt-3 text-3xl font-semibold tracking-tight text-gray-900">
                     {creditCost} {t("크레딧", "credits")}
                   </p>
                   <p className="mt-3 text-sm leading-relaxed text-gray-500">
                     {t(
-                      "기본 생성/보정 작업은 현재 이 기준으로 계산됩니다. 가격 이해를 먼저 돕기 위해 패키지 카드 위에 고정 노출합니다.",
-                      "A standard generation or enhancement job currently uses this credit amount. It is surfaced above the packages so users can price the workflow faster."
+                      "기본 프로필 사진 생성/보정 1회는 현재 이 기준으로 계산됩니다. 패키지 가격을 결과물 수로 바로 환산할 수 있도록 먼저 보여줍니다.",
+                      "A standard profile photo generation or enhancement currently uses this amount. It is shown first so visitors can translate package price into result count faster."
                     )}
                   </p>
                 </article>
 
                 <article className="rounded-[28px] border border-gray-200 bg-white/80 p-6">
                   <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
-                    {t("패키지별 예상 작업 수", "Estimated jobs by package")}
+                    {t("패키지 빠른 비교", "Quick package comparison")}
                   </p>
-                  <p className="mt-3 text-3xl font-semibold tracking-tight text-gray-900">
-                    {packageCapacityHeadline
-                      ? `${packageCapacityHeadline} ${t("건", "jobs")}`
-                      : "—"}
-                  </p>
-                  <p className="mt-3 text-sm leading-relaxed text-gray-500">
-                    {packageCapacitySummary
-                      ? t(
-                          `${packageCapacitySummary} 정도로 계산됩니다.`,
-                          `Roughly ${packageCapacitySummary} at the current credit cost.`
-                        )
-                      : t(
-                          "패키지 정보를 불러오면 예상 작업 수를 바로 계산해서 보여줍니다.",
-                          "Once package data loads, the page calculates the rough job count automatically."
+                  <div className="mt-4 space-y-3">
+                    {packageStats.length > 0 ? (
+                      packageStats.map((pkg) => (
+                        <div
+                          key={`comparison-${pkg.id}`}
+                          className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3"
+                        >
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">{pkg.name}</p>
+                            <p className="mt-1 text-xs text-gray-500">
+                              {pkg.total_credits} {t("크레딧", "credits")} ·{" "}
+                              {pkg.estimatedJobs === null
+                                ? "—"
+                                : `${pkg.estimatedJobs} ${t("장 예상", "estimated results")}`}
+                            </p>
+                          </div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {formatCurrency(pkg.price, pkg.currency)}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm leading-relaxed text-gray-500">
+                        {t(
+                          "패키지 정보를 불러오면 가격과 예상 결과물 수를 함께 보여줍니다.",
+                          "Once package data loads, this section shows price and estimated results together."
                         )}
-                  </p>
+                      </p>
+                    )}
+                  </div>
                 </article>
 
                 <article className="rounded-[28px] border border-amber-200 bg-amber-50 p-6">
@@ -1259,8 +1334,7 @@ export default function BillingPageClient({
               </section>
 
               <section className="grid gap-4 lg:grid-cols-3">
-                {localizedPackages.map((pkg) => {
-                  const pricePerCredit = pkg.price / pkg.total_credits;
+                {packageStats.map((pkg) => {
                   const isBusy = checkoutingPackageId === pkg.id;
                   const packageGuide =
                     BILLING_PACKAGE_GUIDE[pkg.id as keyof typeof BILLING_PACKAGE_GUIDE]?.[
@@ -1270,6 +1344,7 @@ export default function BillingPageClient({
                   return (
                     <article
                       key={pkg.id}
+                      id={`package-${pkg.id}`}
                       className={`relative overflow-hidden rounded-[28px] border p-6 transition-colors ${
                         pkg.highlight
                           ? "border-indigo-500/40 bg-indigo-500/10 shadow-lg shadow-indigo-950/20"
@@ -1290,9 +1365,32 @@ export default function BillingPageClient({
                           <h2 className="mt-2 text-2xl font-semibold text-gray-900">{pkg.name}</h2>
                         </div>
 
-                        <div className="flex items-end gap-2">
-                          <span className="text-4xl font-semibold text-gray-900">{pkg.total_credits}</span>
-                          <span className="pb-1 text-sm text-gray-500">credits</span>
+                        <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
+                          <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
+                            {t("패키지 가격", "Package price")}
+                          </p>
+                          <p className="mt-2 text-3xl font-semibold text-gray-900">
+                            {formatCurrency(pkg.price, pkg.currency)}
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
+                            <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
+                              {t("총 크레딧", "Total credits")}
+                            </p>
+                            <p className="mt-2 text-2xl font-semibold text-gray-900">
+                              {pkg.total_credits}
+                            </p>
+                          </div>
+                          <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
+                            <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
+                              {t("예상 결과물", "Estimated results")}
+                            </p>
+                            <p className="mt-2 text-2xl font-semibold text-gray-900">
+                              {pkg.estimatedJobs ?? "—"}
+                            </p>
+                          </div>
                         </div>
 
                         <div className="flex flex-wrap gap-2 text-xs">
@@ -1323,14 +1421,15 @@ export default function BillingPageClient({
                         )}
 
                         <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
-                          <p className="text-2xl font-semibold text-gray-900">
-                            {formatCurrency(pkg.price, pkg.currency)}
-                          </p>
-                          <p className="mt-1 text-xs text-gray-500">
-                            {t("크레딧당 약", "Approx. per credit")} {formatCurrency(pricePerCredit, pkg.currency)}
-                          </p>
+                          {pkg.pricePerCredit !== null && (
+                            <p className="text-xs text-gray-500">
+                              {t("크레딧당 약", "Approx. per credit")}{" "}
+                              {formatCurrency(pkg.pricePerCredit, pkg.currency)}
+                            </p>
+                          )}
                           <p className="mt-2 text-xs text-gray-500">
-                            {t("예상 작업 수", "Estimated jobs")}: {creditCost > 0 ? Math.floor(pkg.total_credits / creditCost) : "—"}
+                            {t("예상 결과물 수", "Estimated results")}:{" "}
+                            {pkg.estimatedJobs === null ? "—" : `${pkg.estimatedJobs} ${t("장", "results")}`}
                           </p>
                         </div>
 

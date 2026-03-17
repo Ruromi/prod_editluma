@@ -11,7 +11,7 @@ export const metadata: Metadata = createSeoMetadata({
   title: "Pricing",
   path: "/pricing",
   description:
-    "Review credit packages for LinkedIn-ready profile photos, professional headshots, and public-facing profile upgrades.",
+    "Compare profile photo packages by price, credits, and estimated results for LinkedIn-ready headshots and professional profile images.",
   keywords: ["AI profile photo pricing", "LinkedIn headshot pricing", "professional headshot AI pricing"],
 });
 
