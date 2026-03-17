@@ -115,32 +115,32 @@ const ZERO_DECIMAL_CURRENCIES = new Set(["KRW", "JPY"]);
 const BILLING_PACKAGE_COPY = {
   starter: {
     ko: {
-      badge: "입문용",
-      description: "링크드인이나 이력서용 프로필 사진 1~2장을 먼저 확인할 때 적합한 기본 패키지",
+      badge: "기본",
+      description: "링크드인, 이력서, 소개 페이지용 프로필 사진 결과를 여러 장 비교하고 첫 세트를 정리할 때 적합한 기본 패키지",
     },
     en: {
-      badge: "Starter",
-      description: "A lightweight starter pack for checking one or two professional profile photos before paying for more.",
+      badge: "Base Plan",
+      description: "A baseline pack for comparing multiple LinkedIn, resume, and profile-photo results before you narrow down the final set.",
     },
   },
   pro: {
     ko: {
       badge: "가장 많이 선택",
-      description: "구직, 팀 소개, 개인 브랜딩용 프로필 사진을 반복적으로 정리할 때 가장 무난한 메인 패키지",
+      description: "구직, 개인 브랜딩, 채널별 프로필 업데이트를 반복적으로 운영할 때 가장 무난한 메인 패키지",
     },
     en: {
       badge: "Most Popular",
-      description: "The best-value pack for recurring LinkedIn headshots, founder bios, and polished public-facing profiles.",
+      description: "The best-value pack for recurring LinkedIn headshots, personal branding updates, and profile-photo refreshes across channels.",
     },
   },
   max: {
     ko: {
       badge: "대용량",
-      description: "팀 프로필 정리, 후보 이미지 비교, 여러 장의 프로필 사진을 한 번에 처리할 때 적합한 대용량 패키지",
+      description: "팀 프로필 정리, 다수 후보 비교, 대량 프로필 사진 검토를 한 번에 처리할 때 적합한 상위 패키지",
     },
     en: {
       badge: "High Volume",
-      description: "A larger pack for team headshots, batch profile cleanup, and multiple candidate photos in one pass.",
+      description: "A higher-volume pack for team headshots, larger review batches, and profile-photo decisions across many candidates.",
     },
   },
 } as const;
@@ -148,32 +148,32 @@ const BILLING_PACKAGE_COPY = {
 const BILLING_PACKAGE_GUIDE = {
   starter: {
     ko: {
-      bestFor: "링크드인이나 이력서용 프로필 사진 1~2장을 먼저 확인해 보고 싶을 때",
-      why: "첫 결과를 확인하고 판단하려는 개인 사용자에게 가장 부담이 적습니다.",
+      bestFor: "개인 프로필 사진 결과를 여러 장 비교하고 최종 후보를 고르고 싶을 때",
+      why: "첫 세트를 충분히 비교할 수 있으면서도 가장 낮은 진입 가격으로 시작할 수 있습니다.",
     },
     en: {
-      bestFor: "Testing one or two LinkedIn or resume profile photos first",
-      why: "It is the lowest-risk option when you want to see whether the result is strong enough before committing further.",
+      bestFor: "Comparing several personal profile photo results before choosing finalists",
+      why: "It gives enough room for a real first batch while still being the lowest entry price in the lineup.",
     },
   },
   pro: {
     ko: {
-      bestFor: "구직, 창업자 소개, 개인 브랜딩용 프로필 사진을 반복적으로 정리하는 경우",
-      why: "현재 작업당 크레딧 기준에서 반복 시도와 가격 효율의 균형이 가장 좋습니다.",
+      bestFor: "구직, 창업자 소개, 개인 브랜딩용 프로필 사진을 주기적으로 업데이트하는 경우",
+      why: "현재 작업당 크레딧 기준에서 반복 사용과 단가 균형이 가장 무난한 구간입니다.",
     },
     en: {
-      bestFor: "Job seekers, founders, and solo professionals who refresh profile photos repeatedly",
-      why: "At the current per-image credit cost, this is the clearest balance of repeat usage and price efficiency.",
+      bestFor: "Job seekers, founders, and solo professionals who update profile photos on a recurring basis",
+      why: "At the current per-result credit cost, this is the clearest middle ground between repeat usage and package efficiency.",
     },
   },
   max: {
     ko: {
-      bestFor: "팀 소개 사진, 구성원 프로필 정리, 여러 후보 이미지를 한 번에 검토해야 하는 경우",
-      why: "검토 인원과 후보 수가 늘어날수록 작업당 판단이 쉬워지는 대용량 구간입니다.",
+      bestFor: "팀 소개 사진, 구성원 프로필 정리, 여러 후보 이미지를 대량으로 검토해야 하는 경우",
+      why: "검토 대상과 결과 후보 수가 많을수록 의사결정 비용을 줄이기 쉬운 상위 구간입니다.",
     },
     en: {
-      bestFor: "Team headshots, directory photos, or batches that need several profile candidates in one go",
-      why: "The larger pool makes cost-per-decision easier to manage when reviews, retries, and profile variations grow.",
+      bestFor: "Team headshots, directory photos, or larger batches that need many profile candidates in one go",
+      why: "The larger pool makes review cycles and profile-photo decisions easier to manage when variations and stakeholders increase.",
     },
   },
 } as const;
@@ -1471,8 +1471,8 @@ export default function BillingPageClient({
                 </p>
                 <p className="mt-3 text-sm leading-relaxed text-gray-700">
                   {t(
-                    "먼저 품질만 확인하려면 Starter, 주기적으로 프로필과 썸네일을 돌릴 계획이면 Pro, 팀 검수나 여러 시안을 한 번에 다뤄야 하면 Max가 맞습니다.",
-                    "Choose Starter to validate quality first, Pro for recurring profile and thumbnail work, and Max when team reviews or many variants need to run together."
+                    "Starter는 개인 프로필용 결과를 여러 장 비교할 때, Pro는 반복 업데이트용으로, Max는 팀 검수나 대량 후보 비교에 맞습니다.",
+                    "Choose Starter for comparing a first personal batch, Pro for recurring profile-photo updates, and Max for team reviews or larger candidate sets."
                   )}
                 </p>
               </section>

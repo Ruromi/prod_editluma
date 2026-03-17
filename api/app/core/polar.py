@@ -72,10 +72,10 @@ def get_billing_packages() -> list[BillingPackage]:
     return [
         BillingPackage(
             id="starter",
-            name="100 Credits",
+            name="400 Credits",
             badge="입문용",
-            price=2.99,
-            credits=100,
+            price=35.0,
+            credits=400,
             bonus=0,
             description="가볍게 써보거나 급하게 소량 충전할 때 적합한 기본 패키지",
             product_id=settings.polar_product_id_starter,
@@ -83,10 +83,10 @@ def get_billing_packages() -> list[BillingPackage]:
         ),
         BillingPackage(
             id="pro",
-            name="500 Credits",
+            name="600 Credits",
             badge="가장 많이 선택",
-            price=12.99,
-            credits=500,
+            price=45.0,
+            credits=600,
             bonus=0,
             description="반복 생성과 리터치를 꾸준히 돌릴 때 가장 무난한 메인 패키지",
             product_id=settings.polar_product_id_pro,
@@ -95,10 +95,10 @@ def get_billing_packages() -> list[BillingPackage]:
         ),
         BillingPackage(
             id="max",
-            name="1500 Credits",
+            name="1000 Credits",
             badge="대용량",
-            price=29.99,
-            credits=1500,
+            price=75.0,
+            credits=1000,
             bonus=0,
             description="팀 단위 작업이나 대량 생성이 많은 사용자를 위한 대용량 패키지",
             product_id=settings.polar_product_id_max,
@@ -129,6 +129,7 @@ async def _polar_request(
     path: str,
     *,
     json_body: dict[str, Any] | None = None,
+    query_params: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     if not settings.polar_access_token:
         raise HTTPException(status_code=503, detail="Polar 결제 설정이 비어 있습니다.")
@@ -145,6 +146,7 @@ async def _polar_request(
             f"{polar_api_base_url()}{path}",
             headers=headers,
             json=json_body,
+            params=query_params,
         )
 
     try:
@@ -270,3 +272,29 @@ def verify_and_parse_webhook(payload: bytes, headers: Mapping[str, str]) -> dict
         return json.loads(payload.decode("utf-8"))
     except json.JSONDecodeError as exc:
         raise HTTPException(status_code=400, detail="Polar 웹훅 본문이 JSON이 아닙니다.") from exc
+
+
+async def list_orders(
+    *,
+    checkout_id: str | None = None,
+    customer_external_id: str | None = None,
+    metadata: Mapping[str, str] | None = None,
+    limit: int = 10,
+) -> list[dict[str, Any]]:
+    query_params: dict[str, Any] = {
+        "limit": max(min(limit, 100), 1),
+        "sorting": "-created_at",
+    }
+
+    if checkout_id:
+        query_params["checkout_id"] = checkout_id
+    if customer_external_id:
+        query_params["customer_external_id"] = customer_external_id
+    if metadata:
+        for key, value in metadata.items():
+            if value:
+                query_params[f"metadata[{key}]"] = value
+
+    payload = await _polar_request("GET", "/orders/", query_params=query_params)
+    items = payload.get("items")
+    return items if isinstance(items, list) else []
