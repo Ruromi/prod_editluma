@@ -12,6 +12,7 @@ type LandingProblemItem = {
 };
 
 type LandingUseCaseItem = {
+  id: string;
   title: string;
   desc: string;
   bullets: string[];
@@ -42,9 +43,13 @@ type LandingCopy = {
     titleHighlight: string;
     subtitleLine1: string;
     subtitleLine2: string;
+    audienceLabel: string;
+    audienceButtons: { label: string; href: string }[];
     primaryCtaSignedOut: string;
     primaryCtaSignedIn: string;
     secondaryCta: string;
+    pricingHint: string;
+    pricingHref: string;
     proofPoints: string[];
     imageBeforeLabel: string;
     imageAfterLabel: string;
@@ -114,10 +119,18 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
       subtitleLine1:
         "Turn your casual photo into a LinkedIn-ready, business-grade profile image with AI.",
       subtitleLine2:
-        "Built for job seekers, founders, creators, and anyone who needs a stronger first impression fast.",
+        "Built for public-facing profile photos where trust has to read fast.",
+      audienceLabel: "Choose your starting point",
+      audienceButtons: [
+        { label: "I'm a job seeker", href: "#use-case-job-seekers" },
+        { label: "I'm a founder", href: "#use-case-founders" },
+        { label: "I'm a creator", href: "#use-case-creators" },
+      ],
       primaryCtaSignedOut: "Upgrade my profile photo",
       primaryCtaSignedIn: "Open dashboard",
       secondaryCta: "See before / after",
+      pricingHint: "From $35 · 40-100 profile photo results",
+      pricingHref: "/pricing#package-starter",
       proofPoints: ["LinkedIn-ready", "Business-ready", "CV-ready"],
       imageBeforeLabel: "Before",
       imageAfterLabel: "After",
@@ -260,16 +273,19 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
         "The clearest use cases all share one thing: the image stands in for a real person in a public context where trust matters fast.",
       items: [
         {
+          id: "job-seekers",
           title: "Job seekers",
           desc: "Upgrade the photo attached to job applications, resumes, CVs, and LinkedIn.",
           bullets: ["LinkedIn profile refresh", "Resume and CV headshot", "Application-ready photo"],
         },
         {
+          id: "founders",
           title: "Founders and operators",
           desc: "Clean up the profile image used across team pages, bios, newsletters, and investor-facing intros.",
           bullets: ["Founder bio headshot", "Team directory photo", "Speaker page image"],
         },
         {
+          id: "creators",
           title: "Creators and freelancers",
           desc: "Keep the profile photo believable while making it strong enough for outreach, bios, and public-facing profiles.",
           bullets: ["Creator profile image", "Freelancer bio photo", "Community avatar upgrade"],
@@ -321,10 +337,18 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
       subtitleLine1:
         "캐주얼한 사진을 링크드인, 이력서, 팀 소개에 바로 쓸 수 있는 프로필 사진으로 정리합니다.",
       subtitleLine2:
-        "구직자, 창업자, 크리에이터처럼 첫인상이 중요한 사용자에게 맞춰진 흐름입니다.",
+        "공개 프로필에서 신뢰가 빨리 읽혀야 하는 장면에 맞춘 흐름입니다.",
+      audienceLabel: "어떤 프로필 사진이 필요한가요?",
+      audienceButtons: [
+        { label: "구직자예요", href: "#use-case-job-seekers" },
+        { label: "창업자예요", href: "#use-case-founders" },
+        { label: "크리에이터예요", href: "#use-case-creators" },
+      ],
       primaryCtaSignedOut: "내 프로필 사진 업그레이드",
       primaryCtaSignedIn: "대시보드 열기",
       secondaryCta: "비포 애프터 보기",
+      pricingHint: "시작 $35 · 패키지당 40~100장 결과",
+      pricingHref: "/pricing#package-starter",
       proofPoints: ["LinkedIn-ready", "Business-ready", "CV-ready"],
       imageBeforeLabel: "Before",
       imageAfterLabel: "After",
@@ -467,16 +491,19 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
         "가장 명확한 사용 장면은 모두 같습니다. 공적인 맥락에서 실제 사람을 대신 보여주는 사진이고, 여기서는 신뢰가 빠르게 읽혀야 합니다.",
       items: [
         {
+          id: "job-seekers",
           title: "구직자",
           desc: "지원서, 이력서, CV, 링크드인에 들어가는 사진을 더 믿을 만하게 정리합니다.",
           bullets: ["링크드인 프로필 정리", "이력서와 CV 헤드샷", "지원용 프로필 사진"],
         },
         {
+          id: "founders",
           title: "창업자와 운영자",
           desc: "팀 소개, 바이오, 뉴스레터, 투자자용 소개에 반복되는 프로필 사진을 정리합니다.",
           bullets: ["창업자 소개 헤드샷", "팀 디렉터리 사진", "발표자 페이지 이미지"],
         },
         {
+          id: "creators",
           title: "크리에이터와 프리랜서",
           desc: "개성을 유지하면서도 소개, 협업, 커뮤니티에서 더 좋은 첫인상을 주는 쪽으로 정리합니다.",
           bullets: ["크리에이터 프로필", "프리랜서 소개 사진", "커뮤니티 아바타 업그레이드"],
@@ -528,10 +555,18 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
       subtitleLine1:
         "EditLuma transforme une photo casual en image de profil credible pour LinkedIn, CV, et pages equipe.",
       subtitleLine2:
-        "Le flux est pense pour les chercheurs d'emploi, fondateurs, createurs, et tous ceux qui ont besoin d'une meilleure premiere impression.",
+        "Concu pour les photos de profil publiques ou la confiance doit se lire vite.",
+      audienceLabel: "Choisissez votre point de depart",
+      audienceButtons: [
+        { label: "Je cherche un emploi", href: "#use-case-job-seekers" },
+        { label: "Je suis fondateur", href: "#use-case-founders" },
+        { label: "Je suis createur", href: "#use-case-creators" },
+      ],
       primaryCtaSignedOut: "Ameliorer ma photo de profil",
       primaryCtaSignedIn: "Ouvrir le tableau de bord",
       secondaryCta: "Voir avant / apres",
+      pricingHint: "A partir de 35 $ · 40 a 100 resultats par pack",
+      pricingHref: "/pricing#package-starter",
       proofPoints: ["LinkedIn-ready", "Business-ready", "CV-ready"],
       imageBeforeLabel: "Before",
       imageAfterLabel: "After",
@@ -674,16 +709,19 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
         "Les meilleurs cas d'usage ont un point commun: la photo represente une vraie personne dans un contexte public ou la confiance compte vite.",
       items: [
         {
+          id: "job-seekers",
           title: "Chercheurs d'emploi",
           desc: "Renforcez la photo utilisee sur LinkedIn, CV, et candidatures.",
           bullets: ["Rafraichir LinkedIn", "Headshot CV", "Photo de candidature"],
         },
         {
+          id: "founders",
           title: "Fondateurs et operateurs",
           desc: "Nettoyez l'image repetee sur bios, pages equipe, newsletters, et presentatons publiques.",
           bullets: ["Headshot fondateur", "Photo annuaire equipe", "Image page speaker"],
         },
         {
+          id: "creators",
           title: "Createurs et freelances",
           desc: "Gardez de la personnalite tout en renforcant la credibilite sur les profils publics.",
           bullets: ["Photo bio createur", "Profil freelance", "Upgrade avatar communaute"],

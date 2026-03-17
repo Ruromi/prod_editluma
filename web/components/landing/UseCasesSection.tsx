@@ -10,7 +10,7 @@ export default function UseCasesSection({ language }: UseCasesSectionProps) {
   const copy = landingCopy[language].useCases;
 
   return (
-    <section className="mx-auto max-w-6xl px-6">
+    <section id="use-cases" className="mx-auto max-w-6xl px-6 scroll-mt-24">
       <div className="mb-10 text-center">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-600">
           {copy.eyebrow}
@@ -26,8 +26,9 @@ export default function UseCasesSection({ language }: UseCasesSectionProps) {
       <div className="grid gap-4 lg:grid-cols-3">
         {copy.items.map((item) => (
           <div
-            key={item.title}
-            className="rounded-[1.75rem] border border-gray-200 bg-white px-5 py-5 shadow-[0_18px_50px_-36px_rgba(15,23,42,0.25)]"
+            key={item.id}
+            id={`use-case-${item.id}`}
+            className="scroll-mt-28 rounded-[1.75rem] border border-gray-200 bg-white px-5 py-5 shadow-[0_18px_50px_-36px_rgba(15,23,42,0.25)]"
           >
             <h3 className="text-lg font-semibold tracking-tight text-gray-900">{item.title}</h3>
             <p className="mt-2 text-sm leading-relaxed text-gray-600">{item.desc}</p>

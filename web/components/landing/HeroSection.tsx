@@ -34,6 +34,23 @@ export default function HeroSection({ isAuthenticated, language }: HeroSectionPr
             {copy.subtitleLine2}
           </p>
 
+          <div className="mt-7">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+              {copy.audienceLabel}
+            </p>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+              {copy.audienceButtons.map((button) => (
+                <a
+                  key={button.href}
+                  href={button.href}
+                  className="inline-flex items-center justify-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-900"
+                >
+                  {button.label}
+                </a>
+              ))}
+            </div>
+          </div>
+
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
             <Link
               href={primaryHref}
@@ -47,6 +64,12 @@ export default function HeroSection({ isAuthenticated, language }: HeroSectionPr
             >
               {copy.secondaryCta}
             </a>
+            <Link
+              href={copy.pricingHref}
+              className="inline-flex items-center justify-center rounded-xl px-1 py-3 text-sm font-semibold text-indigo-700 transition-colors hover:text-indigo-900"
+            >
+              {copy.pricingHint}
+            </Link>
           </div>
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
