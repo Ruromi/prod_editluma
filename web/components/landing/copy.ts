@@ -105,7 +105,7 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           desc: "Useful when the source image is small, soft, or cropped too tightly for a profile refresh.",
         },
         {
-          img: "",
+          img: "/landing/features/multilingual-prompt.svg",
           title: "Multilingual prompt support",
           desc: "Write direction in Korean, English, or French and let the workflow normalize it for the model.",
         },
@@ -260,7 +260,7 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           desc: "작게 저장됐거나 다소 흐린 원본도 프로필용으로 다시 살려야 할 때 유용합니다.",
         },
         {
-          img: "",
+          img: "/landing/features/multilingual-prompt.svg",
           title: "다국어 프롬프트 지원",
           desc: "한국어, 영어, 프랑스어로 원하는 방향을 적으면 모델이 처리하기 쉬운 형태로 정리합니다.",
         },
@@ -415,7 +415,7 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           desc: "Pratique quand l’image source est petite, douce ou trop recadrée pour une photo de profil propre.",
         },
         {
-          img: "",
+          img: "/landing/features/multilingual-prompt.svg",
           title: "Support multilingue",
           desc: "Rédigez la direction en coréen, en anglais ou en français et laissez le modèle la normaliser.",
         },

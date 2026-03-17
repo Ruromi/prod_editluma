@@ -1,0 +1,79 @@
+<svg width="1152" height="864" viewBox="0 0 1152 864" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="88" y1="64" x2="1068" y2="800" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F8FC"/>
+      <stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#4F46E5"/>
+      <stop offset="1" stop-color="#14B8A6"/>
+    </linearGradient>
+    <filter id="shadow" x="54" y="34" width="1044" height="796" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="12"/>
+      <feGaussianBlur stdDeviation="17"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.0745098 0 0 0 0 0.0941176 0 0 0 0 0.2 0 0 0 0.08 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_1_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1_1" result="shape"/>
+    </filter>
+  </defs>
+
+  <rect width="1152" height="864" rx="36" fill="url(#bg)"/>
+  <circle cx="1042" cy="126" r="92" fill="#E0E7FF"/>
+  <circle cx="128" cy="744" r="110" fill="#D1FAE5"/>
+  <circle cx="946" cy="724" r="124" fill="#FCE7F3"/>
+
+  <g filter="url(#shadow)">
+    <rect x="88" y="68" width="976" height="728" rx="34" fill="white"/>
+  </g>
+
+  <rect x="124" y="112" width="336" height="62" rx="31" fill="#EEF2FF"/>
+  <circle cx="164" cy="143" r="18" fill="#4F46E5"/>
+  <text x="192" y="151" fill="#1F2937" font-size="28" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-weight="700">KR Input</text>
+
+  <rect x="124" y="212" width="404" height="210" rx="28" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2"/>
+  <text x="156" y="266" fill="#475569" font-size="26" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700">creator portrait</text>
+  <text x="156" y="304" fill="#475569" font-size="26" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700">softer skin detail</text>
+  <text x="156" y="342" fill="#475569" font-size="26" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700">brighter window light</text>
+
+  <rect x="124" y="458" width="166" height="54" rx="27" fill="#F1F5F9"/>
+  <circle cx="154" cy="485" r="10" fill="#22C55E"/>
+  <text x="178" y="493" fill="#334155" font-size="24" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-weight="600">KO</text>
+
+  <rect x="306" y="458" width="166" height="54" rx="27" fill="#F1F5F9"/>
+  <circle cx="336" cy="485" r="10" fill="#4F46E5"/>
+  <text x="360" y="493" fill="#334155" font-size="24" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-weight="600">EN</text>
+
+  <rect x="124" y="532" width="348" height="126" rx="28" fill="#ECFEFF" stroke="#CCFBF1" stroke-width="2"/>
+  <text x="156" y="584" fill="#0F766E" font-size="24" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-weight="700">Language normalization</text>
+  <text x="156" y="622" fill="#115E59" font-size="22" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Short instructions become one</text>
+  <text x="156" y="652" fill="#115E59" font-size="22" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">clean model-ready direction.</text>
+
+  <path d="M574 364C622 364 640 286 688 286" stroke="url(#accent)" stroke-width="18" stroke-linecap="round"/>
+  <path d="M660 248L722 286L660 324" stroke="#4F46E5" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="690" y="112" width="256" height="62" rx="31" fill="#EEF2FF"/>
+  <rect x="712" y="130" width="28" height="28" rx="8" fill="url(#accent)"/>
+  <text x="758" y="151" fill="#1F2937" font-size="28" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-weight="700">Model Prompt</text>
+
+  <rect x="624" y="212" width="372" height="272" rx="32" fill="#EEF2FF"/>
+  <rect x="648" y="236" width="324" height="224" rx="26" fill="white"/>
+  <text x="682" y="292" fill="#312E81" font-size="25" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700">clean creator portrait</text>
+  <text x="682" y="332" fill="#312E81" font-size="25" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700">natural skin detail</text>
+  <text x="682" y="372" fill="#312E81" font-size="25" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700">brighter balanced light</text>
+  <text x="682" y="412" fill="#312E81" font-size="25" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700">polished realistic finish</text>
+
+  <rect x="624" y="532" width="108" height="54" rx="27" fill="#EEF2FF"/>
+  <text x="662" y="566" fill="#4338CA" font-size="24" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-weight="700">KO</text>
+  <rect x="744" y="532" width="108" height="54" rx="27" fill="#EEF2FF"/>
+  <text x="782" y="566" fill="#4338CA" font-size="24" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-weight="700">EN</text>
+  <rect x="864" y="532" width="108" height="54" rx="27" fill="#EEF2FF"/>
+  <text x="902" y="566" fill="#4338CA" font-size="24" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-weight="700">FR</text>
+
+  <rect x="624" y="624" width="372" height="118" rx="28" fill="#111827"/>
+  <circle cx="676" cy="683" r="18" fill="#22C55E"/>
+  <path d="M667 683L674 690L686 676" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="712" y="675" fill="white" font-size="28" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-weight="700">Processing target</text>
+  <text x="712" y="714" fill="#A5B4FC" font-size="22" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">One normalized prompt for KO / EN / FR input.</text>
+</svg>
