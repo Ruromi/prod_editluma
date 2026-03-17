@@ -11,8 +11,8 @@ export const metadata: Metadata = createSeoMetadata({
   title: "Pricing",
   path: "/pricing",
   description:
-    "Review EditLuma credit packages for AI image generation, enhancement, retouching, and upscaling workflows.",
-  keywords: ["AI SaaS pricing", "credit packages", "image generation pricing"],
+    "Review credit packages for LinkedIn-ready profile photos, professional headshots, and public-facing profile upgrades.",
+  keywords: ["AI profile photo pricing", "LinkedIn headshot pricing", "professional headshot AI pricing"],
 });
 
 function PricingFallback() {

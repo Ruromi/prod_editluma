@@ -14,12 +14,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: `${siteName} | AI Portrait Enhancer for Creators`,
+    default: `${siteName} | AI Profile Photo Generator`,
     template: `%s | ${siteName}`,
   },
   description: defaultDescription,
   openGraph: {
-    title: `${siteName} | AI Portrait Enhancer for Creators`,
+    title: `${siteName} | AI Profile Photo Generator`,
     description: defaultDescription,
     url: siteUrl,
     siteName,
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${siteName} | AI Portrait Enhancer for Creators`,
+    title: `${siteName} | AI Profile Photo Generator`,
     description: defaultDescription,
     images: [defaultOgImagePath],
   },

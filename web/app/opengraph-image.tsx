@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "EditLuma AI image generation and enhancement";
+export const alt = "EditLuma professional profile photo AI";
 export const size = {
   width: 1200,
   height: 630,
@@ -49,10 +49,10 @@ export default function OpenGraphImage() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: "24px", maxWidth: 900 }}>
           <div style={{ fontSize: 72, lineHeight: 1.05, fontWeight: 700 }}>
-            AI image generator and photo enhancer
+            Professional profile photo AI
           </div>
           <div style={{ fontSize: 30, lineHeight: 1.35, color: "#d1d5db" }}>
-            Generate visuals, enhance portraits, retouch photos, and upscale images with a fast credit-based workflow.
+            Turn a casual photo into a LinkedIn-ready, business-grade profile image with AI.
           </div>
         </div>
 
@@ -64,9 +64,9 @@ export default function OpenGraphImage() {
             fontSize: 26,
           }}
         >
-          <span>AI Image Generator</span>
-          <span>Photo Enhancer</span>
-          <span>Portrait Retouch</span>
+          <span>LinkedIn-ready</span>
+          <span>Business headshot</span>
+          <span>Profile upgrade</span>
         </div>
       </div>
     ),

@@ -116,31 +116,31 @@ const BILLING_PACKAGE_COPY = {
   starter: {
     ko: {
       badge: "입문용",
-      description: "프로필 사진 결과를 먼저 확인하거나 급한 보정 몇 장만 처리할 때 적합한 기본 패키지",
+      description: "링크드인이나 이력서용 프로필 사진 1~2장을 먼저 확인할 때 적합한 기본 패키지",
     },
     en: {
       badge: "Starter",
-      description: "A lightweight starter pack for validating portrait quality first or handling a few urgent edits.",
+      description: "A lightweight starter pack for checking one or two professional profile photos before paying for more.",
     },
   },
   pro: {
     ko: {
       badge: "가장 많이 선택",
-      description: "프로필, 썸네일, 반복 보정 작업을 꾸준히 돌릴 때 가장 무난한 메인 패키지",
+      description: "구직, 팀 소개, 개인 브랜딩용 프로필 사진을 반복적으로 정리할 때 가장 무난한 메인 패키지",
     },
     en: {
       badge: "Most Popular",
-      description: "The best-value core package for repeat portrait cleanup, thumbnails, and ongoing creator work.",
+      description: "The best-value pack for recurring LinkedIn headshots, founder bios, and polished public-facing profiles.",
     },
   },
   max: {
     ko: {
       badge: "대용량",
-      description: "팀 검수, 여러 시안, 대량 생성처럼 재시도 횟수가 많은 사용자를 위한 대용량 패키지",
+      description: "팀 프로필 정리, 후보 이미지 비교, 여러 장의 프로필 사진을 한 번에 처리할 때 적합한 대용량 패키지",
     },
     en: {
       badge: "High Volume",
-      description: "A larger credit pack designed for team reviews, client batches, and high-output image work.",
+      description: "A larger pack for team headshots, batch profile cleanup, and multiple candidate photos in one pass.",
     },
   },
 } as const;
@@ -148,32 +148,32 @@ const BILLING_PACKAGE_COPY = {
 const BILLING_PACKAGE_GUIDE = {
   starter: {
     ko: {
-      bestFor: "프로필 사진 1~2장을 먼저 테스트하거나 급하게 소량만 충전할 때",
-      why: "결과 품질을 먼저 확인하고 싶은 개인 사용자에게 가장 부담이 적습니다.",
+      bestFor: "링크드인이나 이력서용 프로필 사진 1~2장을 먼저 확인해 보고 싶을 때",
+      why: "첫 결과를 확인하고 판단하려는 개인 사용자에게 가장 부담이 적습니다.",
     },
     en: {
-      bestFor: "Testing one or two profile photos first or topping up a very small urgent batch",
-      why: "It is the lowest-risk package when you want to validate output quality before committing further.",
+      bestFor: "Testing one or two LinkedIn or resume profile photos first",
+      why: "It is the lowest-risk option when you want to see whether the result is strong enough before committing further.",
     },
   },
   pro: {
     ko: {
-      bestFor: "프로필, 썸네일, 보정 작업을 반복적으로 돌리는 개인 크리에이터",
-      why: "현재 작업당 크레딧 기준에서 반복 시도와 가격 판단의 균형이 가장 좋습니다.",
+      bestFor: "구직, 창업자 소개, 개인 브랜딩용 프로필 사진을 반복적으로 정리하는 경우",
+      why: "현재 작업당 크레딧 기준에서 반복 시도와 가격 효율의 균형이 가장 좋습니다.",
     },
     en: {
-      bestFor: "Solo creators who run profile, thumbnail, and retouch work repeatedly",
-      why: "At the current per-job credit cost, this is the clearest balance of repeat usage and price efficiency.",
+      bestFor: "Job seekers, founders, and solo professionals who refresh profile photos repeatedly",
+      why: "At the current per-image credit cost, this is the clearest balance of repeat usage and price efficiency.",
     },
   },
   max: {
     ko: {
-      bestFor: "팀 단위 검수, 고객 작업, 여러 시안을 한 번에 돌려야 하는 경우",
-      why: "재시도와 변형 수가 많을수록 작업당 판단이 쉬워지는 대용량 구간입니다.",
+      bestFor: "팀 소개 사진, 구성원 프로필 정리, 여러 후보 이미지를 한 번에 검토해야 하는 경우",
+      why: "검토 인원과 후보 수가 늘어날수록 작업당 판단이 쉬워지는 대용량 구간입니다.",
     },
     en: {
-      bestFor: "Team reviews, client-facing work, or batches that need many variants in one go",
-      why: "The larger pool makes cost-per-decision easier to manage when retries and variants grow.",
+      bestFor: "Team headshots, directory photos, or batches that need several profile candidates in one go",
+      why: "The larger pool makes cost-per-decision easier to manage when reviews, retries, and profile variations grow.",
     },
   },
 } as const;
@@ -903,8 +903,8 @@ export default function BillingPageClient({
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-500 sm:text-base">
               {isPricingView
                 ? t(
-                    "필요한 만큼 크레딧을 충전하고 바로 이미지 생성과 보정에 사용할 수 있습니다. 로그인한 상태라면 패키지 선택 후 바로 결제로 이어집니다.",
-                    "Top up credits and use them right away for image generation and enhancement. If you're signed in, choosing a package takes you straight to checkout."
+                    "필요한 만큼 크레딧을 충전하고 프로필 사진 업그레이드, 헤드샷 보정, 추가 수정에 바로 사용할 수 있습니다. 로그인한 상태라면 패키지 선택 후 바로 결제로 이어집니다.",
+                    "Top up credits and use them right away for profile photo upgrades, headshot cleanup, and follow-up edits. If you're signed in, choosing a package takes you straight to checkout."
                   )
                 : t(
                     "보유 크레딧, 최근 충전 내역, 최근 사용 내역을 한곳에서 확인할 수 있습니다.",

@@ -21,7 +21,11 @@ export default async function LoginPage({
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">EditLuma</h1>
-          <p className="text-gray-500 mt-1">{language === "ko" ? "로그인" : "Log in"}</p>
+          <p className="text-gray-500 mt-1">
+            {language === "ko"
+              ? "프로필 사진 업그레이드를 이어서 진행하세요"
+              : "Log in to continue upgrading your profile photo"}
+          </p>
         </div>
 
         {error && (

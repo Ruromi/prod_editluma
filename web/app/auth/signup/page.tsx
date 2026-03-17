@@ -21,7 +21,11 @@ export default async function SignupPage({
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">EditLuma</h1>
-          <p className="text-gray-500 mt-1">{language === "ko" ? "회원가입" : "Sign up"}</p>
+          <p className="text-gray-500 mt-1">
+            {language === "ko"
+              ? "프로필 사진 업그레이드를 시작하려면 계정을 만드세요"
+              : "Create an account to upgrade your profile photo"}
+          </p>
         </div>
 
         {error && (
