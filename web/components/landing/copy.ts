@@ -6,6 +6,22 @@ type LandingFeature = {
   desc: string;
 };
 
+type LandingProblemItem = {
+  title: string;
+  desc: string;
+};
+
+type LandingUseCaseItem = {
+  title: string;
+  desc: string;
+  bullets: string[];
+};
+
+type LandingTrustItem = {
+  title: string;
+  desc: string;
+};
+
 type LandingExample = {
   src: string;
   alt: string;
@@ -35,6 +51,7 @@ type LandingCopy = {
     imageCaption: string;
   };
   features: {
+    eyebrow: string;
     heading: string;
     subheading: string;
     koreanPromptInputLabel: string;
@@ -53,6 +70,25 @@ type LandingCopy = {
     turnaroundLabel: string;
     resultUseLabel: string;
     items: LandingExample[];
+  };
+  problem: {
+    eyebrow: string;
+    heading: string;
+    subheading: string;
+    items: LandingProblemItem[];
+  };
+  useCases: {
+    eyebrow: string;
+    heading: string;
+    subheading: string;
+    items: LandingUseCaseItem[];
+  };
+  trust: {
+    eyebrow: string;
+    heading: string;
+    subheading: string;
+    note: string;
+    items: LandingTrustItem[];
   };
   footer: {
     description: string;
@@ -89,6 +125,7 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
         "A weak casual portrait becomes a cleaner, more credible profile photo for LinkedIn, resumes, and founder bios.",
     },
     features: {
+      eyebrow: "Result focus",
       heading: "Built For Profile Photo Results",
       subheading:
         "Start with one casual photo, pick the direction you want, and decide quickly whether the result is ready for LinkedIn, your CV, or your team page.",
@@ -196,6 +233,71 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
         },
       ],
     },
+    problem: {
+      eyebrow: "First impression risk",
+      heading: "Your current profile photo might be weakening the first impression",
+      subheading:
+        "Most profile-photo problems are simple: the photo feels too casual, the light is weak, or the image quality is not strong enough for public-facing use.",
+      items: [
+        {
+          title: "Too casual for professional use",
+          desc: "A usable selfie can still send the wrong signal on LinkedIn, resumes, founder pages, and speaker bios.",
+        },
+        {
+          title: "Weak light and soft detail",
+          desc: "Dim light, low resolution, and flat skin detail make the image feel lower quality than the person it represents.",
+        },
+        {
+          title: "Inconsistent public profile",
+          desc: "When the same weak image appears across multiple public pages, the first impression problem compounds everywhere.",
+        },
+      ],
+    },
+    useCases: {
+      eyebrow: "Use cases",
+      heading: "Built for the people who get judged by their profile photo",
+      subheading:
+        "The clearest use cases all share one thing: the image stands in for a real person in a public context where trust matters fast.",
+      items: [
+        {
+          title: "Job seekers",
+          desc: "Upgrade the photo attached to job applications, resumes, CVs, and LinkedIn.",
+          bullets: ["LinkedIn profile refresh", "Resume and CV headshot", "Application-ready photo"],
+        },
+        {
+          title: "Founders and operators",
+          desc: "Clean up the profile image used across team pages, bios, newsletters, and investor-facing intros.",
+          bullets: ["Founder bio headshot", "Team directory photo", "Speaker page image"],
+        },
+        {
+          title: "Creators and freelancers",
+          desc: "Keep the profile photo believable while making it strong enough for outreach, bios, and public-facing profiles.",
+          bullets: ["Creator profile image", "Freelancer bio photo", "Community avatar upgrade"],
+        },
+      ],
+    },
+    trust: {
+      eyebrow: "Trust",
+      heading: "Trust has to come from the result, not inflated claims",
+      subheading:
+        "This landing should feel credible before it feels impressive. That means clear outcomes, believable examples, and no fake proof.",
+      note:
+        "Do not publish unverified social proof, inflated usage numbers, or testimonials without explicit permission.",
+      items: [
+        {
+          title: "Believable profile-photo outcomes",
+          desc: "Position the result as stronger, cleaner, and more credible rather than unrealistically perfect.",
+        },
+        {
+          title: "Consistent message across pages",
+          desc: "Keep home, SEO pages, pricing, and auth flows centered on the same profile-photo promise.",
+        },
+        {
+          title: "Real proof over filler",
+          desc: "Use before / after, realistic examples, and actual user evidence when available instead of generic AI-tool claims.",
+        },
+      ],
+    },
     footer: {
       description:
         "Professional profile photo AI for LinkedIn headshots, resume photos, and polished public-facing profiles.",
@@ -230,6 +332,7 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
         "캐주얼한 인물 사진을 링크드인, 이력서, 창업자 소개에 맞는 더 믿을 만한 프로필 사진으로 정리합니다.",
     },
     features: {
+      eyebrow: "결과 중심",
       heading: "프로필 사진 결과에 맞춘 흐름",
       subheading:
         "사진 한 장으로 시작해 원하는 결과 방향을 잡고, 링크드인이나 CV에 바로 쓸 만한지 빠르게 판단할 수 있게 설계했습니다.",
@@ -337,6 +440,71 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
         },
       ],
     },
+    problem: {
+      eyebrow: "첫인상 리스크",
+      heading: "지금 프로필 사진이 첫인상을 깎고 있을 수 있습니다",
+      subheading:
+        "대부분의 문제는 복잡하지 않습니다. 사진이 너무 캐주얼하거나, 빛이 약하거나, 디테일이 부족해서 공개용 프로필로는 약하게 보이는 경우가 많습니다.",
+      items: [
+        {
+          title: "프로필용으로는 너무 캐주얼함",
+          desc: "셀피 자체는 괜찮아도 링크드인, 이력서, 창업자 소개 페이지에서는 신뢰감이 약할 수 있습니다.",
+        },
+        {
+          title: "빛과 디테일이 부족함",
+          desc: "어두운 조명, 낮은 해상도, 흐린 디테일은 사람보다 사진 품질이 먼저 보이게 만듭니다.",
+        },
+        {
+          title: "공개 프로필 인상이 제각각임",
+          desc: "같은 약한 사진이 여러 공개 페이지에 반복되면 첫인상 문제도 같이 커집니다.",
+        },
+      ],
+    },
+    useCases: {
+      eyebrow: "사용 장면",
+      heading: "프로필 사진으로 평가받는 사용자에게 맞춘 흐름",
+      subheading:
+        "가장 명확한 사용 장면은 모두 같습니다. 공적인 맥락에서 실제 사람을 대신 보여주는 사진이고, 여기서는 신뢰가 빠르게 읽혀야 합니다.",
+      items: [
+        {
+          title: "구직자",
+          desc: "지원서, 이력서, CV, 링크드인에 들어가는 사진을 더 믿을 만하게 정리합니다.",
+          bullets: ["링크드인 프로필 정리", "이력서와 CV 헤드샷", "지원용 프로필 사진"],
+        },
+        {
+          title: "창업자와 운영자",
+          desc: "팀 소개, 바이오, 뉴스레터, 투자자용 소개에 반복되는 프로필 사진을 정리합니다.",
+          bullets: ["창업자 소개 헤드샷", "팀 디렉터리 사진", "발표자 페이지 이미지"],
+        },
+        {
+          title: "크리에이터와 프리랜서",
+          desc: "개성을 유지하면서도 소개, 협업, 커뮤니티에서 더 좋은 첫인상을 주는 쪽으로 정리합니다.",
+          bullets: ["크리에이터 프로필", "프리랜서 소개 사진", "커뮤니티 아바타 업그레이드"],
+        },
+      ],
+    },
+    trust: {
+      eyebrow: "신뢰",
+      heading: "신뢰는 과장된 주장보다 결과에서 나와야 합니다",
+      subheading:
+        "이 랜딩은 먼저 믿을 만해야 합니다. 분명한 결과, 현실적인 예시, 검증되지 않은 사회적 증거 배제가 기본입니다.",
+      note:
+        "검증되지 않은 수치, 가짜 후기, 명시적 동의 없는 사용자 증언은 공개하지 않습니다.",
+      items: [
+        {
+          title: "현실적인 결과 표현",
+          desc: "비현실적으로 완벽한 사진이 아니라 더 정돈되고 더 믿을 만한 프로필 사진이라는 점을 강조합니다.",
+        },
+        {
+          title: "페이지 전반의 메시지 일관성",
+          desc: "홈, SEO 페이지, 가격, 로그인 흐름까지 모두 같은 프로필 사진 약속을 유지해야 합니다.",
+        },
+        {
+          title: "채우기용 문구보다 실제 증거",
+          desc: "가능하면 비포 애프터와 실제 예시를 우선하고, 일반적인 AI 툴 수사는 줄입니다.",
+        },
+      ],
+    },
     footer: {
       description:
         "링크드인 헤드샷, 이력서 사진, 공개 프로필용 이미지를 위한 프로필 사진 AI.",
@@ -371,6 +539,7 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
         "Une photo casual devient une image de profil plus credible pour LinkedIn, CV, et bios publiques.",
     },
     features: {
+      eyebrow: "Resultat",
       heading: "Pense pour le resultat photo de profil",
       subheading:
         "Partez d'une photo simple, choisissez la direction souhaitee, puis jugez vite si le resultat est assez fort pour LinkedIn, un CV, ou une page equipe.",
@@ -475,6 +644,71 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           originalState: "Portrait lisible mais encore trop casual pour du business, des bios, ou de l'outreach.",
           turnaround: "Une passe puis leger ajustement si besoin.",
           resultUse: "Bios createur, profils freelance, pages communaute, et avatars.",
+        },
+      ],
+    },
+    problem: {
+      eyebrow: "Risque de premiere impression",
+      heading: "Votre photo de profil actuelle peut affaiblir la premiere impression",
+      subheading:
+        "Le probleme est souvent simple: la photo est trop casual, la lumiere est faible, ou la qualite n'est pas assez forte pour un usage public.",
+      items: [
+        {
+          title: "Trop casual pour un usage professionnel",
+          desc: "Un selfie acceptable peut encore envoyer un mauvais signal sur LinkedIn, un CV, ou une bio fondateur.",
+        },
+        {
+          title: "Lumiere faible et details mous",
+          desc: "Une photo sombre ou trop douce donne une impression plus faible que la personne qu'elle represente.",
+        },
+        {
+          title: "Presence publique incoherente",
+          desc: "Quand la meme image faible apparait partout, le probleme de premiere impression grandit sur chaque surface publique.",
+        },
+      ],
+    },
+    useCases: {
+      eyebrow: "Cas d'usage",
+      heading: "Pense pour les personnes jugees par leur photo de profil",
+      subheading:
+        "Les meilleurs cas d'usage ont un point commun: la photo represente une vraie personne dans un contexte public ou la confiance compte vite.",
+      items: [
+        {
+          title: "Chercheurs d'emploi",
+          desc: "Renforcez la photo utilisee sur LinkedIn, CV, et candidatures.",
+          bullets: ["Rafraichir LinkedIn", "Headshot CV", "Photo de candidature"],
+        },
+        {
+          title: "Fondateurs et operateurs",
+          desc: "Nettoyez l'image repetee sur bios, pages equipe, newsletters, et presentatons publiques.",
+          bullets: ["Headshot fondateur", "Photo annuaire equipe", "Image page speaker"],
+        },
+        {
+          title: "Createurs et freelances",
+          desc: "Gardez de la personnalite tout en renforcant la credibilite sur les profils publics.",
+          bullets: ["Photo bio createur", "Profil freelance", "Upgrade avatar communaute"],
+        },
+      ],
+    },
+    trust: {
+      eyebrow: "Confiance",
+      heading: "La confiance doit venir du resultat, pas de promesses gonflees",
+      subheading:
+        "Cette page doit paraitre credible avant de paraitre impressionnante. Resultats clairs, exemples realistes, et aucune preuve sociale douteuse.",
+      note:
+        "Ne publiez pas de chiffres non verifies ni de temoignages sans permission explicite.",
+      items: [
+        {
+          title: "Resultats credibles",
+          desc: "Positionnez le rendu comme plus propre et plus professionnel, pas comme une perfection irreelle.",
+        },
+        {
+          title: "Message coherent",
+          desc: "Gardez la meme promesse photo de profil sur la home, les pages SEO, les tarifs, et les flux auth.",
+        },
+        {
+          title: "Vraies preuves",
+          desc: "Preferez avant / apres et exemples realistes a des affirmations generiques sur l'IA.",
         },
       ],
     },

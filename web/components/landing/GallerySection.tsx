@@ -14,7 +14,7 @@ export default function GallerySection({ language }: GallerySectionProps) {
   ];
 
   return (
-    <section id="proof" className="mx-auto max-w-6xl px-6">
+    <section id="examples" className="mx-auto max-w-6xl px-6">
       <div className="mb-12 text-center">
         <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">{copy.heading}</h2>
         <p className="mt-3 text-sm text-gray-500">{copy.subheading}</p>
