@@ -9,6 +9,7 @@ import {
   clearStoredCreditBalance,
   readStoredCreditBalance,
 } from "@/lib/credits";
+import { trackEvent, trackEventOnce } from "@/lib/analytics";
 import { createClient } from "@/lib/supabase/client";
 import { deleteAccount } from "@/app/auth/actions";
 
@@ -320,7 +321,11 @@ export default function BillingPageClient({
   const autoCheckoutPackageRef = useRef<string | null>(null);
   const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
   const checkoutPackageId = searchParams.get("checkoutPackage");
+  const checkoutStatus = searchParams.get("checkout");
+  const checkoutId = searchParams.get("checkout_id") ?? undefined;
+  const pricingSource = searchParams.get("source") ?? "direct";
   const navigationBasePath = pathname.startsWith("/pricing") ? "/pricing" : "/mypage";
+  const hasTrackedPricingVisitRef = useRef(false);
 
   const getAccessToken = useCallback(async () => {
     const { data } = await supabase.auth.getSession();
@@ -482,6 +487,19 @@ export default function BillingPageClient({
   }, [loadBillingPage]);
 
   useEffect(() => {
+    if (!isPricingView || isLoading || isAuthenticated === null || hasTrackedPricingVisitRef.current) {
+      return;
+    }
+
+    hasTrackedPricingVisitRef.current = true;
+    trackEvent("visit_pricing", {
+      source: pricingSource,
+      authenticated: isAuthenticated,
+      language: initialLanguage,
+    });
+  }, [initialLanguage, isAuthenticated, isLoading, isPricingView, pricingSource]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
 
     const params = new URLSearchParams(window.location.search);
@@ -527,6 +545,19 @@ export default function BillingPageClient({
       window.clearInterval(intervalId);
     };
   }, [isPricingView, refreshCredits, refreshMyPageSnapshot]);
+
+  useEffect(() => {
+    if (!isPricingView || checkoutStatus !== "success") {
+      return;
+    }
+
+    const dedupeKey = checkoutId ? `purchase_credit:${checkoutId}` : "purchase_credit:success";
+    trackEventOnce("purchase_credit", dedupeKey, {
+      checkout_id: checkoutId,
+      source: pricingSource,
+      language: initialLanguage,
+    });
+  }, [checkoutId, checkoutStatus, initialLanguage, isPricingView, pricingSource]);
 
   const handleCheckout = useCallback(
     async (packageId: string) => {
@@ -614,6 +645,19 @@ export default function BillingPageClient({
       }),
     [initialLanguage, packages]
   );
+  const packageCapacitySummary = useMemo(() => {
+    if (creditCost <= 0 || localizedPackages.length === 0) {
+      return null;
+    }
+
+    return localizedPackages
+      .map((pkg) =>
+        isKo
+          ? `${pkg.name} 약 ${Math.floor(pkg.total_credits / creditCost)}건`
+          : `${pkg.name} about ${Math.floor(pkg.total_credits / creditCost)} jobs`
+      )
+      .join(" · ");
+  }, [creditCost, isKo, localizedPackages]);
   const loginHref = buildLoginHref(navigationBasePath);
   const refundRequestsByLedgerId = useMemo(
     () =>
@@ -1048,92 +1092,149 @@ export default function BillingPageClient({
           </section>
 
           {isPricingView ? (
-            <section className="grid gap-4 lg:grid-cols-3">
-              {localizedPackages.map((pkg) => {
-                const pricePerCredit = pkg.price / pkg.total_credits;
-                const isBusy = checkoutingPackageId === pkg.id;
-
-                return (
-                  <article
-                    key={pkg.id}
-                    className={`relative overflow-hidden rounded-[28px] border p-6 transition-colors ${
-                      pkg.highlight
-                        ? "border-indigo-500/40 bg-indigo-500/10 shadow-lg shadow-indigo-950/20"
-                        : "border-gray-200 bg-white/80"
-                    }`}
-                  >
-                    {pkg.highlight && (
-                      <div className="absolute right-4 top-4 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-indigo-600">
-                        Recommended
-                      </div>
+            <>
+              <section className="grid gap-4 lg:grid-cols-3">
+                <article className="rounded-[28px] border border-gray-200 bg-white/80 p-6">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
+                    {t("작업당 소모", "Per image cost")}
+                  </p>
+                  <p className="mt-3 text-3xl font-semibold tracking-tight text-gray-900">
+                    {creditCost} {t("크레딧", "credits")}
+                  </p>
+                  <p className="mt-3 text-sm leading-relaxed text-gray-500">
+                    {t(
+                      "기본 생성/보정 작업은 현재 이 기준으로 계산됩니다. 가격 이해를 먼저 돕기 위해 패키지 카드 위에 고정 노출합니다.",
+                      "A standard generation or enhancement job currently uses this credit amount. It is surfaced above the packages so users can price the workflow faster."
                     )}
+                  </p>
+                </article>
 
-                    <div className="space-y-4">
-                      <div>
-                        <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
-                          {pkg.badge}
-                        </p>
-                        <h2 className="mt-2 text-2xl font-semibold text-gray-900">{pkg.name}</h2>
-                      </div>
+                <article className="rounded-[28px] border border-gray-200 bg-white/80 p-6">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
+                    {t("패키지별 예상 작업 수", "Estimated jobs by package")}
+                  </p>
+                  <p className="mt-3 text-3xl font-semibold tracking-tight text-gray-900">
+                    {packageCapacitySummary ? packageCapacitySummary.split(" · ")[0] : "—"}
+                  </p>
+                  <p className="mt-3 text-sm leading-relaxed text-gray-500">
+                    {packageCapacitySummary
+                      ? t(
+                          `${packageCapacitySummary} 정도로 계산됩니다.`,
+                          `Roughly ${packageCapacitySummary} at the current credit cost.`
+                        )
+                      : t(
+                          "패키지 정보를 불러오면 예상 작업 수를 바로 계산해서 보여줍니다.",
+                          "Once package data loads, the page calculates the rough job count automatically."
+                        )}
+                  </p>
+                </article>
 
-                      <div className="flex items-end gap-2">
-                        <span className="text-4xl font-semibold text-gray-900">{pkg.total_credits}</span>
-                        <span className="pb-1 text-sm text-gray-500">credits</span>
-                      </div>
+                <article className="rounded-[28px] border border-amber-200 bg-amber-50 p-6">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-amber-700">
+                    {t("환불 정책 요약", "Refund summary")}
+                  </p>
+                  <p className="mt-3 text-3xl font-semibold tracking-tight text-amber-950">
+                    {t("7일 이내", "Within 7 days")}
+                  </p>
+                  <p className="mt-3 text-sm leading-relaxed text-amber-900">
+                    {t(
+                      "마이페이지에서 환불 요청 가능한 결제는 7일 이내 직접 요청할 수 있습니다.",
+                      "Eligible payments can request a refund from My Page within 7 days."
+                    )}
+                  </p>
+                </article>
+              </section>
 
-                      <div className="flex flex-wrap gap-2 text-xs">
-                        <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-gray-400">
-                          {isKo ? `기본 ${pkg.credits}` : `Base ${pkg.credits}`}
-                        </span>
-                        {pkg.bonus > 0 && (
-                          <span className="rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-green-700">
-                            {isKo ? `보너스 +${pkg.bonus}` : `Bonus +${pkg.bonus}`}
+              <section className="grid gap-4 lg:grid-cols-3">
+                {localizedPackages.map((pkg) => {
+                  const pricePerCredit = pkg.price / pkg.total_credits;
+                  const isBusy = checkoutingPackageId === pkg.id;
+
+                  return (
+                    <article
+                      key={pkg.id}
+                      className={`relative overflow-hidden rounded-[28px] border p-6 transition-colors ${
+                        pkg.highlight
+                          ? "border-indigo-500/40 bg-indigo-500/10 shadow-lg shadow-indigo-950/20"
+                          : "border-gray-200 bg-white/80"
+                      }`}
+                    >
+                      {pkg.highlight && (
+                        <div className="absolute right-4 top-4 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-indigo-600">
+                          Recommended
+                        </div>
+                      )}
+
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
+                            {pkg.badge}
+                          </p>
+                          <h2 className="mt-2 text-2xl font-semibold text-gray-900">{pkg.name}</h2>
+                        </div>
+
+                        <div className="flex items-end gap-2">
+                          <span className="text-4xl font-semibold text-gray-900">{pkg.total_credits}</span>
+                          <span className="pb-1 text-sm text-gray-500">credits</span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-gray-400">
+                            {isKo ? `기본 ${pkg.credits}` : `Base ${pkg.credits}`}
                           </span>
+                          {pkg.bonus > 0 && (
+                            <span className="rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-green-700">
+                              {isKo ? `보너스 +${pkg.bonus}` : `Bonus +${pkg.bonus}`}
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-sm leading-relaxed text-gray-500">{pkg.description}</p>
+
+                        <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
+                          <p className="text-2xl font-semibold text-gray-900">
+                            {formatCurrency(pkg.price, pkg.currency)}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {t("크레딧당 약", "Approx. per credit")} {formatCurrency(pricePerCredit, pkg.currency)}
+                          </p>
+                          <p className="mt-2 text-xs text-gray-500">
+                            {t("예상 작업 수", "Estimated jobs")}: {creditCost > 0 ? Math.floor(pkg.total_credits / creditCost) : "—"}
+                          </p>
+                        </div>
+
+                        {pkg.available ? (
+                          <button
+                            type="button"
+                            onClick={() => void handleCheckout(pkg.id)}
+                            disabled={isBusy}
+                            className={`inline-flex w-full items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
+                              pkg.highlight
+                                ? "bg-indigo-500 text-white hover:bg-indigo-400 disabled:opacity-50"
+                                : "bg-white text-gray-950 hover:bg-gray-100 disabled:opacity-50"
+                            }`}
+                          >
+                            {isBusy
+                              ? t("체크아웃 준비 중...", "Preparing checkout...")
+                              : isAuthenticated
+                                ? t("결제하기", "Continue to payment")
+                                : t("로그인 후 결제하기", "Log in to pay")}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled
+                            className="inline-flex w-full items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-500"
+                          >
+                            {t("상품 ID 연결 필요", "Product ID required")}
+                          </button>
                         )}
                       </div>
-
-                      <p className="text-sm leading-relaxed text-gray-500">{pkg.description}</p>
-
-                      <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
-                        <p className="text-2xl font-semibold text-gray-900">
-                          {formatCurrency(pkg.price, pkg.currency)}
-                        </p>
-                        <p className="mt-1 text-xs text-gray-500">
-                          {t("크레딧당 약", "Approx. per credit")} {formatCurrency(pricePerCredit, pkg.currency)}
-                        </p>
-                      </div>
-
-                      {pkg.available ? (
-                        <button
-                          type="button"
-                          onClick={() => void handleCheckout(pkg.id)}
-                          disabled={isBusy}
-                          className={`inline-flex w-full items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
-                            pkg.highlight
-                              ? "bg-indigo-500 text-gray-900 hover:bg-indigo-400 disabled:opacity-50"
-                              : "bg-white text-gray-950 hover:bg-gray-100 disabled:opacity-50"
-                          }`}
-                        >
-                          {isBusy
-                            ? t("체크아웃 준비 중...", "Preparing checkout...")
-                            : isAuthenticated
-                              ? t("결제하기", "Continue to payment")
-                              : t("로그인 후 결제하기", "Log in to pay")}
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          disabled
-                          className="inline-flex w-full items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-500"
-                        >
-                          {t("상품 ID 연결 필요", "Product ID required")}
-                        </button>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
-            </section>
+                    </article>
+                  );
+                })}
+              </section>
+            </>
           ) : (
             <>
               <section className="rounded-[32px] border border-gray-200 bg-white/80 p-6 sm:p-8">

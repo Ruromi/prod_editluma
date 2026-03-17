@@ -6,11 +6,15 @@ import SignupForm from "./SignupForm";
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
   const cookieStore = await cookies();
   const language = normalizeLandingLanguage(cookieStore.get(LANDING_LANGUAGE_COOKIE)?.value);
+  const nextPath =
+    typeof next === "string" && next.startsWith("/") && !next.startsWith("//")
+      ? next
+      : "/dashboard?tab=generate";
 
   return (
     <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4">
@@ -26,7 +30,7 @@ export default async function SignupPage({
           </div>
         )}
 
-        <SignupForm initialLanguage={language} />
+        <SignupForm initialLanguage={language} nextPath={nextPath} />
 
         <p className="text-center text-sm text-gray-500">
           {language === "ko" ? "이미 계정이 있으신가요?" : "Already have an account?"}{" "}

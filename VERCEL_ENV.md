@@ -28,6 +28,10 @@ IMAGE_REQUEST_CREDIT_COST=10
 ADMIN_ALLOWED_IPS=203.0.113.10
 ADMIN_EMAILS=admin@example.com
 NEXT_PUBLIC_CONTACT_EMAIL=support@example.com
+NEXT_PUBLIC_GA4_MEASUREMENT_ID=
+NEXT_PUBLIC_POSTHOG_KEY=
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+NEXT_PUBLIC_POSTHOG_UI_HOST=https://us.posthog.com
 STORAGE_BUCKET=editluma-uploads
 STORAGE_REGION=ap-northeast-2
 STORAGE_ACCESS_KEY=
@@ -48,6 +52,7 @@ POLAR_CHECKOUT_LINK_MAX=
 - `NEXT_PUBLIC_API_URL`은 반드시 빈 값으로 둡니다.
 - `INTERNAL_API_URL`도 빈 값으로 둡니다. 같은 프로젝트 안의 `/api/*`를 그대로 사용합니다.
 - Production에서 `ENVIRONMENT=production`이면 `POLAR_SERVER=production`도 같이 들어가야 합니다.
+- `NEXT_PUBLIC_GA4_MEASUREMENT_ID`와 `NEXT_PUBLIC_POSTHOG_*`는 비워두면 추적 코드가 로드되지 않습니다.
 
 필요한 경우에만 추가:
 

@@ -27,6 +27,11 @@ function resolveNextPath(rawNext: FormDataEntryValue | null, fallback: string) {
   return rawNext;
 }
 
+function appendTrackingParams(path: string, entries: Record<string, string>) {
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}${new URLSearchParams(entries).toString()}`;
+}
+
 function isValidSignupPassword(password: string) {
   return password.length >= 8;
 }
@@ -88,11 +93,15 @@ export async function signup(formData: FormData) {
   }
 
   const origin = resolveTrustedRequestOrigin(headersList);
+  const next = resolveNextPath(formData.get("next"), "/dashboard?tab=generate");
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}/dashboard`,
+      emailRedirectTo: `${origin}${appendTrackingParams(next, {
+        signup: "success",
+        provider: "email",
+      })}`,
     },
   });
 

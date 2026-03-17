@@ -15,13 +15,13 @@ export default function GallerySection({ language }: GallerySectionProps) {
         <p className="mt-3 text-sm text-gray-500">{copy.subheading}</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2">
         {copy.items.map((g) => (
           <div
             key={g.src}
             className="group overflow-hidden rounded-2xl border border-gray-200 bg-white transition-all duration-300 hover:border-gray-300 hover:shadow-xl hover:shadow-indigo-500/5"
           >
-            <div className="relative aspect-square w-full overflow-hidden bg-white">
+            <div className="relative aspect-[4/3] w-full overflow-hidden bg-white">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={g.src}
@@ -32,11 +32,23 @@ export default function GallerySection({ language }: GallerySectionProps) {
                 }}
               />
             </div>
-            <div className="space-y-2 px-5 py-4">
+            <div className="space-y-4 px-5 py-5">
               <span className="inline-flex rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-500">
                 {g.label}
               </span>
-              <p className="text-sm leading-relaxed text-gray-700">{g.summary}</p>
+              <div>
+                <h3 className="text-lg font-semibold tracking-tight text-gray-900">{g.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-gray-600">{g.summary}</p>
+              </div>
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
+                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">
+                  {copy.promptLabel}
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-gray-700">{g.prompt}</p>
+              </div>
+              <p className="text-sm leading-relaxed text-gray-500">
+                <span className="font-semibold text-gray-700">{copy.fitLabel}:</span> {g.fit}
+              </p>
             </div>
           </div>
         ))}

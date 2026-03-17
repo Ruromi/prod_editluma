@@ -6,15 +6,15 @@ import { LANDING_LANGUAGE_COOKIE, normalizeLandingLanguage } from "@/lib/landing
 import { createServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = createSeoMetadata({
-  title: "AI Image Generator and Photo Enhancer",
+  title: "AI Portrait Enhancer for Creators",
   path: "/",
   description:
-    "Create AI images, enhance portraits, retouch selfies, and upscale photos with EditLuma's fast credit-based workflow.",
+    "Clean up creator portraits, retouch selfies, and test publish-ready profile photos with EditLuma's credit-based AI workflow.",
   keywords: [
-    "AI image generation SaaS",
-    "AI photo enhancer online",
-    "portrait retouch AI",
-    "photo upscaler AI",
+    "AI portrait enhancer",
+    "creator profile photo enhancer",
+    "AI selfie retouch",
+    "portrait cleanup AI",
   ],
 });
 

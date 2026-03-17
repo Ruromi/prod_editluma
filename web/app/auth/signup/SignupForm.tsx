@@ -6,10 +6,15 @@ import { signup, loginWithGoogle } from "../actions";
 
 type SignupFormProps = {
   initialLanguage?: HeaderLanguage;
+  nextPath?: string;
 };
 
-export default function SignupForm({ initialLanguage = "en" }: SignupFormProps) {
+export default function SignupForm({
+  initialLanguage = "en",
+  nextPath = "/dashboard?tab=generate",
+}: SignupFormProps) {
   const language = initialLanguage;
+  const signupRedirectPath = `${nextPath}${nextPath.includes("?") ? "&" : "?"}signup=success&provider=google`;
   const passwordPolicyTitle =
     language === "ko"
       ? "비밀번호는 8자 이상이어야 합니다."
@@ -40,6 +45,7 @@ export default function SignupForm({ initialLanguage = "en" }: SignupFormProps) 
   return (
     <>
       <form action={signup} className="space-y-4">
+        <input type="hidden" name="next" value={nextPath} />
         <div>
             <label htmlFor="email" className="block text-sm text-gray-400 mb-1">
             {language === "ko" ? "이메일" : "Email"}
@@ -119,6 +125,11 @@ export default function SignupForm({ initialLanguage = "en" }: SignupFormProps) 
       </div>
 
       <form action={loginWithGoogle}>
+        <input
+          type="hidden"
+          name="next"
+          value={signupRedirectPath}
+        />
         <button
           type="submit"
           className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 font-medium text-gray-800 hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
