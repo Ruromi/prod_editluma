@@ -51,22 +51,24 @@ export default function HeroSection({ isAuthenticated, language }: HeroSectionPr
             </div>
           </div>
 
-          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
-            <Link
-              href={primaryHref}
-              className="inline-flex min-w-[240px] items-center justify-center rounded-xl bg-gray-950 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
-            >
-              {isAuthenticated ? copy.primaryCtaSignedIn : copy.primaryCtaSignedOut}
-            </Link>
-            <a
-              href="#examples"
-              className="inline-flex items-center justify-center rounded-xl border border-gray-200 px-6 py-3.5 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-900"
-            >
-              {copy.secondaryCta}
-            </a>
+          <div className="mt-8 flex flex-col items-center gap-3 lg:items-start">
+            <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
+              <Link
+                href={primaryHref}
+                className="inline-flex min-w-[240px] items-center justify-center whitespace-nowrap rounded-xl bg-gray-950 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
+              >
+                {isAuthenticated ? copy.primaryCtaSignedIn : copy.primaryCtaSignedOut}
+              </Link>
+              <a
+                href="#examples"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-xl border border-gray-200 px-6 py-3.5 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-900"
+              >
+                {copy.secondaryCta}
+              </a>
+            </div>
             <Link
               href={copy.pricingHref}
-              className="inline-flex items-center justify-center rounded-xl px-1 py-3 text-sm font-semibold text-indigo-700 transition-colors hover:text-indigo-900"
+              className="inline-flex items-center justify-center text-sm font-semibold text-indigo-700 transition-colors hover:text-indigo-900"
             >
               {copy.pricingHint}
             </Link>
