@@ -18,6 +18,7 @@ const REFUND_REASONS = new Set([
 ]);
 
 const REFUND_LOCKED_STATUSES = new Set(["pending", "completed", "manual_review"]);
+const REFUND_WINDOW_DAYS = 7;
 
 type AdminDb = ReturnType<ReturnType<typeof createAdminClient>["schema"]>;
 
@@ -33,6 +34,40 @@ function adminRedirect(params: { message?: string; error?: string }): never {
   if (params.error) search.set("error", params.error);
   const suffix = search.size ? `?${search.toString()}` : "";
   redirect(`/admin${suffix}`);
+}
+
+function parseIsoDate(value: unknown) {
+  if (typeof value !== "string" || value.length === 0) {
+    return null;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function isRefundWindowOpen(value: unknown, days = REFUND_WINDOW_DAYS) {
+  const createdAt = parseIsoDate(value);
+  if (!createdAt) {
+    return false;
+  }
+
+  return Date.now() - createdAt.getTime() <= days * 24 * 60 * 60 * 1000;
+}
+
+function hasUnusedPaidCreditsForRefund(
+  currentBalance: number | null,
+  paymentRow: Record<string, unknown> | null | undefined
+) {
+  if (currentBalance === null || !paymentRow) {
+    return false;
+  }
+
+  const balanceAfter = typeof paymentRow.balance_after === "number" ? paymentRow.balance_after : null;
+  if (balanceAfter === null) {
+    return false;
+  }
+
+  return currentBalance >= balanceAfter;
 }
 
 async function requireAdminAccess() {
@@ -464,8 +499,12 @@ export async function refundPayment(formData: FormData) {
 
   const creditRow = await ensureCreditRow(adminDb, targetUserId);
   const currentBalance = extractBalance(creditRow);
-  if (currentBalance === null || currentBalance < creditsToReverse) {
-    adminRedirect({ error: "사용자 현재 잔액이 부족해서 전액 환불을 진행할 수 없습니다." });
+  if (!isRefundWindowOpen(paymentRow.created_at)) {
+    adminRedirect({ error: "구매 후 7일이 지난 결제는 자동 환불을 진행할 수 없습니다." });
+  }
+
+  if (!hasUnusedPaidCreditsForRefund(currentBalance, paymentRow)) {
+    adminRedirect({ error: "해당 구매로 충전된 유료 크레딧을 일부 사용한 결제는 자동 환불을 진행할 수 없습니다." });
   }
 
   let refundData: Record<string, unknown>;

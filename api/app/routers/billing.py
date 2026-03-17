@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -30,6 +31,7 @@ REFUND_REASONS = {
     "dispute_prevention",
     "other",
 }
+REFUND_WINDOW_DAYS = 7
 
 
 class BillingPackageResponse(BaseModel):
@@ -157,6 +159,47 @@ def _is_missing_refund_requests_error(exc: Exception) -> bool:
 def _metadata_dict(row: dict[str, Any]) -> dict[str, Any]:
     metadata = row.get("metadata")
     return metadata if isinstance(metadata, dict) else {}
+
+
+def _parse_timestamp(value: Any) -> datetime | None:
+    if not value:
+        return None
+
+    try:
+        normalized = str(value).replace("Z", "+00:00")
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+
+    return parsed.astimezone(timezone.utc)
+
+
+def _refund_request_error(detail: str) -> HTTPException:
+    return HTTPException(status_code=409, detail=detail)
+
+
+async def _enforce_refund_policy(
+    *,
+    user_id: str,
+    payment_row: dict[str, Any],
+) -> None:
+    created_at = _parse_timestamp(payment_row.get("created_at"))
+    if created_at is None:
+        raise _refund_request_error("이 결제 건의 구매 시각을 확인할 수 없어 자동 환불 요청을 진행할 수 없습니다.")
+
+    if datetime.now(timezone.utc) - created_at > timedelta(days=REFUND_WINDOW_DAYS):
+        raise _refund_request_error(f"구매 후 {REFUND_WINDOW_DAYS}일이 지난 결제는 자동 환불 요청을 지원하지 않습니다.")
+
+    balance_after = payment_row.get("balance_after")
+    if not isinstance(balance_after, int):
+        raise _refund_request_error("이 결제 건의 잔액 기록이 부족해 자동 환불 요청을 진행할 수 없습니다.")
+
+    current_balance = await get_or_create_credit_balance(user_id)
+    if current_balance < balance_after:
+        raise _refund_request_error("해당 구매로 충전된 유료 크레딧을 일부 사용한 결제는 자동 환불 요청을 지원하지 않습니다.")
 
 
 def _map_history_row(row: dict[str, Any]) -> BillingHistoryItem:
@@ -489,6 +532,8 @@ async def create_refund_request(
         if status == "manual_review":
             raise HTTPException(status_code=409, detail="이 결제 건은 이미 수동 검토 중입니다.")
         raise HTTPException(status_code=409, detail="이미 환불 요청이 접수되었습니다.")
+
+    await _enforce_refund_policy(user_id=user.id, payment_row=payment_row)
 
     try:
         inserted = (

@@ -330,6 +330,14 @@ function isWithinRefundWindow(value: string, days = 7) {
   return Date.now() - createdAt.getTime() <= days * 24 * 60 * 60 * 1000;
 }
 
+function hasUnusedPaidCreditsForRefund(currentBalance: number | null, paymentBalanceAfter: number) {
+  if (currentBalance === null) {
+    return false;
+  }
+
+  return currentBalance >= paymentBalanceAfter;
+}
+
 function DeleteAccountSubmitButton({ language }: { language: "en" | "ko" }) {
   const { pending } = useFormStatus();
 
@@ -1529,13 +1537,18 @@ export default function BillingPageClient({
                       refundRequestsByLedgerId.get(item.id) ??
                       (item.order_id ? refundRequestsByOrderId.get(item.order_id) : undefined);
                     const isRefundWindowOpen = isWithinRefundWindow(item.created_at, 7);
+                    const hasUnusedPaidCredits = hasUnusedPaidCreditsForRefund(
+                      creditBalance,
+                      item.balance_after
+                    );
                     const canRequestRefund =
                       !existingRefundRequest &&
                       item.credits_added > 0 &&
                       typeof item.amount === "number" &&
                       item.amount > 0 &&
                       Boolean(item.order_id) &&
-                      isRefundWindowOpen;
+                      isRefundWindowOpen &&
+                      hasUnusedPaidCredits;
 
                     return (
                       <div
@@ -1666,6 +1679,13 @@ export default function BillingPageClient({
                                 {t("7일 이내 환불 요청 가능", "Refund requests are available within 7 days.")}
                               </p>
                             </>
+                          ) : !existingRefundRequest && !hasUnusedPaidCredits ? (
+                            <p className="text-xs leading-5 text-gray-500">
+                              {t(
+                                "해당 구매 건으로 충전된 유료 크레딧을 일부 사용한 뒤에는 자동 환불 요청을 지원하지 않습니다.",
+                                "Automatic refunds are only available before any paid credits from this purchase are used."
+                              )}
+                            </p>
                           ) : (
                             <p className="text-xs leading-5 text-gray-500">
                               {t(

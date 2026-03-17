@@ -4,23 +4,14 @@ import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.config import settings
-from app.core.storage import generate_presigned_upload_url
+from app.core.storage import generate_presigned_upload_post
+from app.core.uploads import ALLOWED_UPLOAD_TYPES
 
 router = APIRouter(prefix="/api/upload", tags=["upload"])
-
-ALLOWED_UPLOAD_TYPES = {
-    "image/jpeg": ".jpg",
-    "image/png": ".png",
-    "image/webp": ".webp",
-    "image/gif": ".gif",
-    "image/heic": ".heic",
-    "image/heif": ".heic",
-}
-
 
 def _sanitize_filename(filename: str, content_type: str) -> str:
     base_name = filename.replace("\\", "/").rsplit("/", 1)[-1].strip()
@@ -48,6 +39,7 @@ class PresignRequest(BaseModel):
 class PresignResponse(BaseModel):
     upload_url: str
     object_key: str
+    upload_fields: dict[str, str] = Field(default_factory=dict)
 
 
 @router.post("/presign", response_model=PresignResponse)
@@ -69,5 +61,9 @@ async def presign_upload(
 
     safe_name = _sanitize_filename(body.filename, body.content_type)
     object_key = f"uploads/{user.id}/{uuid.uuid4()}/{safe_name}"
-    upload_url = generate_presigned_upload_url(object_key, body.content_type)
-    return PresignResponse(upload_url=upload_url, object_key=object_key)
+    payload = generate_presigned_upload_post(object_key, body.content_type)
+    return PresignResponse(
+        upload_url=str(payload["url"]),
+        object_key=object_key,
+        upload_fields={str(key): str(value) for key, value in dict(payload.get("fields") or {}).items()},
+    )
