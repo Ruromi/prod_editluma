@@ -19,7 +19,17 @@ type LandingExample = {
   title: string;
   summary: string;
   prompt: string;
-  fit: string;
+  originalState: string;
+  turnaround: string;
+  resultUse: string;
+};
+
+type LandingFailureCase = {
+  eyebrow: string;
+  title: string;
+  originalState: string;
+  whyFailed: string;
+  nextStep: string;
 };
 
 type LandingCopy = {
@@ -58,7 +68,12 @@ type LandingCopy = {
     heading: string;
     subheading: string;
     promptLabel: string;
-    fitLabel: string;
+    originalStateLabel: string;
+    turnaroundLabel: string;
+    resultUseLabel: string;
+    failureReasonLabel: string;
+    failureNextStepLabel: string;
+    failureCase: LandingFailureCase;
     items: LandingExample[];
   };
   cta: {
@@ -100,27 +115,27 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
       eyebrow: "Trust Before Traffic",
       heading: "Show the workflow people need to trust before they buy",
       subheading:
-        "The landing page now leads with a narrower promise, visible examples, and clear tradeoffs instead of trying to sell every image workflow at once.",
+        "The landing page now leads with a narrower promise, six review-ready examples, and one visible miss instead of trying to sell every image workflow at once.",
       metrics: [
         {
-          label: "Positioning",
-          value: "Portrait-first",
-          detail: "The first screen is now anchored to creator portraits and profile-photo cleanup instead of broad AI utility language.",
+          label: "Review set",
+          value: "6 example cards",
+          detail: "The homepage now anchors itself with six concrete portrait and support-use examples instead of generic AI claims.",
         },
         {
-          label: "Workflow",
-          value: "Prompt + result visible",
-          detail: "Sample outputs below expose the kind of prompt direction the product can handle before a user commits.",
+          label: "What is visible",
+          value: "Source + prompt + turnaround",
+          detail: "Each card now exposes the original condition, prompt direction, rough turnaround, and intended result use before checkout.",
         },
         {
-          label: "Decision safety",
-          value: "7-day refund window",
-          detail: "Pricing now surfaces the existing refund window earlier so users can judge the risk before checkout.",
+          label: "Risk handling",
+          value: "1 miss shown openly",
+          detail: "A known weak-input case is called out on purpose so the promise stays narrower and more believable.",
         },
       ],
       limitationTitle: "Where we still say no",
       limitationBody:
-        "Heavy motion blur, hidden faces, or badly compressed uploads can still need retries or manual touch-up. Showing that clearly is better than promising magic.",
+        "Heavy motion blur, hidden faces, or badly compressed uploads can still need retries or manual touch-up. Pricing now also reflects the actual refund policy: 7 days, unused paid credits only, and no typical partial refunds.",
     },
     features: {
       heading: "What The Product Is Optimized For",
@@ -166,9 +181,24 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
     },
     gallery: {
       heading: "Proof, Not Just Claims",
-      subheading: "Each sample shows the use case, prompt direction, and where that type of output is most useful.",
+      subheading:
+        "Each example now shows the original condition, prompt direction, review speed, and where that result is meant to be used before purchase.",
       promptLabel: "Prompt direction",
-      fitLabel: "Best fit",
+      originalStateLabel: "Original state",
+      turnaroundLabel: "Typical turnaround",
+      resultUseLabel: "Result use",
+      failureReasonLabel: "Why it breaks",
+      failureNextStepLabel: "What to do instead",
+      failureCase: {
+        eyebrow: "Known miss",
+        title: "Hidden face plus strong blur is still a bad starting point",
+        originalState:
+          "The face is partially blocked, the light is uneven, and the upload is already heavily compressed.",
+        whyFailed:
+          "The model does not have enough clean facial structure to restore a trustworthy portrait, so retries can drift or over-smooth.",
+        nextStep:
+          "Use a clearer frame or reshoot once. This workflow works best when the face and light are still readable.",
+      },
       items: [
         {
           src: "/landing/feature-enhance-portrait.png",
@@ -177,7 +207,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "Cleaner headshot for public-facing profiles",
           summary: "A more polished portrait without pushing skin texture into an artificial plastic look.",
           prompt: "Clean creator portrait, natural skin detail, balanced light, polished but realistic finish.",
-          fit: "Profile photos, creator pages, speaker bios, and landing-page introductions.",
+          originalState: "Usable headshot with flat light and a slightly tired skin finish.",
+          turnaround: "Usually one pass.",
+          resultUse: "Profile photos, creator pages, speaker bios, and landing-page introductions.",
         },
         {
           src: "/landing/gallery-enhance.png",
@@ -186,7 +218,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "Weak source image made usable again",
           summary: "A softer portrait becomes clearer and more presentable for quick publishing or client review.",
           prompt: "Restore portrait clarity, cleaner skin tone, balanced contrast, keep the face natural.",
-          fit: "Older uploads, low-confidence drafts, and fast turnarounds when a full reshoot is not realistic.",
+          originalState: "Older upload with weak contrast and a flatter facial read than desired.",
+          turnaround: "Usually one to two retries.",
+          resultUse: "Older uploads, low-confidence drafts, and fast turnarounds when a full reshoot is not realistic.",
         },
         {
           src: "/prompt-examples/beauty-portrait.png",
@@ -195,7 +229,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "Sharper thumbnail or profile visual",
           summary: "A clean editorial portrait direction that keeps the subject centered and credible.",
           prompt: "Clean beauty portrait of a young East Asian woman, natural glowing skin, centered composition, soft daylight, realistic facial detail.",
-          fit: "Thumbnails, beauty creators, portfolio intros, and polished social profile images.",
+          originalState: "Centered portrait with a readable face and already-stable daylight.",
+          turnaround: "Usually one pass.",
+          resultUse: "Thumbnails, beauty creators, portfolio intros, and polished social profile images.",
         },
         {
           src: "/prompt-examples/cinematic-street.png",
@@ -204,7 +240,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "A stronger social-facing portrait mood",
           summary: "Useful when the goal is not just cleanup, but a more intentional editorial atmosphere.",
           prompt: "Cinematic street portrait, soft bokeh lights, warm glow, fashion editorial mood, realistic photography.",
-          fit: "X headers, Instagram promos, creator launch posts, and campaign thumbnails.",
+          originalState: "Clear face, but the original mood and background energy feel too weak for promotion.",
+          turnaround: "One pass, then mood tuning if needed.",
+          resultUse: "X headers, Instagram promos, creator launch posts, and campaign thumbnails.",
         },
         {
           src: "/prompt-examples/pop-art-grid.png",
@@ -213,7 +251,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "Intentional visual shift for campaign experiments",
           summary: "A reminder that the product can extend into styled variations after the core portrait is working.",
           prompt: "A four-panel pop art portrait series, neon cyan and magenta palette, bold graphic shapes, gallery poster composition.",
-          fit: "Creative tests, launch art, campaign experiments, and high-contrast social assets.",
+          originalState: "The main portrait direction is already approved and the next step is campaign variation testing.",
+          turnaround: "Two to three retries when style matters.",
+          resultUse: "Creative tests, launch art, campaign experiments, and high-contrast social assets.",
         },
         {
           src: "/prompt-examples/fairytale-cafe.png",
@@ -222,7 +262,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "Prompt-based side visual when you need more than retouching",
           summary: "Generation still exists, but it is now positioned as a supporting workflow after the portrait use case.",
           prompt: "A fairytale princess with very long golden hair sitting at a cozy cafe table, warm indoor lighting, whimsical cinematic detail.",
-          fit: "Supporting creatives, mood boards, and visual variations that sit next to a stronger portrait-first offer.",
+          originalState: "The portrait job is already solved and a side visual is needed for the same campaign.",
+          turnaround: "Usually more prompt tuning than portrait cleanup.",
+          resultUse: "Supporting creatives, mood boards, and visual variations that sit next to a stronger portrait-first offer.",
         },
       ],
     },
@@ -263,27 +305,27 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
       eyebrow: "광고 전에 신뢰부터",
       heading: "사람들이 결제 전에 확인해야 하는 정보를 먼저 보여줍니다",
       subheading:
-        "첫 화면에서 기능을 전부 나열하는 대신, 인물 보정 중심 메시지와 실제 예시, 그리고 한계까지 같이 노출하는 구조로 바꿉니다.",
+        "첫 화면에서 기능을 전부 나열하는 대신, 인물 보정 중심 메시지와 6개의 검토용 사례 카드, 그리고 실패 사례 1개까지 같이 노출하는 구조로 바꿉니다.",
       metrics: [
         {
-          label: "포지셔닝",
-          value: "인물 보정 중심",
-          detail: "랜딩 첫 화면을 범용 AI 이미지 툴이 아니라 크리에이터용 인물 보정 흐름에 맞췄습니다.",
+          label: "검토 자산",
+          value: "사례 카드 6개",
+          detail: "홈에서 범용 AI 주장 대신 실제 인물 보정과 보조 비주얼 흐름을 바로 확인할 수 있게 정리했습니다.",
         },
         {
-          label: "작업 흐름",
-          value: "프롬프트와 결과 공개",
-          detail: "아래 예시 카드에서 어떤 방향의 프롬프트와 결과를 기대할 수 있는지 먼저 판단할 수 있습니다.",
+          label: "카드 정보",
+          value: "원본 상태 + 프롬프트 + 처리 감각",
+          detail: "각 카드에서 원본 상태, 프롬프트 방향, 대략적인 처리 감각, 결과 용도를 결제 전에 먼저 판단할 수 있습니다.",
         },
         {
-          label: "결정 안전장치",
-          value: "7일 이내 환불 요청",
-          detail: "가격 페이지 상단에서 기존 환불 가능 기간을 더 빨리 보여줘 결제 전 판단 부담을 줄입니다.",
+          label: "리스크 공개",
+          value: "실패 사례 1개 공개",
+          detail: "잘 안 맞는 입력 예시를 의도적으로 같이 보여줘 과한 약속 대신 믿을 수 있는 범위를 먼저 제시합니다.",
         },
       ],
       limitationTitle: "이럴 때는 재시도나 수작업이 필요합니다",
       limitationBody:
-        "얼굴 가림이 심하거나, 움직임 블러가 크거나, 압축 손상이 심한 이미지는 한 번에 깔끔하게 나오지 않을 수 있습니다. 이 한계를 먼저 보여주는 편이 더 신뢰를 만듭니다.",
+        "얼굴 가림이 심하거나, 움직임 블러가 크거나, 압축 손상이 심한 이미지는 한 번에 깔끔하게 나오지 않을 수 있습니다. 가격 페이지 문구도 운영 기준에 맞춰 7일 이내, 미사용 유료 크레딧만 전액 환불, 부분 환불은 원칙적으로 미지원으로 다시 맞춥니다.",
     },
     features: {
       heading: "지금 제품이 가장 잘 맞는 흐름",
@@ -329,9 +371,23 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
     },
     gallery: {
       heading: "말보다 결과로 판단하세요",
-      subheading: "각 카드에 어떤 용도인지, 어떤 방향의 프롬프트인지, 어디에 잘 맞는지 같이 보여줍니다.",
+      subheading:
+        "각 카드에 원본 상태, 프롬프트 방향, 처리 감각, 결과 용도를 같이 붙여 결제 전에 바로 판단할 수 있게 했습니다.",
       promptLabel: "프롬프트 방향",
-      fitLabel: "잘 맞는 용도",
+      originalStateLabel: "원본 상태",
+      turnaroundLabel: "처리 감각",
+      resultUseLabel: "결과 용도",
+      failureReasonLabel: "왜 잘 안 나오는지",
+      failureNextStepLabel: "대신 이렇게 하는 편이 낫습니다",
+      failureCase: {
+        eyebrow: "실패 사례",
+        title: "얼굴 가림과 강한 블러가 겹치면 시작점 자체가 좋지 않습니다",
+        originalState: "얼굴 일부가 가려져 있고, 빛이 불안정하며, 업로드 자체도 압축 손상이 큰 상태입니다.",
+        whyFailed:
+          "모델이 참고할 얼굴 구조 정보가 부족해서 여러 번 돌려도 형태가 흔들리거나 과하게 뭉개질 수 있습니다.",
+        nextStep:
+          "얼굴과 빛이 더 잘 보이는 원본으로 다시 올리거나 한 번 재촬영하는 편이 결과 신뢰도가 훨씬 높습니다.",
+      },
       items: [
         {
           src: "/landing/feature-enhance-portrait.png",
@@ -340,7 +396,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "공개용 프로필에 바로 쓸 수 있는 인상 정리",
           summary: "피부 질감을 완전히 지우지 않으면서 더 정돈된 인물 사진으로 만드는 방향입니다.",
           prompt: "Clean creator portrait, natural skin detail, balanced light, polished but realistic finish.",
-          fit: "프로필 사진, 크리에이터 소개 페이지, 발표자 소개, 랜딩 헤드샷에 잘 맞습니다.",
+          originalState: "기본 인상은 괜찮지만 빛이 평평하고 피부 표현이 다소 지친 헤드샷입니다.",
+          turnaround: "대체로 1회 시도.",
+          resultUse: "프로필 사진, 크리에이터 소개 페이지, 발표자 소개, 랜딩 헤드샷에 잘 맞습니다.",
         },
         {
           src: "/landing/gallery-enhance.png",
@@ -349,7 +407,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "아쉬운 원본을 다시 쓸 수 있게 정리",
           summary: "부드럽고 힘이 빠진 사진을 조금 더 또렷하고 게시 가능한 결과로 끌어올리는 예시입니다.",
           prompt: "Restore portrait clarity, cleaner skin tone, balanced contrast, keep the face natural.",
-          fit: "오래된 업로드, 급한 시안, 재촬영이 어려운 상황에서 특히 유용합니다.",
+          originalState: "대비가 약하고 얼굴 인상이 흐릿하게 읽히는 오래된 업로드입니다.",
+          turnaround: "대체로 1~2회 재시도.",
+          resultUse: "오래된 업로드, 급한 시안, 재촬영이 어려운 상황에서 특히 유용합니다.",
         },
         {
           src: "/prompt-examples/beauty-portrait.png",
@@ -358,7 +418,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "썸네일과 프로필에 강한 중심 인물 컷",
           summary: "주인공이 분명하고 신뢰감 있는 인물 이미지를 만들고 싶을 때 적합한 방향입니다.",
           prompt: "Clean beauty portrait of a young East Asian woman, natural glowing skin, centered composition, soft daylight, realistic facial detail.",
-          fit: "뷰티 크리에이터, 포트폴리오 첫 화면, 소셜 프로필, 썸네일 이미지에 잘 맞습니다.",
+          originalState: "얼굴이 잘 보이고 자연광도 안정적인 중심 인물 컷입니다.",
+          turnaround: "대체로 1회 시도.",
+          resultUse: "뷰티 크리에이터, 포트폴리오 첫 화면, 소셜 프로필, 썸네일 이미지에 잘 맞습니다.",
         },
         {
           src: "/prompt-examples/cinematic-street.png",
@@ -367,7 +429,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "분위기까지 포함한 인물 중심 비주얼",
           summary: "단순 보정보다 한 단계 더 나아가 에디토리얼 무드가 필요한 경우에 쓸 수 있습니다.",
           prompt: "Cinematic street portrait, soft bokeh lights, warm glow, fashion editorial mood, realistic photography.",
-          fit: "X 헤더, 인스타 프로모션, 런칭 포스트, 캠페인용 썸네일에 어울립니다.",
+          originalState: "얼굴은 선명하지만 홍보용으로 쓰기엔 무드와 배경 에너지가 약한 컷입니다.",
+          turnaround: "1회 생성 후 무드 튜닝 추가.",
+          resultUse: "X 헤더, 인스타 프로모션, 런칭 포스트, 캠페인용 썸네일에 어울립니다.",
         },
         {
           src: "/prompt-examples/pop-art-grid.png",
@@ -376,7 +440,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "핵심 사진이 잡힌 뒤 시도하는 확장 실험",
           summary: "기본 인물 흐름이 잡힌 다음에 캠페인용 스타일 변형을 시험할 때 적합합니다.",
           prompt: "A four-panel pop art portrait series, neon cyan and magenta palette, bold graphic shapes, gallery poster composition.",
-          fit: "크리에이티브 테스트, 런칭 아트, 캠페인 시안, 강한 대비의 소셜 자산에 맞습니다.",
+          originalState: "핵심 인물 컷은 이미 확보됐고, 다음 단계로 스타일 실험을 붙이는 상황입니다.",
+          turnaround: "스타일 중요도에 따라 2~3회 조정.",
+          resultUse: "크리에이티브 테스트, 런칭 아트, 캠페인 시안, 강한 대비의 소셜 자산에 맞습니다.",
         },
         {
           src: "/prompt-examples/fairytale-cafe.png",
@@ -385,7 +451,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "인물 보정 외에 필요한 보조 이미지",
           summary: "생성 기능은 여전히 있지만, 이제는 보조 흐름으로 뒤에 배치해 제품의 핵심 메시지를 흐리지 않게 합니다.",
           prompt: "A fairytale princess with very long golden hair sitting at a cozy cafe table, warm indoor lighting, whimsical cinematic detail.",
-          fit: "보조 크리에이티브, 무드보드, 사이드 비주얼, 콘셉트 보강 이미지에 적합합니다.",
+          originalState: "인물 사진 작업은 끝났고 같은 캠페인에 붙일 보조 비주얼이 필요한 상태입니다.",
+          turnaround: "인물 보정보다 프롬프트 조정 비중이 큽니다.",
+          resultUse: "보조 크리에이티브, 무드보드, 사이드 비주얼, 콘셉트 보강 이미지에 적합합니다.",
         },
       ],
     },
@@ -426,27 +494,27 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
       eyebrow: "La confiance avant le trafic",
       heading: "Montrez d’abord ce qu’un utilisateur doit croire avant d’acheter",
       subheading:
-        "La page d’accueil adopte une promesse plus étroite, des exemples visibles et des limites assumées au lieu d’essayer de vendre tous les usages IA en même temps.",
+        "La page d’accueil porte désormais une promesse plus étroite, six exemples concrets et un cas d’échec visible au lieu d’essayer de vendre tous les usages IA en même temps.",
       metrics: [
         {
-          label: "Positionnement",
-          value: "Axé portrait",
-          detail: "Le premier écran parle désormais d’abord de nettoyage portrait et de photo de profil.",
+          label: "Base de preuve",
+          value: "6 cartes d’exemple",
+          detail: "La page montre maintenant six cas concrets orientés portrait au lieu de promesses génériques.",
         },
         {
-          label: "Workflow",
-          value: "Prompt + résultat visibles",
-          detail: "Les exemples ci-dessous montrent quel type de direction de prompt et de résultat attendre avant l’inscription.",
+          label: "Ce qui est visible",
+          value: "Source + prompt + rythme",
+          detail: "Chaque carte montre l’état initial, la direction du prompt, le rythme attendu et l’usage final visé.",
         },
         {
-          label: "Sécurité de décision",
-          value: "Remboursement sous 7 jours",
-          detail: "La page tarifaire met en avant plus tôt la fenêtre de remboursement déjà existante.",
+          label: "Risque assumé",
+          value: "1 échec montré",
+          detail: "Un cas d’entrée faible est affiché volontairement pour garder une promesse plus crédible.",
         },
       ],
       limitationTitle: "Quand nous préférons être clairs",
       limitationBody:
-        "Un flou de mouvement fort, des visages cachés ou une compression trop agressive peuvent encore demander des essais ou une retouche manuelle.",
+        "Un flou de mouvement fort, des visages cachés ou une compression trop agressive peuvent encore demander des essais ou une retouche manuelle. La page tarifaire rappelle aussi la vraie règle de remboursement: 7 jours, crédits payants non utilisés uniquement, pas de remboursement partiel habituel.",
     },
     features: {
       heading: "Le flux auquel le produit correspond le mieux",
@@ -492,9 +560,24 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
     },
     gallery: {
       heading: "Des preuves, pas seulement des promesses",
-      subheading: "Chaque exemple montre l’usage, la direction du prompt et le contexte où ce rendu devient utile.",
+      subheading:
+        "Chaque exemple montre désormais l’état initial, la direction du prompt, le rythme de revue et l’usage final attendu avant l’achat.",
       promptLabel: "Direction du prompt",
-      fitLabel: "Usage idéal",
+      originalStateLabel: "État initial",
+      turnaroundLabel: "Rythme typique",
+      resultUseLabel: "Usage final",
+      failureReasonLabel: "Pourquoi cela casse",
+      failureNextStepLabel: "Que faire à la place",
+      failureCase: {
+        eyebrow: "Cas d’échec",
+        title: "Visage caché et flou fort restent une mauvaise base",
+        originalState:
+          "Le visage est partiellement bloqué, la lumière est instable et le fichier est déjà trop compressé.",
+        whyFailed:
+          "Le modèle ne dispose pas d’assez de structure faciale propre pour recréer un portrait fiable, donc les essais dérivent ou lissent trop.",
+        nextStep:
+          "Utilisez une image plus nette ou refaites une prise. Le flux fonctionne mieux quand le visage et la lumière restent lisibles.",
+      },
       items: [
         {
           src: "/landing/feature-enhance-portrait.png",
@@ -503,7 +586,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "Headshot plus propre pour un usage public",
           summary: "Un portrait plus net et mieux présenté sans effet plastique excessif.",
           prompt: "Clean creator portrait, natural skin detail, balanced light, polished but realistic finish.",
-          fit: "Photos de profil, bios de créateurs, pages d’introduction et présentations publiques.",
+          originalState: "Headshot utilisable mais avec une lumière trop plate et un rendu de peau un peu fatigué.",
+          turnaround: "Généralement une seule passe.",
+          resultUse: "Photos de profil, bios de créateurs, pages d’introduction et présentations publiques.",
         },
         {
           src: "/landing/gallery-enhance.png",
@@ -512,7 +597,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "Une source faible redevient exploitable",
           summary: "Un portrait mou ou fatigué devient plus clair et plus publiable.",
           prompt: "Restore portrait clarity, cleaner skin tone, balanced contrast, keep the face natural.",
-          fit: "Anciens uploads, brouillons rapides et situations où refaire la photo n’est pas réaliste.",
+          originalState: "Ancien upload avec peu de contraste et un visage moins lisible que souhaité.",
+          turnaround: "En général une à deux reprises.",
+          resultUse: "Anciens uploads, brouillons rapides et situations où refaire la photo n’est pas réaliste.",
         },
         {
           src: "/prompt-examples/beauty-portrait.png",
@@ -521,7 +608,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "Visuel centré fort pour profil ou miniature",
           summary: "Une direction éditoriale propre avec un sujet crédible et bien posé.",
           prompt: "Clean beauty portrait of a young East Asian woman, natural glowing skin, centered composition, soft daylight, realistic facial detail.",
-          fit: "Miniatures, profils sociaux, créateurs beauté et premières sections de portfolio.",
+          originalState: "Portrait centré avec un visage lisible et une lumière déjà stable.",
+          turnaround: "Généralement une seule passe.",
+          resultUse: "Miniatures, profils sociaux, créateurs beauté et premières sections de portfolio.",
         },
         {
           src: "/prompt-examples/cinematic-street.png",
@@ -530,7 +619,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "Portrait avec ambiance éditoriale",
           summary: "Utile quand il faut plus qu’un simple nettoyage et qu’une vraie atmosphère est nécessaire.",
           prompt: "Cinematic street portrait, soft bokeh lights, warm glow, fashion editorial mood, realistic photography.",
-          fit: "Headers X, promos Instagram, posts de lancement et visuels de campagne.",
+          originalState: "Le visage est net mais l’ambiance d’origine reste trop faible pour un usage promo.",
+          turnaround: "Une passe, puis ajustement d’ambiance si besoin.",
+          resultUse: "Headers X, promos Instagram, posts de lancement et visuels de campagne.",
         },
         {
           src: "/prompt-examples/pop-art-grid.png",
@@ -539,7 +630,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "Expérience créative après validation du portrait",
           summary: "Une extension utile seulement une fois que le portrait principal fonctionne déjà.",
           prompt: "A four-panel pop art portrait series, neon cyan and magenta palette, bold graphic shapes, gallery poster composition.",
-          fit: "Tests créatifs, campagnes de lancement et assets sociaux à fort contraste.",
+          originalState: "Le portrait principal est déjà validé et l’étape suivante consiste à tester une direction plus forte.",
+          turnaround: "Deux à trois essais quand le style compte.",
+          resultUse: "Tests créatifs, campagnes de lancement et assets sociaux à fort contraste.",
         },
         {
           src: "/prompt-examples/fairytale-cafe.png",
@@ -548,7 +641,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           title: "Un flux secondaire pour compléter l’offre portrait",
           summary: "La génération reste disponible mais ne brouille plus le message principal du site.",
           prompt: "A fairytale princess with very long golden hair sitting at a cozy cafe table, warm indoor lighting, whimsical cinematic detail.",
-          fit: "Moodboards, visuels complémentaires et variations conceptuelles autour d’une offre plus claire.",
+          originalState: "Le besoin portrait est déjà couvert et il faut un visuel secondaire pour la même campagne.",
+          turnaround: "Davantage d’ajustements de prompt que de retouche portrait.",
+          resultUse: "Moodboards, visuels complémentaires et variations conceptuelles autour d’une offre plus claire.",
         },
       ],
     },

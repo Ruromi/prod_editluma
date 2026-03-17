@@ -7,6 +7,11 @@ type GallerySectionProps = {
 
 export default function GallerySection({ language }: GallerySectionProps) {
   const copy = landingCopy[language].gallery;
+  const detailCards = [
+    { label: copy.originalStateLabel, value: "originalState" as const },
+    { label: copy.turnaroundLabel, value: "turnaround" as const },
+    { label: copy.resultUseLabel, value: "resultUse" as const },
+  ];
 
   return (
     <section className="mx-auto max-w-6xl px-6">
@@ -40,18 +45,63 @@ export default function GallerySection({ language }: GallerySectionProps) {
                 <h3 className="text-lg font-semibold tracking-tight text-gray-900">{g.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-gray-600">{g.summary}</p>
               </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {detailCards.map((detail) => (
+                  <div
+                    key={`${g.src}-${detail.value}`}
+                    className="rounded-2xl border border-gray-200 bg-white px-4 py-4"
+                  >
+                    <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">
+                      {detail.label}
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-gray-700">{g[detail.value]}</p>
+                  </div>
+                ))}
+              </div>
               <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
                 <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">
                   {copy.promptLabel}
                 </p>
                 <p className="mt-2 text-sm leading-relaxed text-gray-700">{g.prompt}</p>
               </div>
-              <p className="text-sm leading-relaxed text-gray-500">
-                <span className="font-semibold text-gray-700">{copy.fitLabel}:</span> {g.fit}
-              </p>
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="mt-6 rounded-[28px] border border-amber-200 bg-amber-50 px-6 py-6">
+        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-amber-700">
+          {copy.failureCase.eyebrow}
+        </p>
+        <h3 className="mt-3 text-xl font-semibold tracking-tight text-amber-950">
+          {copy.failureCase.title}
+        </h3>
+        <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          <div className="rounded-2xl border border-amber-200 bg-white/80 px-4 py-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-amber-700">
+              {copy.originalStateLabel}
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-amber-950">
+              {copy.failureCase.originalState}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-amber-200 bg-white/80 px-4 py-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-amber-700">
+              {copy.failureReasonLabel}
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-amber-950">
+              {copy.failureCase.whyFailed}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-amber-200 bg-white/80 px-4 py-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-amber-700">
+              {copy.failureNextStepLabel}
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-amber-950">
+              {copy.failureCase.nextStep}
+            </p>
+          </div>
+        </div>
       </div>
     </section>
   );
