@@ -42,6 +42,14 @@ const ALLOWED_UPLOAD_TYPES = new Set([
   "image/heic",
   "image/heif",
 ]);
+const ALLOWED_UPLOAD_ACCEPT = Array.from(ALLOWED_UPLOAD_TYPES).join(",");
+const DASHBOARD_DRAFT_STORAGE_KEY = "editluma:dashboard-draft";
+
+type DashboardDraft = {
+  prompt: string;
+  hadAttachment: boolean;
+};
+
 const DASHBOARD_COPY = {
   en: {
     pending: "Pending",
@@ -60,7 +68,7 @@ const DASHBOARD_COPY = {
     generatedGallery: "Generated Gallery",
     generatingCount: (count: number) => `${count} generating`,
     noImagesYet: "No generated images yet",
-    createFirstImage: "Enter a prompt to create your first image",
+    createFirstImage: "Attach one portrait or enter one portrait prompt to get your first usable result.",
     sessionExpired: "Your session has expired. Please sign in again.",
     apiConnErrWithUrl: (apiUrl: string) =>
       `Cannot connect to the API server (${apiUrl}). Check the server URL and network status.`,
@@ -68,36 +76,71 @@ const DASHBOARD_COPY = {
       "Cannot connect to the API server. Make sure the Next.js and FastAPI servers are running.",
     promptRequired: "Enter a prompt.",
     loadingUser: "Loading your account. Please try again in a moment.",
-    invalidFileType: "Only JPG, PNG, WEBP, GIF, and HEIC files are supported.",
-    maxFileSize: "The maximum upload size is 15MB.",
+    invalidFileType: "Use JPG, PNG, WEBP, GIF, or HEIC for portrait uploads.",
+    maxFileSize: "Use an image smaller than 15MB.",
     uploading: "Uploading...",
     generating: "Generating...",
-    generateAction: "Generate",
+    generateAction: "Generate portrait",
+    enhanceAction: "Enhance photo",
     generationFailed: "Generation failed",
-    uploadPrepFailed: (status: number) => `Failed to prepare upload (HTTP ${status})`,
-    uploadNetworkFailed: "File upload failed. Check your network connection.",
+    generationFailedHint: "Retry with a clearer portrait prompt or a stronger source image.",
+    uploadPrepFailed: () => "We couldn't prepare the upload. Try again in a moment.",
+    uploadNetworkFailed: "The upload stopped before your photo reached us. Check the connection and retry.",
     uploadFailed: (status: number, detail?: string) =>
-      detail ? `File upload failed (HTTP ${status}): ${detail}` : `File upload failed (HTTP ${status})`,
-    requestFailed: (status: number) => `Request failed (HTTP ${status})`,
-    aiRequestFailed: (status: number) =>
-      `AI generation request failed (HTTP ${status}). Please try again in a moment.`,
+      detail ? `The upload did not finish: ${detail}` : `The upload did not finish. Retry with the same photo or a smaller file.`,
+    requestFailed: () => "We couldn't start the enhancement job. Try a clearer portrait or retry in a minute.",
+    aiRequestFailed: () =>
+      "We couldn't start the generation job. Try a shorter portrait prompt or retry in a minute.",
     redirectingToGallery: "Redirecting to gallery...",
-    promptPlaceholder: "Example: a cyberpunk city at night, a cozy cafe window in warm sunlight...",
-    attachImage: "Attach image",
+    promptPlaceholder: "Example: clean creator portrait, softer skin texture, brighter light, realistic finish...",
+    attachImage: "Attach portrait",
     cancelAttachment: "Remove attachment",
-    attachTitle: "Attach an image for AI enhancement",
+    attachTitle: "Attach a profile photo, selfie, or headshot to keep the result closer to the source.",
     enterPromptTitle: "Enter a prompt",
-    insufficientCreditsTitle: "Not enough credits. Click to open pricing.",
+    insufficientCreditsTitle: "You need more credits. We'll open pricing and keep this prompt ready.",
     unknownError: "Unknown error",
-    promptExamples: "Prompt Examples",
+    promptExamples: "Portrait Prompt Starters",
     promptExamplesHint:
-      "Click a card to apply the prompt and preview the intended visual tone.",
+      "Built around creator portraits, profile photos, and selfie cleanup. Click a card to fill the prompt box.",
     hidePrompt: "Hide prompt",
     clickImage: "Click image",
     appliedToInput: "Applied to the input box",
     expandPrompt: "View full image + show prompt",
     promptLabel: "Prompt",
     loadingDashboard: "Loading dashboard...",
+    firstRunEyebrow: "First result",
+    firstRunTitle: "Get one usable portrait before you do anything else",
+    firstRunBody:
+      "Start with one profile photo or one short portrait prompt. The goal is to get a believable result fast, then decide whether to retry or buy more credits.",
+    firstRunCreditSummary: (balance: number | null, cost: number, initialCredits: number | null) => {
+      if (typeof balance === "number") {
+        const starterText =
+          typeof initialCredits === "number" && initialCredits > 0
+            ? ` Your account started with ${initialCredits} credits.`
+            : "";
+        return `You have ${balance} credits available now. One image currently uses ${cost} credits.${starterText}`;
+      }
+
+      return `One image currently uses ${cost} credits.`;
+    },
+    firstRunStepUploadTitle: "Use one source photo when you want cleanup",
+    firstRunStepUploadBody: "Profile photos, selfies, and speaker headshots under 15MB work best for the first enhancement.",
+    firstRunStepPromptTitle: "Keep the prompt short and specific",
+    firstRunStepPromptBody: "Ask for cleaner skin, better light, and a realistic finish instead of stacking many styles at once.",
+    firstRunStepReviewTitle: "Decide quickly after the first result",
+    firstRunStepReviewBody: "If the face feels off, retry with a tighter prompt or a cleaner source instead of pushing the same draft further.",
+    composerHintWithAttachment:
+      "Source image attached. We'll keep the face closer to the original and clean up the portrait.",
+    composerHintWithoutAttachment:
+      "No image attached. Use this to generate a new portrait or a profile-photo variation from the prompt alone.",
+    submitShortcutHint: "Press Cmd/Ctrl + Enter to submit.",
+    signupSuccessMessage:
+      "Account ready. Upload one portrait or enter one portrait prompt to get your first usable result.",
+    resumeDraftMessage: "Your last prompt is back. You can continue from here.",
+    resumeEnhanceDraftMessage:
+      "Your last prompt is back. Reattach the source photo before running the enhancement again.",
+    paymentReadyMessage: "Credits are ready. Your previous prompt has been restored.",
+    paymentReadyGeneric: "Credits are ready. Continue from the dashboard when you're ready.",
   },
   ko: {
     pending: "대기 중",
@@ -116,7 +159,7 @@ const DASHBOARD_COPY = {
     generatedGallery: "생성 갤러리",
     generatingCount: (count: number) => `${count}개 생성 중`,
     noImagesYet: "아직 생성된 이미지가 없습니다",
-    createFirstImage: "프롬프트를 입력하여 첫 번째 이미지를 만들어 보세요",
+    createFirstImage: "프로필 사진을 첨부하거나 인물 프롬프트를 입력해 첫 결과를 만들어 보세요.",
     sessionExpired: "세션이 만료되었습니다. 다시 로그인하세요.",
     apiConnErrWithUrl: (apiUrl: string) =>
       `API 서버(${apiUrl})에 연결할 수 없습니다. 서버 URL과 네트워크 상태를 확인하세요.`,
@@ -124,91 +167,244 @@ const DASHBOARD_COPY = {
       "API 서버에 연결할 수 없습니다. Next.js 개발 서버와 FastAPI 서버가 실행 중인지 확인하세요.",
     promptRequired: "프롬프트를 입력하세요.",
     loadingUser: "사용자 정보를 불러오는 중입니다. 잠시 후 다시 시도하세요.",
-    invalidFileType: "JPG, PNG, WEBP, GIF, HEIC 파일만 첨부할 수 있습니다.",
-    maxFileSize: "업로드 가능한 최대 파일 크기는 15MB입니다.",
+    invalidFileType: "프로필 사진 업로드는 JPG, PNG, WEBP, GIF, HEIC 파일만 지원합니다.",
+    maxFileSize: "15MB 이하 이미지를 사용해 주세요.",
     uploading: "업로드 중…",
     generating: "생성 중…",
-    generateAction: "생성하기",
+    generateAction: "인물 이미지 생성",
+    enhanceAction: "사진 보정하기",
     generationFailed: "생성 실패",
-    uploadPrepFailed: (status: number) => `업로드 준비 실패 (HTTP ${status})`,
-    uploadNetworkFailed: "파일 업로드에 실패했습니다. 네트워크 상태를 확인하세요.",
+    generationFailedHint: "더 선명한 인물 프롬프트나 원본 사진으로 다시 시도해 보세요.",
+    uploadPrepFailed: () => "업로드를 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+    uploadNetworkFailed: "사진 업로드가 중간에 멈췄습니다. 네트워크 상태를 확인한 뒤 다시 시도해 주세요.",
     uploadFailed: (status: number, detail?: string) =>
-      detail ? `파일 업로드 실패 (HTTP ${status}): ${detail}` : `파일 업로드 실패 (HTTP ${status})`,
-    requestFailed: (status: number) => `요청 실패 (HTTP ${status})`,
-    aiRequestFailed: (status: number) =>
-      `AI 생성 요청 실패 (HTTP ${status}). 잠시 후 다시 시도하세요.`,
+      detail ? `파일 업로드를 완료하지 못했습니다: ${detail}` : "파일 업로드를 완료하지 못했습니다. 같은 사진으로 다시 시도하거나 용량을 줄여 주세요.",
+    requestFailed: () => "보정 작업을 시작하지 못했습니다. 더 선명한 인물 사진으로 다시 시도하거나 잠시 후 다시 실행해 주세요.",
+    aiRequestFailed: () =>
+      "생성 작업을 시작하지 못했습니다. 인물 중심의 짧은 프롬프트로 다시 시도하거나 잠시 후 다시 실행해 주세요.",
     redirectingToGallery: "갤러리로 이동 중…",
-    promptPlaceholder: "예: 사이버펑크 도시 야경, 따뜻한 햇살이 비치는 카페 창가…",
-    attachImage: "이미지 첨부",
+    promptPlaceholder: "예: 클린한 크리에이터 프로필 사진, 더 부드러운 피부결, 밝은 조명, 현실적인 마무리…",
+    attachImage: "원본 사진 첨부",
     cancelAttachment: "첨부 취소",
-    attachTitle: "이미지 첨부 (AI 보정 모드)",
+    attachTitle: "프로필 사진, 셀피, 헤드샷을 첨부하면 원본 얼굴과 더 가깝게 보정할 수 있습니다.",
     enterPromptTitle: "프롬프트를 입력하세요",
-    insufficientCreditsTitle: "크레딧이 부족합니다. 클릭하면 요금제 페이지로 이동합니다",
+    insufficientCreditsTitle: "크레딧이 부족합니다. 요금제 페이지로 이동하고 현재 프롬프트는 보관해 둘게요.",
     unknownError: "알 수 없는 오류",
-    promptExamples: "프롬프트 예시",
+    promptExamples: "인물 프롬프트 시작 예시",
     promptExamplesHint:
-      "아래 카드를 누르면 프롬프트와 함께 이미지 톤도 참고할 수 있습니다",
+      "홈 메시지와 맞춘 인물/프로필 사진 예시입니다. 카드를 누르면 바로 프롬프트 입력창에 채워집니다.",
     hidePrompt: "프롬프트 숨기기",
     clickImage: "이미지 클릭",
     appliedToInput: "입력창에 적용되었습니다",
     expandPrompt: "전체 이미지 보기 + 프롬프트 펼치기",
     promptLabel: "Prompt",
     loadingDashboard: "대시보드를 불러오는 중입니다…",
+    firstRunEyebrow: "첫 결과 만들기",
+    firstRunTitle: "다른 것보다 먼저, 쓸 만한 인물 결과 1장을 만드세요",
+    firstRunBody:
+      "프로필 사진 1장이나 짧은 인물 프롬프트 1개로 시작하세요. 목표는 빨리 믿을 만한 첫 결과를 보고, 다시 시도할지 결제할지 판단하는 것입니다.",
+    firstRunCreditSummary: (balance: number | null, cost: number, initialCredits: number | null) => {
+      if (typeof balance === "number") {
+        const starterText =
+          typeof initialCredits === "number" && initialCredits > 0
+            ? ` 가입 시 ${initialCredits}크레딧으로 시작합니다.`
+            : "";
+        return `현재 사용 가능한 크레딧은 ${balance}입니다. 이미지 1건당 현재 ${cost}크레딧이 사용됩니다.${starterText}`;
+      }
+
+      return `이미지 1건당 현재 ${cost}크레딧이 사용됩니다.`;
+    },
+    firstRunStepUploadTitle: "보정이 목적이면 원본 사진 1장을 먼저 붙이기",
+    firstRunStepUploadBody: "프로필 사진, 셀피, 발표자 헤드샷처럼 얼굴이 또렷한 15MB 이하 사진이 첫 보정에 가장 잘 맞습니다.",
+    firstRunStepPromptTitle: "프롬프트는 짧고 구체적으로 쓰기",
+    firstRunStepPromptBody: "스타일을 많이 쌓기보다 피부결, 조명, 현실감처럼 원하는 변화만 한 문장으로 적어 주세요.",
+    firstRunStepReviewTitle: "첫 결과를 보고 빠르게 판단하기",
+    firstRunStepReviewBody: "얼굴이 어색하면 같은 초안을 밀기보다 프롬프트를 더 좁히거나 더 나은 원본으로 다시 시도하는 편이 낫습니다.",
+    composerHintWithAttachment:
+      "원본 사진이 첨부되었습니다. 얼굴은 원본에 가깝게 유지하고 인물 사진을 정리하는 흐름으로 처리됩니다.",
+    composerHintWithoutAttachment:
+      "원본 사진이 없으면 프롬프트만으로 새 인물 이미지나 프로필 사진 변형을 생성합니다.",
+    submitShortcutHint: "Cmd/Ctrl + Enter로 바로 실행할 수 있습니다.",
+    signupSuccessMessage:
+      "가입이 완료되었습니다. 인물 사진 1장을 올리거나 인물 프롬프트 1개를 입력해 첫 결과를 확인해 보세요.",
+    resumeDraftMessage: "이전 프롬프트를 다시 불러왔습니다. 이어서 진행하면 됩니다.",
+    resumeEnhanceDraftMessage:
+      "이전 프롬프트를 다시 불러왔습니다. 보정 작업을 다시 실행하려면 원본 사진을 다시 첨부해 주세요.",
+    paymentReadyMessage: "크레딧이 준비되었습니다. 이전 프롬프트도 다시 채워 두었습니다.",
+    paymentReadyGeneric: "크레딧이 반영되었습니다. 준비되면 대시보드에서 바로 이어서 진행하세요.",
   },
 } as const;
 
 const PROMPT_EXAMPLES = [
   {
+    id: "creator-profile",
     label: {
-      en: "Fairytale Cafe",
-      ko: "동화풍 카페 장면",
+      en: "Creator Profile Cleanup",
+      ko: "크리에이터 프로필 정리",
     },
-    image: "/prompt-examples/fairytale-cafe.png",
+    image: "/landing/feature-enhance-portrait.png",
     prompt: {
-      en: "A fairytale princess with very long golden hair sitting at a cozy cafe table, holding a tiny espresso cup, pink dress, warm indoor lighting, shallow depth of field, whimsical cinematic detail",
-      ko: "아주 긴 금발 머리의 동화 속 공주가 아늑한 카페 테이블에 앉아 작은 에스프레소 잔을 들고 있는 장면, 분홍색 드레스, 따뜻한 실내 조명, 얕은 심도, 동화적인 시네마틱 디테일",
+      en: "Clean creator portrait, natural skin detail, balanced light, polished but realistic finish, profile photo framing",
+      ko: "클린한 크리에이터 프로필 포트레이트, 자연스러운 피부결, 균형 잡힌 조명, 과하지 않게 정돈된 현실적인 마무리, 프로필 사진 구도",
     },
   },
   {
+    id: "selfie-retouch",
     label: {
-      en: "Beauty Portrait",
-      ko: "뷰티 포트레이트",
+      en: "Natural Selfie Retouch",
+      ko: "자연스러운 셀피 보정",
     },
     image: "/prompt-examples/beauty-portrait.png",
     prompt: {
-      en: "Clean beauty portrait of a young East Asian woman, natural glowing skin, beige satin blouse, centered composition, soft daylight, realistic facial detail, minimal editorial styling",
-      ko: "젊은 동아시아 여성의 클린 뷰티 포트레이트, 자연스럽게 빛나는 피부, 베이지 새틴 블라우스, 중앙 구도, 부드러운 자연광, 사실적인 얼굴 디테일, 미니멀한 에디토리얼 스타일링",
+      en: "Natural selfie retouch, cleaner skin tone, softer under-eye area, brighter light, keep the face believable and realistic",
+      ko: "자연스러운 셀피 보정, 더 정돈된 피부 톤, 은은한 눈가 정리, 조금 더 밝은 조명, 얼굴은 현실적으로 유지",
     },
   },
   {
+    id: "portrait-recovery",
     label: {
-      en: "Pop Art Style Shift",
-      ko: "팝아트 스타일 변환",
+      en: "Low-Light Portrait Recovery",
+      ko: "저조도 인물 사진 복원",
     },
-    image: "/prompt-examples/pop-art-grid.png",
+    image: "/landing/gallery-enhance.png",
     prompt: {
-      en: "A four-panel pop art portrait series of an androgynous person with round glasses, neon cyan and magenta palette, bold graphic shapes, mixed illustration styles, gallery poster composition",
-      ko: "둥근 안경을 쓴 중성적인 인물을 네 컷으로 구성한 팝아트 포트레이트 시리즈, 네온 시안과 마젠타 팔레트, 강한 그래픽 형태, 다양한 일러스트레이션 스타일, 갤러리 포스터 구도",
+      en: "Recover a dim portrait, cleaner face detail, balanced contrast, remove muddy shadows, keep the result natural and publishable",
+      ko: "어두운 인물 사진 복원, 얼굴 디테일 정리, 대비 균형 조정, 탁한 그림자 제거, 결과는 자연스럽고 바로 쓸 수 있게",
     },
   },
   {
+    id: "social-thumbnail",
     label: {
-      en: "Cinematic Street",
-      ko: "시네마틱 스트리트",
+      en: "Social Thumbnail Portrait",
+      ko: "소셜 썸네일용 인물",
     },
     image: "/prompt-examples/cinematic-street.png",
     prompt: {
-      en: "Cinematic street portrait of a stylish young woman in a beige coat, soft bokeh lights, narrow city alley, warm glow, fashion editorial mood, realistic photography",
-      ko: "베이지 코트를 입은 세련된 젊은 여성의 시네마틱 스트리트 포트레이트, 부드러운 보케 조명, 좁은 도시 골목, 따뜻한 광원, 패션 에디토리얼 무드, 사실적인 사진 스타일",
+      en: "Portrait for a social thumbnail, strong eye contact, warm editorial light, soft background separation, realistic skin detail",
+      ko: "소셜 썸네일용 인물 포트레이트, 또렷한 시선 처리, 따뜻한 에디토리얼 조명, 배경 분리감, 사실적인 피부 디테일",
     },
   },
 ];
 
-async function readApiError(response: Response, fallback: string) {
+function saveDashboardDraft(prompt: string, hadAttachment: boolean) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const trimmedPrompt = prompt.trim();
+  if (!trimmedPrompt) {
+    window.sessionStorage.removeItem(DASHBOARD_DRAFT_STORAGE_KEY);
+    return;
+  }
+
+  const payload: DashboardDraft = {
+    prompt: trimmedPrompt,
+    hadAttachment,
+  };
+  window.sessionStorage.setItem(DASHBOARD_DRAFT_STORAGE_KEY, JSON.stringify(payload));
+}
+
+function readDashboardDraft() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const raw = window.sessionStorage.getItem(DASHBOARD_DRAFT_STORAGE_KEY);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as DashboardDraft;
+    if (typeof parsed.prompt !== "string" || !parsed.prompt.trim()) {
+      return null;
+    }
+
+    return {
+      prompt: parsed.prompt.trim(),
+      hadAttachment: Boolean(parsed.hadAttachment),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function clearDashboardDraft() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.removeItem(DASHBOARD_DRAFT_STORAGE_KEY);
+}
+
+function localizeApiDetail(detail: string, fallback: string, language: HeaderLanguage) {
+  const normalized = detail.trim();
+  if (!normalized) {
+    return fallback;
+  }
+
+  const promptLengthMatch = normalized.match(/^프롬프트는 최대 (\d+)자까지 입력할 수 있습니다\.$/);
+  if (promptLengthMatch) {
+    return language === "ko"
+      ? normalized
+      : `Prompts can be up to ${promptLengthMatch[1]} characters.`;
+  }
+
+  const uploadSizeMatch = normalized.match(/^업로드 가능한 최대 파일 크기는 (\d+)MB입니다\.$/);
+  if (uploadSizeMatch) {
+    return language === "ko"
+      ? normalized
+      : `Use an image smaller than ${uploadSizeMatch[1]}MB.`;
+  }
+
+  const detailMap: Record<string, { en: string; ko: string }> = {
+    "프롬프트를 입력해주세요.": {
+      en: "Enter a prompt.",
+      ko: "프롬프트를 입력해 주세요.",
+    },
+    "이미지 파일만 업로드할 수 있습니다.": {
+      en: "Upload an image file only.",
+      ko: "이미지 파일만 업로드할 수 있습니다.",
+    },
+    "이미지 파일만 보정할 수 있습니다.": {
+      en: "Only image files can be enhanced.",
+      ko: "이미지 파일만 보정할 수 있습니다.",
+    },
+    "지원하지 않는 이미지 형식입니다.": {
+      en: "This image format is not supported.",
+      ko: "지원하지 않는 이미지 형식입니다.",
+    },
+    "업로드한 이미지를 찾지 못했습니다.": {
+      en: "We couldn't find that upload. Attach the image again and retry.",
+      ko: "업로드한 이미지를 찾지 못했습니다. 원본 사진을 다시 첨부한 뒤 재시도해 주세요.",
+    },
+    "본인이 업로드한 이미지만 사용할 수 있습니다.": {
+      en: "You can only enhance images uploaded from this account.",
+      ko: "본인이 업로드한 이미지만 사용할 수 있습니다.",
+    },
+    "AI 작업을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.": {
+      en: "The AI could not finish this request. Try again in a moment.",
+      ko: "AI 작업을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+    },
+  };
+
+  const mapped = detailMap[normalized];
+  if (mapped) {
+    return mapped[language];
+  }
+
+  if (language === "en" && /[가-힣]/.test(normalized)) {
+    return fallback;
+  }
+
+  return normalized;
+}
+
+async function readApiError(response: Response, fallback: string, language: HeaderLanguage) {
   try {
     const payload = await response.json();
     if (payload && typeof payload.detail === "string") {
-      return payload.detail;
+      return localizeApiDetail(payload.detail, fallback, language);
     }
   } catch {
     // fall back to the provided message
@@ -698,9 +894,11 @@ function DashboardPageContent() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [creditCost, setCreditCost] = useState(10);
+  const [initialCredits, setInitialCredits] = useState<number | null>(null);
   const [expandedPromptExample, setExpandedPromptExample] = useState<string | null>(null);
 
   const [prompt, setPrompt] = useState("");
@@ -710,6 +908,7 @@ function DashboardPageContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const initialDoneJobCountRef = useRef<number | null>(null);
   const hasTrackedFirstImageDoneRef = useRef(false);
+  const handledResumeRef = useRef<string | null>(null);
 
   // 로컬 개발: NEXT_PUBLIC_API_URL을 비워두면 상대 경로(/api/*)를 사용하며
   // Next.js 리라이트가 FastAPI로 프록시 → CORS 불필요.
@@ -779,6 +978,7 @@ function DashboardPageContent() {
       provider,
       language,
     });
+    setStatusMessage(copy.signupSuccessMessage);
 
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.delete("signup");
@@ -786,6 +986,37 @@ function DashboardPageContent() {
     const nextQuery = nextParams.toString();
     router.replace(`/dashboard${nextQuery ? `?${nextQuery}` : ""}`);
   }, [language, router, searchParams, userId]);
+
+  useEffect(() => {
+    const resume = searchParams.get("resume");
+    if (!resume || handledResumeRef.current === resume) {
+      return;
+    }
+
+    handledResumeRef.current = resume;
+
+    const draft = readDashboardDraft();
+    if (draft && !prompt.trim()) {
+      setPrompt(draft.prompt);
+    }
+
+    if (draft?.hadAttachment) {
+      setStatusMessage(copy.resumeEnhanceDraftMessage);
+    } else if (draft && resume === "payment-success") {
+      setStatusMessage(copy.paymentReadyMessage);
+    } else if (draft) {
+      setStatusMessage(copy.resumeDraftMessage);
+    } else if (resume === "payment-success") {
+      setStatusMessage(copy.paymentReadyGeneric);
+    }
+
+    clearDashboardDraft();
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete("resume");
+    const nextQuery = nextParams.toString();
+    router.replace(`/dashboard${nextQuery ? `?${nextQuery}` : ""}`);
+  }, [copy.paymentReadyGeneric, copy.paymentReadyMessage, copy.resumeDraftMessage, copy.resumeEnhanceDraftMessage, prompt, router, searchParams]);
 
   // -------------------------------------------------------------------------
   // Job fetching & polling
@@ -810,9 +1041,20 @@ function DashboardPageContent() {
     broadcastCreditBalance(nextBalance);
   }, []);
 
-  const redirectToPricing = useCallback(() => {
-    router.push("/pricing?source=insufficient-credits");
-  }, [router]);
+  const redirectToPricing = useCallback(
+    (mode: JobMode) => {
+      saveDashboardDraft(prompt, mode === "enhance");
+
+      const params = new URLSearchParams({
+        source: "insufficient-credits",
+        intent: mode,
+        returnTo: "/dashboard?tab=generate&resume=credit-topup",
+      });
+
+      router.push(`/pricing?${params.toString()}`);
+    },
+    [prompt, router]
+  );
 
   const fetchCredits = useCallback(async () => {
     if (!userId) return;
@@ -822,6 +1064,7 @@ function DashboardPageContent() {
       const data: CreditSummary = await res.json();
       updateCreditBalance(data.balance);
       setCreditCost(data.cost_per_image);
+      setInitialCredits(data.initial_credits);
     } catch {
       // silently ignore polling errors
     }
@@ -903,7 +1146,7 @@ function DashboardPageContent() {
 
     if (creditBalance !== null && creditBalance < creditCost) {
       setError(null);
-      redirectToPricing();
+      redirectToPricing(attachedFile ? "enhance" : "generate");
       return;
     }
 
@@ -928,7 +1171,7 @@ function DashboardPageContent() {
           throw new Error(err instanceof Error ? err.message : apiConnErrMsg);
         }
         if (!presignRes.ok) {
-          throw new Error(await readApiError(presignRes, copy.uploadPrepFailed(presignRes.status)));
+          throw new Error(await readApiError(presignRes, copy.uploadPrepFailed(), language));
         }
         const { upload_url, object_key } = await presignRes.json();
 
@@ -959,11 +1202,11 @@ function DashboardPageContent() {
         }
         if (res.status === 402) {
           setError(null);
-          redirectToPricing();
+          redirectToPricing("enhance");
           return;
         }
         if (!res.ok) {
-          throw new Error(await readApiError(res, copy.requestFailed(res.status)));
+          throw new Error(await readApiError(res, copy.requestFailed(), language));
         }
         const newJob: Job = await res.json();
         setJobs((prev) => [newJob, ...prev]);
@@ -974,6 +1217,7 @@ function DashboardPageContent() {
         setAttachedFile(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
         setPrompt("");
+        clearDashboardDraft();
       } catch (err) {
         setError(err instanceof Error ? err.message : copy.unknownError);
       } finally {
@@ -996,12 +1240,12 @@ function DashboardPageContent() {
       }
       if (res.status === 402) {
         setError(null);
-        redirectToPricing();
+        redirectToPricing("generate");
         return;
       }
       if (!res.ok) {
         throw new Error(
-          await readApiError(res, copy.aiRequestFailed(res.status))
+          await readApiError(res, copy.aiRequestFailed(), language)
         );
       }
       const newJob: Job = await res.json();
@@ -1011,6 +1255,7 @@ function DashboardPageContent() {
       }
       setActiveJobId(newJob.id);
       setPrompt("");
+      clearDashboardDraft();
     } catch (err) {
       setError(err instanceof Error ? err.message : copy.unknownError);
     } finally {
@@ -1034,9 +1279,74 @@ function DashboardPageContent() {
         const isActive = previewStatus === "pending" || previewStatus === "processing";
         const isDone = previewStatus === "done";
         const hasEnoughCredits = creditBalance === null || creditBalance >= creditCost;
+        const showFirstRunOnboarding = generateJobs.length === 0 && !previewJob && !showLocalPreview;
+        const submitButtonLabel = attachedFile ? copy.enhanceAction : copy.generateAction;
 
         return (
           <div className="min-h-[calc(100vh-10rem)] flex flex-col items-center justify-center gap-5 max-w-2xl mx-auto w-full">
+            {statusMessage && (
+              <div className="w-full rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+                {statusMessage}
+              </div>
+            )}
+
+            {showFirstRunOnboarding && (
+              <section className="w-full overflow-hidden rounded-[28px] border border-gray-200 bg-white/90 shadow-sm">
+                <div className="border-b border-gray-200 bg-gradient-to-br from-white via-sky-50 to-indigo-50 px-5 py-5">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-sky-700">
+                    {copy.firstRunEyebrow}
+                  </p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-tight text-gray-900">
+                    {copy.firstRunTitle}
+                  </h2>
+                  <p className="mt-3 text-sm leading-relaxed text-gray-600">
+                    {copy.firstRunBody}
+                  </p>
+                  <p className="mt-4 text-sm font-medium text-gray-800">
+                    {copy.firstRunCreditSummary(creditBalance, creditCost, initialCredits)}
+                  </p>
+                </div>
+
+                <div className="grid gap-3 p-5 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+                      01
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-gray-900">
+                      {copy.firstRunStepUploadTitle}
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                      {copy.firstRunStepUploadBody}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+                      02
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-gray-900">
+                      {copy.firstRunStepPromptTitle}
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                      {copy.firstRunStepPromptBody}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+                      03
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-gray-900">
+                      {copy.firstRunStepReviewTitle}
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                      {copy.firstRunStepReviewBody}
+                    </p>
+                  </div>
+                </div>
+              </section>
+            )}
+
             {/* 프리뷰 카드 */}
             {(previewJob || showLocalPreview) && (
               <div className="w-full rounded-2xl overflow-hidden border border-gray-200 shadow-2xl">
@@ -1069,6 +1379,9 @@ function DashboardPageContent() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                     </svg>
                     <p className="text-xs text-red-500">{copy.generationFailed}</p>
+                    <p className="max-w-xs text-center text-xs text-red-500/80">
+                      {copy.generationFailedHint}
+                    </p>
                   </div>
                 ) : null}
               </div>
@@ -1090,6 +1403,11 @@ function DashboardPageContent() {
                 className="w-full bg-transparent px-5 pt-5 pb-3 text-base text-gray-900 placeholder-gray-400 focus:outline-none resize-none disabled:opacity-50"
               />
 
+              <div className="px-5 pb-2 text-xs leading-relaxed text-gray-500">
+                <span>{attachedFile ? copy.composerHintWithAttachment : copy.composerHintWithoutAttachment}</span>
+                <span className="ml-2 text-gray-400">{copy.submitShortcutHint}</span>
+              </div>
+
               {/* 하단 툴바 */}
               <div className="flex items-center justify-between px-4 pb-4 pt-1">
                 {/* 좌: 첨부 */}
@@ -1097,7 +1415,7 @@ function DashboardPageContent() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept={ALLOWED_UPLOAD_ACCEPT}
                     className="hidden"
                     onChange={(e) => setAttachedFile(e.target.files?.[0] ?? null)}
                   />
@@ -1145,7 +1463,7 @@ function DashboardPageContent() {
                   }
                   className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all px-5 py-2 rounded-xl font-semibold text-gray-900 text-sm shadow-lg shadow-indigo-900/40 active:scale-95"
                 >
-                  {uploading ? copy.uploading : submitting ? copy.generating : copy.generateAction}
+                  {uploading ? copy.uploading : submitting ? copy.generating : submitButtonLabel}
                 </button>
               </div>
             </div>
@@ -1173,11 +1491,11 @@ function DashboardPageContent() {
                 {PROMPT_EXAMPLES.map((example) => {
                   const exampleLabel = example.label[language];
                   const examplePrompt = example.prompt[language];
-                  const isExpanded = expandedPromptExample === exampleLabel;
+                  const isExpanded = expandedPromptExample === example.id;
 
                   return (
                     <div
-                      key={example.label.en}
+                      key={example.id}
                       className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 text-left transition-all hover:border-indigo-500/40 hover:bg-indigo-500/5 hover:shadow-lg hover:shadow-indigo-900/10"
                     >
                       <button
@@ -1186,7 +1504,7 @@ function DashboardPageContent() {
                           setPrompt(examplePrompt);
                           setError(null);
                           setExpandedPromptExample((current) =>
-                            current === exampleLabel ? null : exampleLabel
+                            current === example.id ? null : example.id
                           );
                         }}
                         disabled={submitting}

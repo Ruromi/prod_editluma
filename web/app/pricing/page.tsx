@@ -31,16 +31,45 @@ function PricingFallback() {
   );
 }
 
-export default async function PricingPage() {
+function readSingleParam(value: string | string[] | undefined) {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+
+  return undefined;
+}
+
+function sanitizeRelativePath(path: string | undefined, fallback: string) {
+  if (!path || !path.startsWith("/") || path.startsWith("//")) {
+    return fallback;
+  }
+
+  return path;
+}
+
+type PricingPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function PricingPage({ searchParams }: PricingPageProps) {
   const supabase = await createServerClient();
   const cookieStore = await cookies();
+  const resolvedSearchParams = (await searchParams) ?? {};
   const initialLanguage = normalizeLandingLanguage(
     cookieStore.get(LANDING_LANGUAGE_COOKIE)?.value
   );
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const closeHref = user ? "/mypage" : "/";
+  const fallbackCloseHref = user ? "/mypage" : "/";
+  const closeHref = sanitizeRelativePath(
+    readSingleParam(resolvedSearchParams.returnTo),
+    fallbackCloseHref
+  );
 
   return (
     <div className="min-h-screen bg-black/55 px-4 py-6 backdrop-blur-sm sm:px-6 sm:py-10">

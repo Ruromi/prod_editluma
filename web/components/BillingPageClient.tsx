@@ -117,31 +117,64 @@ const BILLING_PACKAGE_COPY = {
   starter: {
     ko: {
       badge: "입문용",
-      description: "가볍게 써보거나 급하게 소량 충전할 때 적합한 기본 패키지",
+      description: "프로필 사진 결과를 먼저 확인하거나 급한 보정 몇 장만 처리할 때 적합한 기본 패키지",
     },
     en: {
       badge: "Starter",
-      description: "A lightweight starter pack for trying EditLuma or topping up a small amount fast.",
+      description: "A lightweight starter pack for validating portrait quality first or handling a few urgent edits.",
     },
   },
   pro: {
     ko: {
       badge: "가장 많이 선택",
-      description: "반복 생성과 리터치를 꾸준히 돌릴 때 가장 무난한 메인 패키지",
+      description: "프로필, 썸네일, 반복 보정 작업을 꾸준히 돌릴 때 가장 무난한 메인 패키지",
     },
     en: {
       badge: "Most Popular",
-      description: "The best-value core package for frequent generations, edits, and repeat creative work.",
+      description: "The best-value core package for repeat portrait cleanup, thumbnails, and ongoing creator work.",
     },
   },
   max: {
     ko: {
       badge: "대용량",
-      description: "팀 단위 작업이나 대량 생성이 많은 사용자를 위한 대용량 패키지",
+      description: "팀 검수, 여러 시안, 대량 생성처럼 재시도 횟수가 많은 사용자를 위한 대용량 패키지",
     },
     en: {
       badge: "High Volume",
-      description: "A larger credit pack designed for team workflows and high-output image generation.",
+      description: "A larger credit pack designed for team reviews, client batches, and high-output image work.",
+    },
+  },
+} as const;
+
+const BILLING_PACKAGE_GUIDE = {
+  starter: {
+    ko: {
+      bestFor: "프로필 사진 1~2장을 먼저 테스트하거나 급하게 소량만 충전할 때",
+      why: "결과 품질을 먼저 확인하고 싶은 개인 사용자에게 가장 부담이 적습니다.",
+    },
+    en: {
+      bestFor: "Testing one or two profile photos first or topping up a very small urgent batch",
+      why: "It is the lowest-risk package when you want to validate output quality before committing further.",
+    },
+  },
+  pro: {
+    ko: {
+      bestFor: "프로필, 썸네일, 보정 작업을 반복적으로 돌리는 개인 크리에이터",
+      why: "현재 작업당 크레딧 기준에서 반복 시도와 가격 판단의 균형이 가장 좋습니다.",
+    },
+    en: {
+      bestFor: "Solo creators who run profile, thumbnail, and retouch work repeatedly",
+      why: "At the current per-job credit cost, this is the clearest balance of repeat usage and price efficiency.",
+    },
+  },
+  max: {
+    ko: {
+      bestFor: "팀 단위 검수, 고객 작업, 여러 시안을 한 번에 돌려야 하는 경우",
+      why: "재시도와 변형 수가 많을수록 작업당 판단이 쉬워지는 대용량 구간입니다.",
+    },
+    en: {
+      bestFor: "Team reviews, client-facing work, or batches that need many variants in one go",
+      why: "The larger pool makes cost-per-decision easier to manage when retries and variants grow.",
     },
   },
 } as const;
@@ -176,6 +209,44 @@ function formatCurrency(amount: number, currency?: string | null) {
 
 function buildLoginHref(next: string) {
   return `/auth/login?next=${encodeURIComponent(next)}`;
+}
+
+function buildPathWithQuery(basePath: string, query: string) {
+  return query ? `${basePath}?${query}` : basePath;
+}
+
+function buildPathWithUpdatedSearchParams(
+  basePath: string,
+  currentSearch: string,
+  updates: Record<string, string | undefined>
+) {
+  const params = new URLSearchParams(currentSearch);
+
+  Object.entries(updates).forEach(([key, value]) => {
+    if (typeof value === "string" && value.length > 0) {
+      params.set(key, value);
+      return;
+    }
+
+    params.delete(key);
+  });
+
+  return buildPathWithQuery(basePath, params.toString());
+}
+
+function sanitizeRelativeAppPath(value: string | null | undefined, fallback: string) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return fallback;
+  }
+
+  return value;
+}
+
+function withResumeParam(path: string, resume: string) {
+  const [pathname, query = ""] = path.split("?");
+  const params = new URLSearchParams(query);
+  params.set("resume", resume);
+  return buildPathWithQuery(pathname || "/", params.toString());
 }
 
 function formatUsageMode(mode: string | null | undefined, language: "en" | "ko") {
@@ -324,7 +395,26 @@ export default function BillingPageClient({
   const checkoutStatus = searchParams.get("checkout");
   const checkoutId = searchParams.get("checkout_id") ?? undefined;
   const pricingSource = searchParams.get("source") ?? "direct";
+  const pricingIntent = searchParams.get("intent") === "enhance" ? "enhance" : "generate";
   const navigationBasePath = pathname.startsWith("/pricing") ? "/pricing" : "/mypage";
+  const currentSearch = searchParams.toString();
+  const returnToPath = sanitizeRelativeAppPath(
+    searchParams.get("returnTo"),
+    "/dashboard?tab=generate&resume=credit-topup"
+  );
+  const dashboardContinueHref = withResumeParam(returnToPath, "payment-success");
+  const currentPathWithSearch = buildPathWithQuery(navigationBasePath, currentSearch);
+  const paymentVerificationMessage =
+    pricingSource === "insufficient-credits"
+      ? isKo
+        ? "결제를 확인하고 있습니다. 크레딧이 반영되면 대시보드로 돌아가 방금 작업하던 초안을 이어서 진행하세요."
+        : "We're verifying your payment. Once the credits appear, return to the dashboard and continue the draft you just left."
+      : isKo
+        ? "결제를 확인하고 있습니다. 크레딧 반영까지 몇 초 정도 걸릴 수 있고, 반영되면 대시보드로 돌아가 바로 사용할 수 있습니다."
+        : "We're verifying your payment. Credits can take a few seconds to appear, then you can head back to the dashboard and use them right away.";
+  const paymentVerificationErrorMessage = isKo
+    ? "결제 반영 상태를 확인하지 못했습니다."
+    : "Could not verify the payment status.";
   const hasTrackedPricingVisitRef = useRef(false);
 
   const getAccessToken = useCallback(async () => {
@@ -505,12 +595,7 @@ export default function BillingPageClient({
     const params = new URLSearchParams(window.location.search);
     if (params.get("checkout") !== "success") return;
 
-      setStatusMessage(
-        t(
-          "결제 완료를 확인하고 있습니다. 크레딧 반영까지 몇 초 정도 걸릴 수 있습니다.",
-          "We're verifying your payment. Credits can take a few seconds to appear."
-        )
-      );
+    setStatusMessage(paymentVerificationMessage);
 
     let attempts = 0;
     const intervalId = window.setInterval(() => {
@@ -522,7 +607,7 @@ export default function BillingPageClient({
         setError(
           pollError instanceof Error
             ? pollError.message
-            : t("결제 반영 상태를 확인하지 못했습니다.", "Could not verify the payment status.")
+            : paymentVerificationErrorMessage
         );
       });
       if (attempts >= 5) {
@@ -537,17 +622,17 @@ export default function BillingPageClient({
       setError(
         pollError instanceof Error
           ? pollError.message
-          : t("결제 반영 상태를 확인하지 못했습니다.", "Could not verify the payment status.")
+          : paymentVerificationErrorMessage
       );
     });
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [isPricingView, refreshCredits, refreshMyPageSnapshot]);
+  }, [isPricingView, paymentVerificationErrorMessage, paymentVerificationMessage, refreshCredits, refreshMyPageSnapshot]);
 
   useEffect(() => {
-    if (!isPricingView || checkoutStatus !== "success") {
+    if (checkoutStatus !== "success") {
       return;
     }
 
@@ -557,7 +642,7 @@ export default function BillingPageClient({
       source: pricingSource,
       language: initialLanguage,
     });
-  }, [checkoutId, checkoutStatus, initialLanguage, isPricingView, pricingSource]);
+  }, [checkoutId, checkoutStatus, initialLanguage, pricingSource]);
 
   const handleCheckout = useCallback(
     async (packageId: string) => {
@@ -566,7 +651,9 @@ export default function BillingPageClient({
 
       try {
         const accessToken = await getAccessToken();
-        const nextPath = `${navigationBasePath}?checkoutPackage=${encodeURIComponent(packageId)}`;
+        const nextPath = buildPathWithUpdatedSearchParams(navigationBasePath, currentSearch, {
+          checkoutPackage: packageId,
+        });
 
         if (!accessToken) {
           window.location.assign(buildLoginHref(nextPath));
@@ -603,7 +690,7 @@ export default function BillingPageClient({
         setCheckoutingPackageId(null);
       }
     },
-    [apiFetchWithToken, getAccessToken, navigationBasePath]
+    [apiFetchWithToken, currentSearch, getAccessToken, navigationBasePath]
   );
 
   useEffect(() => {
@@ -658,7 +745,14 @@ export default function BillingPageClient({
       )
       .join(" · ");
   }, [creditCost, isKo, localizedPackages]);
-  const loginHref = buildLoginHref(navigationBasePath);
+  const packageCapacityHeadline = useMemo(() => {
+    if (creditCost <= 0 || localizedPackages.length === 0) {
+      return null;
+    }
+
+    return localizedPackages.map((pkg) => Math.floor(pkg.total_credits / creditCost)).join(" / ");
+  }, [creditCost, localizedPackages]);
+  const loginHref = buildLoginHref(currentPathWithSearch);
   const refundRequestsByLedgerId = useMemo(
     () =>
       new Map(
@@ -897,6 +991,36 @@ export default function BillingPageClient({
             />
             <div className="relative z-10">
               <div className="space-y-5">
+                {isPricingView && pricingSource === "insufficient-credits" && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-amber-700">
+                          {t("현재 작업 이어서 진행", "Continue your draft")}
+                        </p>
+                        <p className="mt-2 text-sm leading-relaxed text-amber-900">
+                          {pricingIntent === "enhance"
+                            ? t(
+                                "지금 작업을 이어가려면 크레딧을 충전하세요. 프롬프트는 다시 불러올 수 있지만, 업로드했던 원본 사진은 보안상 대시보드에서 다시 첨부해야 합니다.",
+                                "Top up to continue this draft. We can restore the prompt, but you'll need to reattach the source photo on the dashboard after checkout."
+                              )
+                            : t(
+                                "지금 작업을 이어가려면 크레딧을 충전하세요. 결제 후 대시보드로 돌아가면 이전 프롬프트를 다시 불러와 바로 생성할 수 있습니다.",
+                                "Top up to continue this draft. After checkout, head back to the dashboard and your previous prompt will be ready to run."
+                              )}
+                        </p>
+                      </div>
+
+                      <Link
+                        href={returnToPath}
+                        className="inline-flex items-center justify-center rounded-xl border border-amber-300 bg-white px-4 py-2.5 text-sm font-medium text-amber-900 transition-colors hover:bg-amber-100"
+                      >
+                        {t("대시보드로 돌아가기", "Back to dashboard")}
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
                 {isPricingView ? (
                   isAuthenticated ? (
                     <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
@@ -1056,7 +1180,17 @@ export default function BillingPageClient({
 
                 {statusMessage && (
                   <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-3 text-sm text-indigo-700">
-                    {statusMessage}
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p>{statusMessage}</p>
+                      {checkoutStatus === "success" && (
+                        <Link
+                          href={dashboardContinueHref}
+                          className="inline-flex items-center justify-center rounded-xl border border-indigo-500/30 bg-white px-4 py-2 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-50"
+                        >
+                          {t("대시보드로 돌아가기", "Return to dashboard")}
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -1114,7 +1248,9 @@ export default function BillingPageClient({
                     {t("패키지별 예상 작업 수", "Estimated jobs by package")}
                   </p>
                   <p className="mt-3 text-3xl font-semibold tracking-tight text-gray-900">
-                    {packageCapacitySummary ? packageCapacitySummary.split(" · ")[0] : "—"}
+                    {packageCapacityHeadline
+                      ? `${packageCapacityHeadline} ${t("건", "jobs")}`
+                      : "—"}
                   </p>
                   <p className="mt-3 text-sm leading-relaxed text-gray-500">
                     {packageCapacitySummary
@@ -1133,15 +1269,21 @@ export default function BillingPageClient({
                   <p className="text-[11px] uppercase tracking-[0.16em] text-amber-700">
                     {t("환불 정책 요약", "Refund summary")}
                   </p>
-                  <p className="mt-3 text-3xl font-semibold tracking-tight text-amber-950">
-                    {t("7일 이내", "Within 7 days")}
+                  <p className="mt-3 text-2xl font-semibold tracking-tight text-amber-950 sm:text-3xl">
+                    {t("7일 이내 + 미사용 유료 크레딧", "7 days + unused paid credits")}
                   </p>
                   <p className="mt-3 text-sm leading-relaxed text-amber-900">
                     {t(
-                      "마이페이지에서 환불 요청 가능한 결제는 7일 이내 직접 요청할 수 있습니다.",
-                      "Eligible payments can request a refund from My Page within 7 days."
+                      "마이페이지에서 7일 이내 환불 요청은 가능하지만, 해당 구매 건의 유료 크레딧을 쓰지 않은 경우에만 전액 환불이 가능하고 부분 환불은 원칙적으로 지원되지 않습니다.",
+                      "Refund requests can be submitted from My Page within 7 days, but full refunds are limited to purchases whose paid credits remain unused and partial refunds are generally not supported."
                     )}
                   </p>
+                  <Link
+                    href={`/refund-policy?lang=${initialLanguage}`}
+                    className="mt-4 inline-flex text-sm font-semibold text-amber-800 transition-colors hover:text-amber-950"
+                  >
+                    {t("환불 정책 자세히 보기", "Read refund policy")}
+                  </Link>
                 </article>
               </section>
 
@@ -1149,6 +1291,10 @@ export default function BillingPageClient({
                 {localizedPackages.map((pkg) => {
                   const pricePerCredit = pkg.price / pkg.total_credits;
                   const isBusy = checkoutingPackageId === pkg.id;
+                  const packageGuide =
+                    BILLING_PACKAGE_GUIDE[pkg.id as keyof typeof BILLING_PACKAGE_GUIDE]?.[
+                      initialLanguage
+                    ];
 
                   return (
                     <article
@@ -1190,6 +1336,20 @@ export default function BillingPageClient({
                         </div>
 
                         <p className="text-sm leading-relaxed text-gray-500">{pkg.description}</p>
+
+                        {packageGuide && (
+                          <div className="rounded-2xl border border-indigo-100 bg-white/80 px-4 py-4">
+                            <p className="text-[11px] uppercase tracking-[0.16em] text-indigo-600">
+                              {t("추천 대상", "Best for")}
+                            </p>
+                            <p className="mt-2 text-sm leading-relaxed text-gray-800">
+                              {packageGuide.bestFor}
+                            </p>
+                            <p className="mt-2 text-xs leading-relaxed text-gray-500">
+                              {packageGuide.why}
+                            </p>
+                          </div>
+                        )}
 
                         <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
                           <p className="text-2xl font-semibold text-gray-900">
@@ -1233,6 +1393,18 @@ export default function BillingPageClient({
                     </article>
                   );
                 })}
+              </section>
+
+              <section className="rounded-[28px] border border-gray-200 bg-gray-50 p-6">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-gray-500">
+                  {t("결제 전에 빠르게 고르기", "Quick package guide")}
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-gray-700">
+                  {t(
+                    "먼저 품질만 확인하려면 Starter, 주기적으로 프로필과 썸네일을 돌릴 계획이면 Pro, 팀 검수나 여러 시안을 한 번에 다뤄야 하면 Max가 맞습니다.",
+                    "Choose Starter to validate quality first, Pro for recurring profile and thumbnail work, and Max when team reviews or many variants need to run together."
+                  )}
+                </p>
               </section>
             </>
           ) : (
