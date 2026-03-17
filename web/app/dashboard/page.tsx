@@ -29,7 +29,6 @@ interface Job {
 interface CreditSummary {
   balance: number;
   cost_per_image: number;
-  initial_credits: number;
 }
 
 const MAX_UPLOAD_FILE_SIZE_BYTES = 15 * 1024 * 1024;
@@ -48,6 +47,70 @@ type DashboardDraft = {
   prompt: string;
   hadAttachment: boolean;
 };
+
+type ProfilePreset = {
+  id: "linkedin" | "business" | "casual";
+  label: {
+    en: string;
+    ko: string;
+  };
+  summary: {
+    en: string;
+    ko: string;
+  };
+  prompt: {
+    en: string;
+    ko: string;
+  };
+};
+
+const PROFILE_PRESETS: ProfilePreset[] = [
+  {
+    id: "linkedin",
+    label: {
+      en: "LinkedIn",
+      ko: "LinkedIn",
+    },
+    summary: {
+      en: "Balanced light, cleaner skin detail, and a profile-ready crop.",
+      ko: "균형 잡힌 조명, 정리된 피부결, 프로필에 바로 쓰기 좋은 인상.",
+    },
+    prompt: {
+      en: "LinkedIn-ready profile photo, balanced light, natural skin detail, clean background, polished but realistic finish",
+      ko: "LinkedIn용 프로필 사진, 균형 잡힌 조명, 자연스러운 피부결, 깔끔한 배경, 현실적으로 정돈된 마무리",
+    },
+  },
+  {
+    id: "business",
+    label: {
+      en: "Business",
+      ko: "Business",
+    },
+    summary: {
+      en: "Sharper headshot presentation for team pages, resumes, and founder bios.",
+      ko: "팀 페이지, 이력서, 대표 소개용으로 더 단정한 헤드샷 인상.",
+    },
+    prompt: {
+      en: "Business-ready headshot, cleaner skin tone, stronger facial clarity, neat framing, realistic professional finish",
+      ko: "비즈니스용 헤드샷, 더 정돈된 피부 톤, 또렷한 얼굴 인상, 단정한 구도, 현실적인 프로페셔널 마무리",
+    },
+  },
+  {
+    id: "casual",
+    label: {
+      en: "Casual",
+      ko: "Casual",
+    },
+    summary: {
+      en: "Keep the face believable while softening rough light and everyday selfie noise.",
+      ko: "일상 셀피 느낌은 유지하면서 거친 조명과 잡티만 부드럽게 정리.",
+    },
+    prompt: {
+      en: "Casual profile portrait, softer light, natural skin cleanup, believable facial detail, relaxed but polished result",
+      ko: "캐주얼 프로필 포트레이트, 부드러운 조명, 자연스러운 피부 정리, 현실적인 얼굴 디테일, 편안하지만 정돈된 결과",
+    },
+  },
+];
 
 const DASHBOARD_COPY = {
   en: {
@@ -91,7 +154,7 @@ const DASHBOARD_COPY = {
     aiRequestFailed: () =>
       "We couldn't start the generation job. Try a shorter portrait prompt or retry in a minute.",
     redirectingToGallery: "Redirecting to gallery...",
-    promptPlaceholder: "Example: clean creator portrait, softer skin texture, brighter light, realistic finish...",
+    promptPlaceholder: "Add one short direction or tap a preset below.",
     attachImage: "Attach portrait",
     cancelAttachment: "Remove attachment",
     attachTitle: "Attach a profile photo, selfie, or headshot to keep the result closer to the source.",
@@ -100,7 +163,7 @@ const DASHBOARD_COPY = {
     unknownError: "Unknown error",
     promptExamples: "Portrait Prompt Starters",
     promptExamplesHint:
-      "Built around creator portraits, profile photos, and selfie cleanup. Click a card to fill the prompt box.",
+      "Use a preset first, then borrow one of these longer prompt examples only if the first preview still needs more direction.",
     hidePrompt: "Hide prompt",
     clickImage: "Click image",
     appliedToInput: "Applied to the input box",
@@ -108,33 +171,29 @@ const DASHBOARD_COPY = {
     promptLabel: "Prompt",
     loadingDashboard: "Loading dashboard...",
     firstRunEyebrow: "First result",
-    firstRunTitle: "Get one usable portrait before you do anything else",
+    firstRunTitle: "See one usable profile-photo result before you do anything else",
     firstRunBody:
-      "Start with one profile photo or one short portrait prompt. The goal is to get a believable result fast, then decide whether to retry or buy more credits.",
-    firstRunCreditSummary: (balance: number | null, cost: number, initialCredits: number | null) => {
+      "Start with one source photo or one short preset-led prompt. The goal is to preview a believable profile-photo result fast, then decide whether to refine it further.",
+    firstRunCreditSummary: (balance: number | null, cost: number) => {
       if (typeof balance === "number") {
-        const starterText =
-          typeof initialCredits === "number" && initialCredits > 0
-            ? ` Your account started with ${initialCredits} credits.`
-            : "";
-        return `You have ${balance} credits available now. One image currently uses ${cost} credits.${starterText}`;
+        return `You have ${balance} credits available now. One profile result currently uses ${cost} credits.`;
       }
 
-      return `One image currently uses ${cost} credits.`;
+      return `One profile result currently uses ${cost} credits.`;
     },
     firstRunStepUploadTitle: "Use one source photo when you want cleanup",
     firstRunStepUploadBody: "Profile photos, selfies, and speaker headshots under 15MB work best for the first enhancement.",
-    firstRunStepPromptTitle: "Keep the prompt short and specific",
-    firstRunStepPromptBody: "Ask for cleaner skin, better light, and a realistic finish instead of stacking many styles at once.",
-    firstRunStepReviewTitle: "Decide quickly after the first result",
-    firstRunStepReviewBody: "If the face feels off, retry with a tighter prompt or a cleaner source instead of pushing the same draft further.",
+    firstRunStepPromptTitle: "Start with LinkedIn, Business, or Casual",
+    firstRunStepPromptBody: "Use one preset first, then add one short direction only if the preview still needs more control.",
+    firstRunStepReviewTitle: "Review the preview before spending more",
+    firstRunStepReviewBody: "Check the first result quickly. If the face feels off, switch preset or replace the source instead of forcing the same draft.",
     composerHintWithAttachment:
       "Source image attached. We'll keep the face closer to the original and clean up the portrait.",
     composerHintWithoutAttachment:
       "No image attached. Use this to generate a new portrait or a profile-photo variation from the prompt alone.",
     submitShortcutHint: "Press Cmd/Ctrl + Enter to submit.",
     signupSuccessMessage:
-      "Account ready. Upload one portrait or enter one portrait prompt to get your first usable result.",
+      "Account ready. Upload one portrait or use one preset to see your first profile-photo result.",
     resumeDraftMessage: "Your last prompt is back. You can continue from here.",
     resumeEnhanceDraftMessage:
       "Your last prompt is back. Reattach the source photo before running the enhancement again.",
@@ -182,7 +241,7 @@ const DASHBOARD_COPY = {
     aiRequestFailed: () =>
       "생성 작업을 시작하지 못했습니다. 인물 중심의 짧은 프롬프트로 다시 시도하거나 잠시 후 다시 실행해 주세요.",
     redirectingToGallery: "갤러리로 이동 중…",
-    promptPlaceholder: "예: 클린한 크리에이터 프로필 사진, 더 부드러운 피부결, 밝은 조명, 현실적인 마무리…",
+    promptPlaceholder: "짧은 방향 1줄만 적거나 아래 프리셋을 먼저 눌러 보세요.",
     attachImage: "원본 사진 첨부",
     cancelAttachment: "첨부 취소",
     attachTitle: "프로필 사진, 셀피, 헤드샷을 첨부하면 원본 얼굴과 더 가깝게 보정할 수 있습니다.",
@@ -191,7 +250,7 @@ const DASHBOARD_COPY = {
     unknownError: "알 수 없는 오류",
     promptExamples: "인물 프롬프트 시작 예시",
     promptExamplesHint:
-      "홈 메시지와 맞춘 인물/프로필 사진 예시입니다. 카드를 누르면 바로 프롬프트 입력창에 채워집니다.",
+      "먼저 프리셋으로 시작하고, 첫 프리뷰가 더 다듬어져야 할 때만 긴 예시 프롬프트를 가져다 쓰세요.",
     hidePrompt: "프롬프트 숨기기",
     clickImage: "이미지 클릭",
     appliedToInput: "입력창에 적용되었습니다",
@@ -199,33 +258,29 @@ const DASHBOARD_COPY = {
     promptLabel: "Prompt",
     loadingDashboard: "대시보드를 불러오는 중입니다…",
     firstRunEyebrow: "첫 결과 만들기",
-    firstRunTitle: "다른 것보다 먼저, 쓸 만한 인물 결과 1장을 만드세요",
+    firstRunTitle: "다른 것보다 먼저, 프로필용 첫 결과 1장을 확인하세요",
     firstRunBody:
-      "프로필 사진 1장이나 짧은 인물 프롬프트 1개로 시작하세요. 목표는 빨리 믿을 만한 첫 결과를 보고, 다시 시도할지 결제할지 판단하는 것입니다.",
-    firstRunCreditSummary: (balance: number | null, cost: number, initialCredits: number | null) => {
+      "원본 사진 1장이나 프리셋 중심의 짧은 프롬프트 1개로 시작하세요. 목표는 빨리 믿을 만한 첫 결과를 보고, 더 다듬을지 판단하는 것입니다.",
+    firstRunCreditSummary: (balance: number | null, cost: number) => {
       if (typeof balance === "number") {
-        const starterText =
-          typeof initialCredits === "number" && initialCredits > 0
-            ? ` 가입 시 ${initialCredits}크레딧으로 시작합니다.`
-            : "";
-        return `현재 사용 가능한 크레딧은 ${balance}입니다. 이미지 1건당 현재 ${cost}크레딧이 사용됩니다.${starterText}`;
+        return `현재 사용 가능한 크레딧은 ${balance}입니다. 프로필 결과 1건당 현재 ${cost}크레딧이 사용됩니다.`;
       }
 
-      return `이미지 1건당 현재 ${cost}크레딧이 사용됩니다.`;
+      return `프로필 결과 1건당 현재 ${cost}크레딧이 사용됩니다.`;
     },
     firstRunStepUploadTitle: "보정이 목적이면 원본 사진 1장을 먼저 붙이기",
     firstRunStepUploadBody: "프로필 사진, 셀피, 발표자 헤드샷처럼 얼굴이 또렷한 15MB 이하 사진이 첫 보정에 가장 잘 맞습니다.",
-    firstRunStepPromptTitle: "프롬프트는 짧고 구체적으로 쓰기",
-    firstRunStepPromptBody: "스타일을 많이 쌓기보다 피부결, 조명, 현실감처럼 원하는 변화만 한 문장으로 적어 주세요.",
-    firstRunStepReviewTitle: "첫 결과를 보고 빠르게 판단하기",
-    firstRunStepReviewBody: "얼굴이 어색하면 같은 초안을 밀기보다 프롬프트를 더 좁히거나 더 나은 원본으로 다시 시도하는 편이 낫습니다.",
+    firstRunStepPromptTitle: "LinkedIn, Business, Casual 중 하나로 시작하기",
+    firstRunStepPromptBody: "먼저 프리셋 하나를 고르고, 첫 프리뷰에 부족한 부분이 있을 때만 짧은 문장을 추가하세요.",
+    firstRunStepReviewTitle: "첫 프리뷰를 보고 바로 판단하기",
+    firstRunStepReviewBody: "얼굴이 어색하면 같은 초안을 밀기보다 프리셋을 바꾸거나 더 나은 원본으로 다시 시도하는 편이 낫습니다.",
     composerHintWithAttachment:
       "원본 사진이 첨부되었습니다. 얼굴은 원본에 가깝게 유지하고 인물 사진을 정리하는 흐름으로 처리됩니다.",
     composerHintWithoutAttachment:
       "원본 사진이 없으면 프롬프트만으로 새 인물 이미지나 프로필 사진 변형을 생성합니다.",
     submitShortcutHint: "Cmd/Ctrl + Enter로 바로 실행할 수 있습니다.",
     signupSuccessMessage:
-      "가입이 완료되었습니다. 인물 사진 1장을 올리거나 인물 프롬프트 1개를 입력해 첫 결과를 확인해 보세요.",
+      "계정이 준비되었습니다. 인물 사진 1장을 올리거나 프리셋 하나를 골라 첫 결과를 확인해 보세요.",
     resumeDraftMessage: "이전 프롬프트를 다시 불러왔습니다. 이어서 진행하면 됩니다.",
     resumeEnhanceDraftMessage:
       "이전 프롬프트를 다시 불러왔습니다. 보정 작업을 다시 실행하려면 원본 사진을 다시 첨부해 주세요.",
@@ -897,14 +952,17 @@ function DashboardPageContent() {
   const [userId, setUserId] = useState<string | null>(null);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [creditCost, setCreditCost] = useState(10);
-  const [initialCredits, setInitialCredits] = useState<number | null>(null);
   const [expandedPromptExample, setExpandedPromptExample] = useState<string | null>(null);
+  const [selectedPresetId, setSelectedPresetId] = useState<ProfilePreset["id"]>("linkedin");
+  const [isDropActive, setIsDropActive] = useState(false);
+  const [previewRevealed, setPreviewRevealed] = useState(false);
 
   const [prompt, setPrompt] = useState("");
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
   const handledResumeRef = useRef<string | null>(null);
 
   // 로컬 개발: NEXT_PUBLIC_API_URL을 비워두면 상대 경로(/api/*)를 사용하며
@@ -1026,7 +1084,6 @@ function DashboardPageContent() {
       const data: CreditSummary = await res.json();
       updateCreditBalance(data.balance);
       setCreditCost(data.cost_per_image);
-      setInitialCredits(data.initial_credits);
     } catch {
       // silently ignore polling errors
     }
@@ -1054,18 +1111,43 @@ function DashboardPageContent() {
     return () => clearTimeout(timer);
   }, [jobs, fetchJobs]);
 
-  // activeJob 완료 시 2초 후 갤러리로 이동
   useEffect(() => {
-    if (!activeJobId) return;
-    const activeJob = jobs.find((j) => j.id === activeJobId);
-    if (activeJob?.status !== "done") return;
+    if (activeJobId) {
+      setPreviewRevealed(false);
+    }
+  }, [activeJobId]);
 
-    const timer = setTimeout(() => {
-      router.replace("/dashboard?tab=gallery");
-      setActiveJobId(null);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [jobs, activeJobId, router]);
+  const handleFileSelection = useCallback((nextFile: File | null) => {
+    if (!nextFile) {
+      setAttachedFile(null);
+      return;
+    }
+
+    if (!ALLOWED_UPLOAD_TYPES.has(nextFile.type)) {
+      setError(copy.invalidFileType);
+      return;
+    }
+
+    if (nextFile.size > MAX_UPLOAD_FILE_SIZE_BYTES) {
+      setError(copy.maxFileSize);
+      return;
+    }
+
+    setAttachedFile(nextFile);
+    setError(null);
+  }, [copy.invalidFileType, copy.maxFileSize]);
+
+  const applyPreset = useCallback((presetId: ProfilePreset["id"]) => {
+    const preset = PROFILE_PRESETS.find((item) => item.id === presetId);
+    if (!preset) {
+      return;
+    }
+
+    setSelectedPresetId(presetId);
+    setPrompt(preset.prompt[language]);
+    setError(null);
+    promptTextareaRef.current?.focus();
+  }, [language]);
 
   // -------------------------------------------------------------------------
   // AI 요청 (이미지 첨부 시 보정, 없으면 프롬프트 기반 생성)
@@ -1099,6 +1181,7 @@ function DashboardPageContent() {
 
     setError(null);
     setSubmitting(true);
+    setPreviewRevealed(false);
 
     // 파일 첨부된 경우: 업로드 후 이미지 보정 요청
     if (attachedFile) {
@@ -1228,6 +1311,8 @@ function DashboardPageContent() {
         const hasEnoughCredits = creditBalance === null || creditBalance >= creditCost;
         const showFirstRunOnboarding = generateJobs.length === 0 && !previewJob && !showLocalPreview;
         const submitButtonLabel = attachedFile ? copy.enhanceAction : copy.generateAction;
+        const selectedPreset =
+          PROFILE_PRESETS.find((preset) => preset.id === selectedPresetId) ?? PROFILE_PRESETS[0];
 
         return (
           <div className="min-h-[calc(100vh-10rem)] flex flex-col items-center justify-center gap-5 max-w-2xl mx-auto w-full">
@@ -1250,7 +1335,7 @@ function DashboardPageContent() {
                     {copy.firstRunBody}
                   </p>
                   <p className="mt-4 text-sm font-medium text-gray-800">
-                    {copy.firstRunCreditSummary(creditBalance, creditCost, initialCredits)}
+                    {copy.firstRunCreditSummary(creditBalance, creditCost)}
                   </p>
                 </div>
 
@@ -1311,14 +1396,94 @@ function DashboardPageContent() {
                     <img
                       src={previewJob.output_url}
                       alt={previewJob.prompt ?? ""}
-                      className="w-full h-full object-cover"
+                      className={`w-full h-full object-cover transition-all duration-300 ${
+                        previewRevealed ? "" : "scale-[1.01]"
+                      }`}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-                      <div className="space-y-1">
-                        <p className="text-xs text-gray-400 line-clamp-2">{previewJob.original_prompt || previewJob.prompt}</p>
-                        <p className="text-xs text-indigo-600">{copy.redirectingToGallery}</p>
+                    {!previewRevealed && (
+                      <>
+                        <div className="absolute inset-x-0 top-0 flex items-center justify-between px-4 py-4">
+                          <span className="rounded-full border border-white/20 bg-black/45 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-white">
+                            {language === "ko" ? "프리뷰" : "Preview"}
+                          </span>
+                          <span className="rounded-full border border-white/20 bg-black/45 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-white">
+                            {language === "ko" ? "워터마크 적용" : "Watermarked"}
+                          </span>
+                        </div>
+                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                          <span className="rotate-[-18deg] select-none text-3xl font-semibold uppercase tracking-[0.38em] text-white/18 sm:text-5xl">
+                            EditLuma Preview
+                          </span>
+                        </div>
+                        <div className="absolute inset-x-0 bottom-0 h-[42%] bg-black/28 backdrop-blur-xl" />
+                        <div className="absolute inset-x-0 bottom-0 p-4">
+                          <div className="rounded-2xl border border-white/10 bg-black/45 p-4 text-white shadow-2xl backdrop-blur">
+                            <p className="text-sm font-semibold">
+                              {language === "ko"
+                                ? "첫 결과 프리뷰가 준비됐습니다"
+                                : "Your first result preview is ready"}
+                            </p>
+                            <p className="mt-2 text-sm leading-6 text-white/75">
+                              {language === "ko"
+                                ? "먼저 가볍게 확인하고, 마음에 들면 전체 결과를 보고 다음 단계로 넘어가세요."
+                                : "Review the first pass quickly. If it looks promising, reveal the full preview and decide what to do next."}
+                            </p>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setPreviewRevealed(true)}
+                                className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-indigo-50"
+                              >
+                                {language === "ko" ? "프리뷰 전체 보기" : "Reveal preview"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => router.push("/dashboard?tab=gallery")}
+                                className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/15"
+                              >
+                                {language === "ko" ? "갤러리 열기" : "Open gallery"}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    {previewRevealed && (
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                        <div className="flex flex-wrap items-end justify-between gap-3">
+                          <div className="space-y-1">
+                            <p className="text-xs text-gray-300 line-clamp-2">
+                              {previewJob.original_prompt || previewJob.prompt}
+                            </p>
+                            <p className="text-xs text-white/80">
+                              {language === "ko"
+                                ? "프리뷰를 확인했습니다. 바로 저장하거나 프롬프트를 다시 다듬어 보세요."
+                                : "Preview revealed. Save it to the gallery or refine the prompt again."}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPrompt(previewJob.original_prompt || previewJob.prompt || "");
+                                setActiveJobId(null);
+                                promptTextareaRef.current?.focus();
+                              }}
+                              className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/15"
+                            >
+                              {language === "ko" ? "프롬프트 다시 다듬기" : "Refine prompt"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => router.push("/dashboard?tab=gallery")}
+                              className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-indigo-50"
+                            >
+                              {language === "ko" ? "갤러리 열기" : "Open gallery"}
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 ) : previewJob && previewStatus === "failed" ? (
                   <div className="aspect-square w-full flex flex-col items-center justify-center gap-2 bg-red-50">
@@ -1338,14 +1503,125 @@ function DashboardPageContent() {
             <div className={`w-full bg-gray-50 border rounded-2xl overflow-hidden transition-colors ${
               error ? "border-red-900/60" : "border-gray-200 hover:border-gray-300 focus-within:border-indigo-500/60"
             }`}>
+              <div className="border-b border-gray-200 bg-white px-5 py-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  {PROFILE_PRESETS.map((preset) => {
+                    const isSelected = preset.id === selectedPreset.id;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => applyPreset(preset.id)}
+                        disabled={submitting}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+                          isSelected
+                            ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                            : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-900"
+                        }`}
+                      >
+                        {preset.label[language]}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-3 text-xs leading-5 text-gray-500">
+                  {selectedPreset.summary[language]}
+                </p>
+              </div>
+
+              <div className="px-5 pt-4">
+                <div
+                  onDragEnter={(event) => {
+                    event.preventDefault();
+                    if (submitting) return;
+                    setIsDropActive(true);
+                  }}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    if (submitting) return;
+                    setIsDropActive(true);
+                  }}
+                  onDragLeave={(event) => {
+                    event.preventDefault();
+                    if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                      return;
+                    }
+                    setIsDropActive(false);
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    setIsDropActive(false);
+                    if (submitting) return;
+                    handleFileSelection(event.dataTransfer.files?.[0] ?? null);
+                  }}
+                  className={`rounded-2xl border border-dashed px-4 py-4 transition-colors ${
+                    isDropActive
+                      ? "border-indigo-500 bg-indigo-50"
+                      : attachedFile
+                        ? "border-emerald-300 bg-emerald-50/60"
+                        : "border-gray-300 bg-white"
+                  }`}
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {attachedFile
+                          ? language === "ko"
+                            ? "원본 사진이 연결되었습니다"
+                            : "Source photo attached"
+                          : language === "ko"
+                            ? "사진을 끌어다 놓거나 직접 첨부하세요"
+                            : "Drag in a portrait or attach one"}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-gray-500">
+                        {attachedFile
+                          ? attachedFile.name
+                          : language === "ko"
+                            ? "JPG, PNG, WEBP, GIF, HEIC 지원. 모바일에서는 버튼으로 바로 업로드할 수 있습니다."
+                            : "Supports JPG, PNG, WEBP, GIF, and HEIC. On mobile, use the button below to upload directly."}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={submitting}
+                        className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        {attachedFile
+                          ? language === "ko"
+                            ? "사진 바꾸기"
+                            : "Replace photo"
+                          : language === "ko"
+                            ? "사진 첨부"
+                            : "Attach photo"}
+                      </button>
+                      {attachedFile && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAttachedFile(null);
+                            if (fileInputRef.current) fileInputRef.current.value = "";
+                          }}
+                          className="rounded-xl border border-gray-200 bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-500 transition-colors hover:text-red-600"
+                        >
+                          {language === "ko" ? "첨부 해제" : "Remove"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <textarea
+                ref={promptTextareaRef}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleGenerate();
                 }}
                 disabled={submitting}
-                rows={4}
+                rows={3}
                 placeholder={copy.promptPlaceholder}
                 className="w-full bg-transparent px-5 pt-5 pb-3 text-base text-gray-900 placeholder-gray-400 focus:outline-none resize-none disabled:opacity-50"
               />
@@ -1364,7 +1640,7 @@ function DashboardPageContent() {
                     type="file"
                     accept={ALLOWED_UPLOAD_ACCEPT}
                     className="hidden"
-                    onChange={(e) => setAttachedFile(e.target.files?.[0] ?? null)}
+                    onChange={(e) => handleFileSelection(e.target.files?.[0] ?? null)}
                   />
                   {attachedFile ? (
                     <span className="flex items-center gap-1.5 text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-lg">
@@ -1383,17 +1659,9 @@ function DashboardPageContent() {
                       </button>
                     </span>
                   ) : (
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={submitting}
-                      className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-400 bg-gray-100 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-                      title={copy.attachTitle}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                      </svg>
-                      {copy.attachImage}
-                    </button>
+                    <span className="text-xs text-gray-400">
+                      {copy.attachTitle}
+                    </span>
                   )}
                 </div>
 

@@ -19,7 +19,6 @@ type UserMenuPopoverProps = {
 type CreditSummary = {
   balance: number;
   cost_per_image: number;
-  initial_credits: number;
 };
 
 export default function UserMenuPopover({
@@ -35,7 +34,6 @@ export default function UserMenuPopover({
   const [isOpen, setIsOpen] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [creditCost, setCreditCost] = useState(10);
-  const [initialCredits, setInitialCredits] = useState(100);
   const [isLoadingCredits, setIsLoadingCredits] = useState(false);
   const [creditError, setCreditError] = useState<string | null>(null);
   const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
@@ -69,7 +67,6 @@ export default function UserMenuPopover({
       const payload: CreditSummary = await response.json();
       setCreditBalance(payload.balance);
       setCreditCost(payload.cost_per_image);
-      setInitialCredits(payload.initial_credits);
       broadcastCreditBalance(payload.balance);
     } catch (error) {
       setCreditError(
@@ -197,8 +194,8 @@ export default function UserMenuPopover({
             </div>
             <p className="mt-3 text-xs text-gray-500">
               {language === "ko"
-                ? `신규 계정은 ${initialCredits} 크레딧으로 시작합니다.`
-                : `New accounts start with ${initialCredits} credits.`}
+                ? `프로필 결과 1건당 현재 ${creditCost}크레딧이 사용됩니다.`
+                : `One profile result currently uses ${creditCost} credits.`}
             </p>
             {isLoadingCredits && (
               <p className="mt-3 text-xs text-gray-500">

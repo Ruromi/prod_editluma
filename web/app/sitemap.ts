@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/site";
 
-const lastModified = new Date("2026-03-13T00:00:00.000Z");
+const lastModified = new Date("2026-03-17T00:00:00.000Z");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
@@ -21,19 +21,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: absoluteUrl("/ai-image-generator"),
       lastModified,
       changeFrequency: "weekly",
-      priority: 0.85,
+      priority: 0.72,
     },
     {
       url: absoluteUrl("/ai-photo-enhancer"),
       lastModified,
       changeFrequency: "weekly",
-      priority: 0.85,
+      priority: 0.88,
     },
     {
       url: absoluteUrl("/ai-portrait-enhancer"),
       lastModified,
       changeFrequency: "weekly",
-      priority: 0.8,
+      priority: 0.95,
     },
     {
       url: absoluteUrl("/contact"),
