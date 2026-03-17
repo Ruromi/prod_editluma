@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     presign_download_expiry_seconds: int = 3600
     max_upload_file_size_bytes: int = 15 * 1024 * 1024
     max_prompt_length_chars: int = 2000
-    initial_user_credits: int = 100
+    initial_user_credits: int = 50
     image_request_credit_cost: int = 10
 
     # Polar billing

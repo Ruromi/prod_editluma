@@ -3,9 +3,9 @@ import "server-only";
 import { createAdminClient, dbSchema } from "@/lib/supabase/server";
 
 function resolveInitialUserCredits() {
-  const rawValue = Number(process.env.INITIAL_USER_CREDITS ?? "100");
+  const rawValue = Number(process.env.INITIAL_USER_CREDITS ?? "50");
   if (!Number.isFinite(rawValue) || rawValue < 0) {
-    return 100;
+    return 50;
   }
 
   return Math.floor(rawValue);
