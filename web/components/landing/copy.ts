@@ -18,14 +18,6 @@ type LandingExample = {
   resultUse: string;
 };
 
-type LandingFailureCase = {
-  eyebrow: string;
-  title: string;
-  originalState: string;
-  whyFailed: string;
-  nextStep: string;
-};
-
 type LandingCopy = {
   languageLabel: string;
   hero: {
@@ -57,9 +49,6 @@ type LandingCopy = {
     originalStateLabel: string;
     turnaroundLabel: string;
     resultUseLabel: string;
-    failureReasonLabel: string;
-    failureNextStepLabel: string;
-    failureCase: LandingFailureCase;
     items: LandingExample[];
   };
   cta: {
@@ -118,6 +107,16 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           desc: "Handle blemishes, tone balance, and minor cleanup while keeping the image believable.",
         },
         {
+          img: "/landing/features/upscale-4k.png",
+          title: "Low-res profile rescue",
+          desc: "Useful when the source image is small, soft, or cropped too tightly for a profile refresh.",
+        },
+        {
+          img: "",
+          title: "Multilingual prompt support",
+          desc: "Write direction in Korean, English, or French and let the workflow normalize it for the model.",
+        },
+        {
           img: "/landing/features/easy-upload.png",
           title: "Upload and review fast",
           desc: "Drop in one photo, add a short direction, and see whether the result is usable before buying more credits.",
@@ -128,9 +127,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           desc: "The product is designed for short feedback cycles so you can test, reject, or retry quickly.",
         },
         {
-          img: "",
-          title: "Multilingual prompt support",
-          desc: "Write direction in Korean, English, or French and let the workflow normalize it for the model.",
+          img: "/landing/features/style-transfer.png",
+          title: "Campaign style variations",
+          desc: "Once the core portrait works, you can branch into stronger visual treatments for launch or promo assets.",
         },
         {
           img: "/landing/ai-landing_2.png",
@@ -147,18 +146,6 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
       originalStateLabel: "Original state",
       turnaroundLabel: "Typical turnaround",
       resultUseLabel: "Result use",
-      failureReasonLabel: "Why it breaks",
-      failureNextStepLabel: "What to do instead",
-      failureCase: {
-        eyebrow: "Known miss",
-        title: "Hidden face plus strong blur is still a bad starting point",
-        originalState:
-          "The face is partially blocked, the light is uneven, and the upload is already heavily compressed.",
-        whyFailed:
-          "The model does not have enough clean facial structure to restore a trustworthy portrait, so retries can drift or over-smooth.",
-        nextStep:
-          "Use a clearer frame or reshoot once. This workflow works best when the face and light are still readable.",
-      },
       items: [
         {
           src: "/landing/feature-enhance-portrait.png",
@@ -282,6 +269,16 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           desc: "잡티, 톤 밸런스, 가벼운 보정을 처리하되 사람이 달라 보일 정도로 과하게 밀지 않습니다.",
         },
         {
+          img: "/landing/features/upscale-4k.png",
+          title: "저해상도 프로필 복구",
+          desc: "작게 저장됐거나 다소 흐린 원본도 프로필용으로 다시 살려야 할 때 유용합니다.",
+        },
+        {
+          img: "",
+          title: "다국어 프롬프트 지원",
+          desc: "한국어, 영어, 프랑스어로 원하는 방향을 적으면 모델이 처리하기 쉬운 형태로 정리합니다.",
+        },
+        {
           img: "/landing/features/easy-upload.png",
           title: "업로드 후 바로 판단",
           desc: "사진 한 장과 짧은 방향만 넣고, 추가 결제 전에 결과가 쓸 만한지 빠르게 확인할 수 있습니다.",
@@ -292,9 +289,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           desc: "한 번 돌려보고, 마음에 안 들면 바로 다시 시도하거나 버릴 수 있는 짧은 판단 사이클에 맞습니다.",
         },
         {
-          img: "",
-          title: "다국어 프롬프트 지원",
-          desc: "한국어, 영어, 프랑스어로 원하는 방향을 적으면 모델이 처리하기 쉬운 형태로 정리합니다.",
+          img: "/landing/features/style-transfer.png",
+          title: "캠페인용 스타일 확장",
+          desc: "핵심 인물 사진이 잡힌 뒤에는 런칭이나 프로모션용 강한 톤의 변형도 이어갈 수 있습니다.",
         },
         {
           img: "/landing/ai-landing_2.png",
@@ -311,17 +308,6 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
       originalStateLabel: "원본 상태",
       turnaroundLabel: "처리 감각",
       resultUseLabel: "결과 용도",
-      failureReasonLabel: "왜 잘 안 나오는지",
-      failureNextStepLabel: "대신 이렇게 하는 편이 낫습니다",
-      failureCase: {
-        eyebrow: "실패 사례",
-        title: "얼굴 가림과 강한 블러가 겹치면 시작점 자체가 좋지 않습니다",
-        originalState: "얼굴 일부가 가려져 있고, 빛이 불안정하며, 업로드 자체도 압축 손상이 큰 상태입니다.",
-        whyFailed:
-          "모델이 참고할 얼굴 구조 정보가 부족해서 여러 번 돌려도 형태가 흔들리거나 과하게 뭉개질 수 있습니다.",
-        nextStep:
-          "얼굴과 빛이 더 잘 보이는 원본으로 다시 올리거나 한 번 재촬영하는 편이 결과 신뢰도가 훨씬 높습니다.",
-      },
       items: [
         {
           src: "/landing/feature-enhance-portrait.png",
@@ -445,6 +431,16 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           desc: "Corrigez petites imperfections et équilibre de teint sans exagérer.",
         },
         {
+          img: "/landing/features/upscale-4k.png",
+          title: "Récupération profil basse résolution",
+          desc: "Pratique quand l’image source est petite, douce ou trop recadrée pour une photo de profil propre.",
+        },
+        {
+          img: "",
+          title: "Support multilingue",
+          desc: "Rédigez la direction en coréen, en anglais ou en français et laissez le modèle la normaliser.",
+        },
+        {
           img: "/landing/features/easy-upload.png",
           title: "Upload puis revue rapide",
           desc: "Ajoutez une photo, une courte direction, et décidez vite si le rendu mérite l’étape suivante.",
@@ -455,9 +451,9 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
           desc: "Tester, rejeter, ajuster ou relancer rapidement fait partie du flux principal.",
         },
         {
-          img: "",
-          title: "Support multilingue",
-          desc: "Rédigez la direction en coréen, en anglais ou en français et laissez le modèle la normaliser.",
+          img: "/landing/features/style-transfer.png",
+          title: "Variations de style campagne",
+          desc: "Une fois le portrait validé, vous pouvez pousser des traitements plus marqués pour des assets de lancement.",
         },
         {
           img: "/landing/ai-landing_2.png",
@@ -474,18 +470,6 @@ export const landingCopy: Record<LandingLanguage, LandingCopy> = {
       originalStateLabel: "État initial",
       turnaroundLabel: "Rythme typique",
       resultUseLabel: "Usage final",
-      failureReasonLabel: "Pourquoi cela casse",
-      failureNextStepLabel: "Que faire à la place",
-      failureCase: {
-        eyebrow: "Cas d’échec",
-        title: "Visage caché et flou fort restent une mauvaise base",
-        originalState:
-          "Le visage est partiellement bloqué, la lumière est instable et le fichier est déjà trop compressé.",
-        whyFailed:
-          "Le modèle ne dispose pas d’assez de structure faciale propre pour recréer un portrait fiable, donc les essais dérivent ou lissent trop.",
-        nextStep:
-          "Utilisez une image plus nette ou refaites une prise. Le flux fonctionne mieux quand le visage et la lumière restent lisibles.",
-      },
       items: [
         {
           src: "/landing/feature-enhance-portrait.png",
