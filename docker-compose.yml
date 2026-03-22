@@ -1,0 +1,41 @@
+version: "3.9"
+
+# 운영 풀스택 참고 구성 (Railway/Render 배포 전 로컬 검증용)
+# 사용법:
+#   cp api/.env.example api/.env && vi api/.env  # 실제 값 입력
+#   docker compose up --build
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: api/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A worker.celery_app worker --loglevel=info -Q celery,default
+    restart: unless-stopped
+    env_file: api/.env
+    depends_on:
+      redis:
+        condition: service_healthy
