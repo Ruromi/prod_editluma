@@ -1,10 +1,11 @@
-"""Tests for _with_enhancement_guards — no external API calls required."""
+"""Tests for _with_enhancement_guards and rewrite_for_image_enhancement — no external API calls required."""
 import sys
 import os
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from app.core.processor import _with_enhancement_guards, _ENHANCEMENT_PRESERVATION
+from app.core.processor import _with_enhancement_guards, _ENHANCEMENT_PRESERVATION, rewrite_for_image_enhancement
 
 
 # ---------------------------------------------------------------------------
@@ -100,3 +101,47 @@ def test_output_ends_with_period():
 def test_empty_prompt_returns_empty():
     assert _with_enhancement_guards("") == ""
     assert _with_enhancement_guards("   ") == ""
+
+
+# ---------------------------------------------------------------------------
+# rewrite_for_image_enhancement — mocked Groq to test without API key
+# ---------------------------------------------------------------------------
+
+def test_rewrite_fallback_applies_guards():
+    """When Groq is unavailable, the raw prompt still gets preservation guards."""
+    with patch("app.core.processor._call_groq_text", return_value=None):
+        result = rewrite_for_image_enhancement("warm")
+    assert result.lower().endswith(_ENHANCEMENT_PRESERVATION.lower() + ".")
+
+
+def test_rewrite_groq_response_gets_guards():
+    """A Groq-rewritten prompt always has preservation guards appended."""
+    groq_response = "Shift to a warmer color temperature with soft golden fill light and gentle flattering shadows"
+    with patch("app.core.processor._call_groq_text", return_value=groq_response):
+        result = rewrite_for_image_enhancement("warm")
+    assert result.lower().endswith(_ENHANCEMENT_PRESERVATION.lower() + ".")
+    assert groq_response.lower() in result.lower()
+
+
+def test_rewrite_system_prompt_contains_keyword_expansions():
+    """System prompt must include precise visual expansion guidance for common style keywords."""
+    captured: dict = {}
+
+    def capture(**kwargs):
+        captured.update(kwargs)
+        return "Adjusted with cinematic color grading and dramatic lighting"
+
+    with patch("app.core.processor._call_groq_text", side_effect=capture):
+        rewrite_for_image_enhancement("cinematic")
+
+    system_prompt = captured.get("system_prompt", "")
+    for keyword in ("cinematic", "luxury", "warm", "studio", "linkedin"):
+        assert keyword in system_prompt.lower(), f"Missing keyword '{keyword}' in system prompt"
+
+
+def test_rewrite_empty_input_uses_default_and_gets_guards():
+    """Empty input uses the default cleanup prompt and still gets guards."""
+    with patch("app.core.processor._call_groq_text", return_value=None):
+        result = rewrite_for_image_enhancement("")
+    assert result.lower().endswith(_ENHANCEMENT_PRESERVATION.lower() + ".")
+    assert len(result) > len(_ENHANCEMENT_PRESERVATION) + 2  # default prompt is present

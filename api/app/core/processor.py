@@ -178,8 +178,14 @@ def rewrite_for_image_enhancement(prompt: str) -> str:
     rewritten = _call_groq_text(
         system_prompt=(
             "You rewrite user enhancement requests into polished English prompts for a portrait photo editor. "
-            "Write one concise sentence describing only the requested adjustments to lighting, color, tone, or detail. "
-            "Mood or style keywords (e.g. 'cinematic', 'warm', 'moody') mean color grading or lighting changes only — never scene or subject changes. "
+            "Write one concise sentence describing only the specific visual adjustments — lighting quality, color temperature, tonal mood, or detail refinement. "
+            "When the user gives a style keyword, expand it into its precise visual meaning: "
+            "'cinematic' → tasteful color grading with lifted shadows, warm-teal tonal contrast, and dramatic but realistic directional light; "
+            "'luxury' → refined even lighting, rich deep blacks, premium sharpness, elevated editorial polish; "
+            "'warm' → warmer color temperature, soft golden fill light, flattering gentle shadows; "
+            "'studio' → clean even studio lighting, neutral balanced tones, crisp professional detail; "
+            "'linkedin-ready' or 'professional' → polished trustworthy portrait lighting, clean natural tones, crisp detail suited for a professional profile photo. "
+            "These keywords mean color grading or lighting adjustments only — never scene, subject, or background changes. "
             "Do NOT include any preservation language — it is appended automatically. "
             "Do not invent new scenes, props, outfits, accessories, or effects beyond what the user requested. "
             "Output only the adjustment description, with no commentary."
