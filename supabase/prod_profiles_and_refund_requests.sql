@@ -77,6 +77,8 @@ CREATE TRIGGER profiles_updated_at
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.profiles TO service_role;
+
 DROP POLICY IF EXISTS "service_role_all" ON public.profiles;
 CREATE POLICY "service_role_all" ON public.profiles
     AS PERMISSIVE FOR ALL
@@ -167,6 +169,8 @@ CREATE TRIGGER refund_requests_updated_at
     FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 ALTER TABLE public.refund_requests ENABLE ROW LEVEL SECURITY;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.refund_requests TO service_role;
 
 DROP POLICY IF EXISTS "service_role_all" ON public.refund_requests;
 CREATE POLICY "service_role_all" ON public.refund_requests
