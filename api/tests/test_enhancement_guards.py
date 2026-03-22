@@ -135,8 +135,68 @@ def test_rewrite_system_prompt_contains_keyword_expansions():
         rewrite_for_image_enhancement("cinematic")
 
     system_prompt = captured.get("system_prompt", "")
-    for keyword in ("cinematic", "luxury", "warm", "studio", "linkedin"):
+    for keyword in ("cinematic", "luxury", "warm", "studio", "linkedin", "premium", "editorial", "refined", "upscale", "polished", "high-end"):
         assert keyword in system_prompt.lower(), f"Missing keyword '{keyword}' in system prompt"
+
+
+def test_rewrite_system_prompt_premium_retouch_visual_language():
+    """System prompt must describe premium retouch in retouching terms, not cinematic/filter terms."""
+    captured: dict = {}
+
+    def capture(**kwargs):
+        captured.update(kwargs)
+        return "Balanced contrast with lifted midtones and crisp sharpness"
+
+    with patch("app.core.processor._call_groq_text", side_effect=capture):
+        rewrite_for_image_enhancement("high-end correction")
+
+    system_prompt = captured.get("system_prompt", "")
+    lower = system_prompt.lower()
+    for phrase in ("balanced contrast", "lifted midtones", "crisp", "skin detail", "color grading"):
+        assert phrase in lower, f"Missing premium-retouch visual term '{phrase}' in system prompt"
+    # Must not conflate premium retouch with cinematic
+    premium_section_start = lower.find("premium")
+    cinematic_section_start = lower.find("cinematic")
+    assert premium_section_start != -1, "premium keyword missing from system prompt"
+    assert cinematic_section_start != -1, "cinematic keyword missing from system prompt"
+    # They should be in separate instructions (luxury cluster appears after cinematic)
+    assert premium_section_start > cinematic_section_start, (
+        "premium-retouch cluster should appear after cinematic in the system prompt"
+    )
+
+
+def test_rewrite_system_prompt_premium_anti_patterns():
+    """System prompt must explicitly forbid plastic skin, airbrushed finish, over-processing, and identity drift."""
+    captured: dict = {}
+
+    def capture(**kwargs):
+        captured.update(kwargs)
+        return "Elegant soft directional light with balanced contrast and crisp detail"
+
+    with patch("app.core.processor._call_groq_text", side_effect=capture):
+        rewrite_for_image_enhancement("luxury")
+
+    system_prompt = captured.get("system_prompt", "")
+    lower = system_prompt.lower()
+    for phrase in ("plastic skin", "airbrushed", "over-processing", "identity drift"):
+        assert phrase in lower, f"Missing anti-pattern guard '{phrase}' in system prompt"
+
+
+def test_rewrite_system_prompt_premium_retouch_guidance():
+    """System prompt must describe premium retouch with elegant light, luminosity, and pore-texture language."""
+    captured: dict = {}
+
+    def capture(**kwargs):
+        captured.update(kwargs)
+        return "Elegant light, balanced contrast, refined skin detail"
+
+    with patch("app.core.processor._call_groq_text", side_effect=capture):
+        rewrite_for_image_enhancement("polished editorial")
+
+    system_prompt = captured.get("system_prompt", "")
+    lower = system_prompt.lower()
+    for phrase in ("elegant", "luminosity", "pore texture"):
+        assert phrase in lower, f"Missing premium-retouch guidance term '{phrase}' in system prompt"
 
 
 def test_rewrite_empty_input_uses_default_and_gets_guards():
