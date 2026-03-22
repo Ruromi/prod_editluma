@@ -4,11 +4,11 @@ import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.config import settings
-from app.core.storage import generate_presigned_upload_post
+from app.core.storage import generate_presigned_upload_url
 from app.core.uploads import ALLOWED_UPLOAD_TYPES
 
 router = APIRouter(prefix="/api/upload", tags=["upload"])
@@ -39,7 +39,6 @@ class PresignRequest(BaseModel):
 class PresignResponse(BaseModel):
     upload_url: str
     object_key: str
-    upload_fields: dict[str, str] = Field(default_factory=dict)
 
 
 @router.post("/presign", response_model=PresignResponse)
@@ -61,9 +60,5 @@ async def presign_upload(
 
     safe_name = _sanitize_filename(body.filename, body.content_type)
     object_key = f"uploads/{user.id}/{uuid.uuid4()}/{safe_name}"
-    payload = generate_presigned_upload_post(object_key, body.content_type)
-    return PresignResponse(
-        upload_url=str(payload["url"]),
-        object_key=object_key,
-        upload_fields={str(key): str(value) for key, value in dict(payload.get("fields") or {}).items()},
-    )
+    upload_url = generate_presigned_upload_url(object_key, body.content_type)
+    return PresignResponse(upload_url=upload_url, object_key=object_key)

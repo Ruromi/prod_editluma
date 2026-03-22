@@ -1203,27 +1203,15 @@ function DashboardPageContent() {
         if (!presignRes.ok) {
           throw new Error(await readApiError(presignRes, copy.uploadPrepFailed(), language));
         }
-        const { upload_url, object_key, upload_fields } = await presignRes.json();
+        const { upload_url, object_key } = await presignRes.json();
 
         let putRes: Response;
         try {
-          if (upload_fields && typeof upload_fields === "object" && Object.keys(upload_fields).length > 0) {
-            const formData = new FormData();
-            Object.entries(upload_fields as Record<string, string>).forEach(([key, value]) => {
-              formData.append(key, value);
-            });
-            formData.append("file", attachedFile);
-            putRes = await fetch(upload_url, {
-              method: "POST",
-              body: formData,
-            });
-          } else {
-            putRes = await fetch(upload_url, {
-              method: "PUT",
-              headers: attachedFile.type ? { "Content-Type": attachedFile.type } : undefined,
-              body: attachedFile,
-            });
-          }
+          putRes = await fetch(upload_url, {
+            method: "PUT",
+            headers: { "Content-Type": attachedFile.type },
+            body: attachedFile,
+          });
         } catch {
           throw new Error(copy.uploadNetworkFailed);
         }

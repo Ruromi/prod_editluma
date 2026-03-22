@@ -2,8 +2,6 @@
 S3-compatible storage helpers (presign, etc.).
 Works with AWS S3, Supabase Storage, Cloudflare R2, MinIO.
 """
-from typing import Any
-
 import boto3
 from botocore.config import Config
 
@@ -22,21 +20,19 @@ def _get_s3_client():
     return boto3.client("s3", **kwargs)
 
 
-def generate_presigned_upload_post(object_key: str, content_type: str) -> dict[str, Any]:
-    """Return a presigned POST payload with server-enforced size and content-type limits."""
+def generate_presigned_upload_url(object_key: str, content_type: str) -> str:
+    """Return a presigned PUT URL valid for `presign_upload_expiry_seconds`."""
     client = _get_s3_client()
-    return client.generate_presigned_post(
-        Bucket=settings.storage_bucket,
-        Key=object_key,
-        Fields={
-            "Content-Type": content_type,
+    url = client.generate_presigned_url(
+        "put_object",
+        Params={
+            "Bucket": settings.storage_bucket,
+            "Key": object_key,
+            "ContentType": content_type,
         },
-        Conditions=[
-            {"Content-Type": content_type},
-            ["content-length-range", 1, settings.max_upload_file_size_bytes],
-        ],
         ExpiresIn=settings.presign_upload_expiry_seconds,
     )
+    return url
 
 
 def generate_presigned_download_url(object_key: str) -> str:
