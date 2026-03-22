@@ -490,6 +490,15 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                       <p>현재 잔액: <span className="text-gray-900">{row.currentBalance}</span></p>
                       <p>결제 시각: <span className="text-gray-900">{dateTime.format(new Date(row.created_at))}</span></p>
                     </div>
+                    {existingRefund && (
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm">
+                        <p className="font-medium text-amber-900">환불 요청 내용</p>
+                        <p className="mt-2 text-xs uppercase tracking-[0.14em] text-amber-700">사유</p>
+                        <p className="mt-1 text-sm text-amber-900">{existingRefund.reason || "-"}</p>
+                        <p className="mt-3 text-xs uppercase tracking-[0.14em] text-amber-700">메모</p>
+                        <p className="mt-1 text-sm text-amber-900">{existingRefund.comment || "-"}</p>
+                      </div>
+                    )}
                   </div>
 
                   <form action={refundPayment} className="w-full max-w-sm space-y-2">
