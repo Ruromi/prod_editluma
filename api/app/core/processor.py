@@ -121,26 +121,24 @@ def _with_generation_guards(prompt: str) -> str:
 
 
 def _with_enhancement_guards(prompt: str) -> str:
-    normalized = " ".join(prompt.split())
+    normalized = " ".join(prompt.split()).rstrip(".")
     if not normalized:
         return normalized
 
     lower = normalized.lower()
-    extra_clauses: list[str] = []
 
-    if not any(
+    needs_identity = not any(
         token in lower
         for token in (
             "same person",
             "same subject",
-            "preserve facial identity",
-            "keep facial identity",
+            "preserve facial",
+            "keep facial",
             "original identity",
+            "preserving",
         )
-    ):
-        extra_clauses.append("same person, preserve facial identity")
-
-    if not any(
+    )
+    needs_pose = not any(
         token in lower
         for token in (
             "same expression",
@@ -150,26 +148,33 @@ def _with_enhancement_guards(prompt: str) -> str:
             "same hairstyle",
             "same clothing",
         )
-    ):
-        extra_clauses.append(
-            "keep the same expression, pose, framing, hairstyle, clothing, and background unless a change is explicitly requested"
-        )
-
-    if not any(
+    )
+    needs_texture = not any(
         token in lower
         for token in (
-            "natural skin texture",
+            "natural skin",
             "realistic detail",
             "subtle retouch",
             "realistic finish",
         )
-    ):
-        extra_clauses.append("natural skin texture, realistic detail, subtle retouch, realistic finish")
+    )
 
-    if not extra_clauses:
-        return normalized
+    if not (needs_identity or needs_pose or needs_texture):
+        return normalized + "."
 
-    return f"{normalized}. {'; '.join(extra_clauses)}."
+    guard_parts: list[str] = []
+    if needs_identity and needs_pose:
+        guard_parts.append(
+            "preserving the subject's facial identity, expression, pose, framing, hairstyle, clothing, and background"
+        )
+    elif needs_identity:
+        guard_parts.append("preserving the subject's facial identity")
+    elif needs_pose:
+        guard_parts.append("keeping the same expression, pose, framing, hairstyle, clothing, and background")
+    if needs_texture:
+        guard_parts.append("natural skin texture and realistic finish")
+
+    return f"{normalized}, {', '.join(guard_parts)}."
 
 
 def rewrite_for_image_generation(prompt: str) -> str:
@@ -211,13 +216,13 @@ def rewrite_for_image_enhancement(prompt: str) -> str:
 
     rewritten = _call_groq_text(
         system_prompt=(
-            "You rewrite user requests into faithful English prompts for an image enhancement model. "
-            "The source image already contains the person and scene. "
-            "Preserve the same person, facial identity, expression, pose, camera angle, framing, hairstyle, clothing, and background unless the user explicitly asks to change one of them. "
-            "Interpret vague requests as subtle retouching only. "
-            "Focus on exposure, contrast, color balance, skin tone, detail recovery, and realistic portrait polish. "
-            "Do not invent new scenes, props, outfits, accessories, makeup, or cinematic effects. "
-            "Keep the prompt concise but specific. Output only one English prompt."
+            "You rewrite user enhancement requests into polished English prompts for a portrait photo editor. "
+            "Produce one or two concise sentences that read naturally as a single coherent instruction. "
+            "The image is already taken — describe only adjustments to lighting, color, tone, or detail. "
+            "Mood or style keywords (e.g. 'cinematic', 'warm', 'moody') mean color grading or lighting changes, not scene or subject changes. "
+            "Every output must reflect that the subject's facial identity, expression, pose, framing, hairstyle, and clothing remain unchanged unless the user explicitly requests otherwise — weave this naturally into the sentence rather than appending a mechanical list. "
+            "Do not invent new scenes, props, outfits, accessories, or effects beyond what the user requested. "
+            "Output only the final prompt, with no commentary."
         ),
         user_prompt=raw_prompt,
         temperature=0.15,
