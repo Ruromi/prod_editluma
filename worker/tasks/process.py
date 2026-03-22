@@ -4,6 +4,7 @@ Image generation and enhancement worker.
 """
 import logging
 import os
+import re
 
 from celery import Task
 
@@ -30,38 +31,134 @@ def _ideogram_timeout_seconds() -> float:
     return max(timeout_ms / 1000, 1)
 
 
-def _translate_to_english(prompt: str) -> str:
-    """한국어가 포함된 프롬프트를 영어로 번역. 영어면 그대로 반환."""
-    import re
-    if not re.search(r"[\uac00-\ud7a3]", prompt):
-        return prompt
+def _contains_korean(text: str) -> bool:
+    return bool(re.search(r"[\uac00-\ud7a3]", text))
 
+
+def _call_groq_text(*, system_prompt: str, user_prompt: str, temperature: float = 0.2, max_tokens: int = 300) -> str | None:
     api_key = _groq_api_key()
     if not api_key:
-        logger.warning("GROQ_API_KEY not set — using original prompt")
-        return prompt
+        return None
 
     from groq import Groq
+
     client = Groq(api_key=api_key)
     resp = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You are a prompt translator for an AI image generation service. "
-                    "Translate the user's prompt to English. "
-                    "Output only the translated prompt, nothing else."
-                ),
-            },
-            {"role": "user", "content": prompt},
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
         ],
-        temperature=0.3,
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+    content = resp.choices[0].message.content or ""
+    text = content.strip()
+    return " ".join(text.split()) if text else None
+
+
+def _translate_to_english(prompt: str) -> str:
+    """한국어가 포함된 프롬프트를 영어로 번역. 영어면 그대로 반환."""
+    if not _contains_korean(prompt):
+        return prompt
+
+    translated = _call_groq_text(
+        system_prompt=(
+            "You translate image-generation prompts into English. "
+            "Preserve every subject, action, attribute, relationship, and scene detail exactly. "
+            "Do not add commentary. Output only the translated prompt."
+        ),
+        user_prompt=prompt,
+        temperature=0.1,
         max_tokens=300,
     )
-    translated = resp.choices[0].message.content.strip()
+    if not translated:
+        logger.warning("GROQ_API_KEY not set — using original prompt")
+        return prompt
     logger.info("Translated prompt: %r → %r", prompt, translated)
     return translated
+
+
+def _with_enhancement_guards(prompt: str) -> str:
+    normalized = " ".join(prompt.split())
+    if not normalized:
+        return normalized
+
+    lower = normalized.lower()
+    extra_clauses: list[str] = []
+
+    if not any(
+        token in lower
+        for token in (
+            "same person",
+            "same subject",
+            "preserve facial identity",
+            "keep facial identity",
+            "original identity",
+        )
+    ):
+        extra_clauses.append("same person, preserve facial identity")
+
+    if not any(
+        token in lower
+        for token in (
+            "same expression",
+            "same pose",
+            "same framing",
+            "same background",
+            "same hairstyle",
+            "same clothing",
+        )
+    ):
+        extra_clauses.append(
+            "keep the same expression, pose, framing, hairstyle, clothing, and background unless a change is explicitly requested"
+        )
+
+    if not any(
+        token in lower
+        for token in (
+            "natural skin texture",
+            "realistic detail",
+            "subtle retouch",
+            "realistic finish",
+        )
+    ):
+        extra_clauses.append("natural skin texture, realistic detail, subtle retouch, realistic finish")
+
+    if not extra_clauses:
+        return normalized
+
+    return f"{normalized}. {'; '.join(extra_clauses)}."
+
+
+def _rewrite_for_image_enhancement(prompt: str) -> str:
+    raw_prompt = (prompt or "").strip()
+    if not raw_prompt:
+        raw_prompt = "subtle portrait cleanup, balanced light, natural skin detail, realistic finish"
+
+    rewritten = _call_groq_text(
+        system_prompt=(
+            "You rewrite user requests into faithful English prompts for an image enhancement model. "
+            "The source image already contains the person and scene. "
+            "Preserve the same person, facial identity, expression, pose, camera angle, framing, hairstyle, clothing, and background unless the user explicitly asks to change one of them. "
+            "Interpret vague requests as subtle retouching only. "
+            "Focus on exposure, contrast, color balance, skin tone, detail recovery, and realistic portrait polish. "
+            "Do not invent new scenes, props, outfits, accessories, makeup, or cinematic effects. "
+            "Keep the prompt concise but specific. Output only one English prompt."
+        ),
+        user_prompt=raw_prompt,
+        temperature=0.15,
+        max_tokens=260,
+    )
+
+    if rewritten:
+        logger.info("Rewritten enhancement prompt: %r → %r", raw_prompt, rewritten)
+        return _with_enhancement_guards(rewritten)
+
+    translated = _translate_to_english(raw_prompt)
+    guarded = _with_enhancement_guards(translated)
+    logger.info("Fallback enhancement prompt: %r → %r", raw_prompt, guarded)
+    return guarded
 
 
 def _get_supabase():
@@ -121,12 +218,12 @@ def process_job(self: Task, job_id: str) -> dict:
                 "enhanced_prompt": enhanced_prompt,
             }
         elif mode in (None, "enhance") and job.get("type", "image") == "image":
-            output_key, translated_prompt = _enhance_image(job)
+            output_key, enhanced_prompt = _enhance_image(job)
             update_data = {
                 "status": "done",
                 "output_key": output_key,
                 "original_prompt": job.get("prompt"),
-                "enhanced_prompt": translated_prompt,
+                "enhanced_prompt": enhanced_prompt,
             }
         else:
             raise ValueError(f"Unsupported job type: {job.get('type')}")
@@ -162,11 +259,11 @@ def _enhance_image(job: dict) -> tuple[str, str]:
     """Image enhance via Ideogram V3 remix with character reference for face preservation.
 
     The original photo is sent as both the remix base image AND as a
-    character_reference_image so that Ideogram locks the person's facial
-    identity while freely changing the scene/situation per the prompt.
+    character_reference_image so that Ideogram preserves the person's facial
+    identity while following conservative cleanup instructions.
 
     Returns:
-        (output_key, translated_prompt)
+        (output_key, model_prompt)
     """
     import uuid as _uuid
     import os
@@ -178,8 +275,8 @@ def _enhance_image(job: dict) -> tuple[str, str]:
     if not api_key:
         raise RuntimeError("IDEOGRAM_API_KEY가 설정되지 않았습니다.")
 
-    raw_prompt = (job.get("prompt") or "high quality, detailed, professional").strip()
-    prompt = _translate_to_english(raw_prompt)
+    raw_prompt = (job.get("prompt") or "").strip()
+    prompt = _rewrite_for_image_enhancement(raw_prompt)
 
     # 1. S3에서 원본 이미지 다운로드
     bucket = os.getenv("STORAGE_BUCKET", "editluma-uploads")
@@ -207,16 +304,16 @@ def _enhance_image(job: dict) -> tuple[str, str]:
     # 2. Ideogram V3 remix API 호출
     #    - image: remix 베이스 (원본 사진)
     #    - character_reference_images: 얼굴/신원 고정용 (같은 사진)
-    #    - image_weight: 낮게 설정하여 장면 변경 허용 (얼굴은 character ref가 보존)
+    #    - image_weight: 원본 사진 구도/인상을 더 강하게 유지
     with httpx.Client(timeout=_ideogram_timeout_seconds()) as client:
         resp = client.post(
             f"{_ideogram_base_url()}/v1/ideogram-v3/remix",
             headers={"Api-Key": api_key},
             data={
                 "prompt": prompt,
-                "image_weight": "35",
+                "image_weight": "70",
                 "rendering_speed": "DEFAULT",
-                "magic_prompt": "ON",
+                "magic_prompt": "OFF",
                 "aspect_ratio": "1x1",
                 "num_images": "1",
             },

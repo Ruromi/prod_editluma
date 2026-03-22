@@ -126,7 +126,7 @@ const DASHBOARD_COPY = {
     download: "Download",
     close: "Close",
     inputPrompt: "Input Prompt",
-    aiPrompt: "AI Refined Prompt",
+    aiPrompt: "Model Prompt Used",
     generatedGallery: "Generated Gallery",
     generatingCount: (count: number) => `${count} generating`,
     noImagesYet: "No generated images yet",
@@ -213,7 +213,7 @@ const DASHBOARD_COPY = {
     download: "다운로드",
     close: "닫기",
     inputPrompt: "입력 프롬프트",
-    aiPrompt: "AI 보정 프롬프트",
+    aiPrompt: "모델에 전달된 프롬프트",
     generatedGallery: "생성 갤러리",
     generatingCount: (count: number) => `${count}개 생성 중`,
     noImagesYet: "아직 생성된 이미지가 없습니다",
@@ -743,7 +743,7 @@ function ImageDetailModal({
             </p>
           </div>
 
-          {/* AI 보정 프롬프트 */}
+          {/* 모델에 전달된 프롬프트 */}
           <div className="space-y-1.5">
             <h3 className="text-xs font-semibold text-indigo-500 uppercase tracking-wider">
               {copy.aiPrompt}

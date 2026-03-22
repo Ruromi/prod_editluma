@@ -120,6 +120,58 @@ def _with_generation_guards(prompt: str) -> str:
     return f"{normalized}. {'; '.join(extra_clauses)}."
 
 
+def _with_enhancement_guards(prompt: str) -> str:
+    normalized = " ".join(prompt.split())
+    if not normalized:
+        return normalized
+
+    lower = normalized.lower()
+    extra_clauses: list[str] = []
+
+    if not any(
+        token in lower
+        for token in (
+            "same person",
+            "same subject",
+            "preserve facial identity",
+            "keep facial identity",
+            "original identity",
+        )
+    ):
+        extra_clauses.append("same person, preserve facial identity")
+
+    if not any(
+        token in lower
+        for token in (
+            "same expression",
+            "same pose",
+            "same framing",
+            "same background",
+            "same hairstyle",
+            "same clothing",
+        )
+    ):
+        extra_clauses.append(
+            "keep the same expression, pose, framing, hairstyle, clothing, and background unless a change is explicitly requested"
+        )
+
+    if not any(
+        token in lower
+        for token in (
+            "natural skin texture",
+            "realistic detail",
+            "subtle retouch",
+            "realistic finish",
+        )
+    ):
+        extra_clauses.append("natural skin texture, realistic detail, subtle retouch, realistic finish")
+
+    if not extra_clauses:
+        return normalized
+
+    return f"{normalized}. {'; '.join(extra_clauses)}."
+
+
 def rewrite_for_image_generation(prompt: str) -> str:
     """사용자 프롬프트를 이미지 생성에 더 적합한 영문 프롬프트로 보정."""
     raw_prompt = (prompt or "").strip()
@@ -148,6 +200,37 @@ def rewrite_for_image_generation(prompt: str) -> str:
     translated = translate_to_english(raw_prompt)
     guarded = _with_generation_guards(translated)
     logger.info("Fallback generation prompt: %r → %r", raw_prompt, guarded)
+    return guarded
+
+
+def rewrite_for_image_enhancement(prompt: str) -> str:
+    """사용자 보정 요청을 원본 보존 중심의 영문 프롬프트로 정리."""
+    raw_prompt = (prompt or "").strip()
+    if not raw_prompt:
+        raw_prompt = "subtle portrait cleanup, balanced light, natural skin detail, realistic finish"
+
+    rewritten = _call_groq_text(
+        system_prompt=(
+            "You rewrite user requests into faithful English prompts for an image enhancement model. "
+            "The source image already contains the person and scene. "
+            "Preserve the same person, facial identity, expression, pose, camera angle, framing, hairstyle, clothing, and background unless the user explicitly asks to change one of them. "
+            "Interpret vague requests as subtle retouching only. "
+            "Focus on exposure, contrast, color balance, skin tone, detail recovery, and realistic portrait polish. "
+            "Do not invent new scenes, props, outfits, accessories, makeup, or cinematic effects. "
+            "Keep the prompt concise but specific. Output only one English prompt."
+        ),
+        user_prompt=raw_prompt,
+        temperature=0.15,
+        max_tokens=260,
+    )
+
+    if rewritten:
+        logger.info("Rewritten enhancement prompt: %r → %r", raw_prompt, rewritten)
+        return _with_enhancement_guards(rewritten)
+
+    translated = translate_to_english(raw_prompt)
+    guarded = _with_enhancement_guards(translated)
+    logger.info("Fallback enhancement prompt: %r → %r", raw_prompt, guarded)
     return guarded
 
 
@@ -195,13 +278,13 @@ def run_generate(job: dict) -> tuple[str, str]:
 
 
 def run_enhance(job: dict) -> tuple[str, str]:
-    """원본 이미지 → Ideogram V3 remix → S3 업로드. (output_key, translated_prompt) 반환."""
+    """원본 이미지 → Ideogram V3 remix → S3 업로드. (output_key, model_prompt) 반환."""
     api_key = os.getenv("IDEOGRAM_API_KEY", "")
     if not api_key:
         raise RuntimeError("IDEOGRAM_API_KEY가 설정되지 않았습니다.")
 
-    raw_prompt = (job.get("prompt") or "high quality, detailed, professional").strip()
-    prompt = translate_to_english(raw_prompt)
+    raw_prompt = (job.get("prompt") or "").strip()
+    prompt = rewrite_for_image_enhancement(raw_prompt)
 
     bucket = os.getenv("STORAGE_BUCKET", "editluma-uploads")
     endpoint = os.getenv("STORAGE_ENDPOINT_URL") or None
@@ -232,9 +315,9 @@ def run_enhance(job: dict) -> tuple[str, str]:
             headers={"Api-Key": api_key},
             data={
                 "prompt": prompt,
-                "image_weight": "35",
+                "image_weight": "70",
                 "rendering_speed": "DEFAULT",
-                "magic_prompt": "ON",
+                "magic_prompt": "OFF",
                 "aspect_ratio": "1x1",
                 "num_images": "1",
             },
