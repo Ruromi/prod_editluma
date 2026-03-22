@@ -79,56 +79,22 @@ def _translate_to_english(prompt: str) -> str:
     return translated
 
 
+_ENHANCEMENT_PRESERVATION = (
+    "preserving identity, expression, pose, framing, hairstyle, clothing, and background"
+    ", natural skin texture and realistic finish"
+)
+
+
 def _with_enhancement_guards(prompt: str) -> str:
-    normalized = " ".join(prompt.split())
+    normalized = " ".join(prompt.split()).rstrip(".")
     if not normalized:
         return normalized
 
-    lower = normalized.lower()
-    extra_clauses: list[str] = []
-
-    if not any(
-        token in lower
-        for token in (
-            "same person",
-            "same subject",
-            "preserve facial identity",
-            "keep facial identity",
-            "original identity",
-        )
-    ):
-        extra_clauses.append("same person, preserve facial identity")
-
-    if not any(
-        token in lower
-        for token in (
-            "same expression",
-            "same pose",
-            "same framing",
-            "same background",
-            "same hairstyle",
-            "same clothing",
-        )
-    ):
-        extra_clauses.append(
-            "keep the same expression, pose, framing, hairstyle, clothing, and background unless a change is explicitly requested"
-        )
-
-    if not any(
-        token in lower
-        for token in (
-            "natural skin texture",
-            "realistic detail",
-            "subtle retouch",
-            "realistic finish",
-        )
-    ):
-        extra_clauses.append("natural skin texture, realistic detail, subtle retouch, realistic finish")
-
-    if not extra_clauses:
-        return normalized
-
-    return f"{normalized}. {'; '.join(extra_clauses)}."
+    # Always append the canonical preservation clause exactly once.
+    # Skip only if the text already ends with it verbatim.
+    if normalized.lower().endswith(_ENHANCEMENT_PRESERVATION.lower()):
+        return normalized + "."
+    return f"{normalized}, {_ENHANCEMENT_PRESERVATION}."
 
 
 def _rewrite_for_image_enhancement(prompt: str) -> str:
@@ -138,17 +104,16 @@ def _rewrite_for_image_enhancement(prompt: str) -> str:
 
     rewritten = _call_groq_text(
         system_prompt=(
-            "You rewrite user requests into faithful English prompts for an image enhancement model. "
-            "The source image already contains the person and scene. "
-            "Preserve the same person, facial identity, expression, pose, camera angle, framing, hairstyle, clothing, and background unless the user explicitly asks to change one of them. "
-            "Interpret vague requests as subtle retouching only. "
-            "Focus on exposure, contrast, color balance, skin tone, detail recovery, and realistic portrait polish. "
-            "Do not invent new scenes, props, outfits, accessories, makeup, or cinematic effects. "
-            "Keep the prompt concise but specific. Output only one English prompt."
+            "You rewrite user enhancement requests into polished English prompts for a portrait photo editor. "
+            "Write one concise sentence describing only the requested adjustments to lighting, color, tone, or detail. "
+            "Mood or style keywords (e.g. 'cinematic', 'warm', 'moody') mean color grading or lighting changes only — never scene or subject changes. "
+            "Do NOT include any preservation language — it is appended automatically. "
+            "Do not invent new scenes, props, outfits, accessories, makeup, or effects beyond what the user requested. "
+            "Output only the adjustment description, with no commentary."
         ),
         user_prompt=raw_prompt,
         temperature=0.15,
-        max_tokens=260,
+        max_tokens=200,
     )
 
     if rewritten:

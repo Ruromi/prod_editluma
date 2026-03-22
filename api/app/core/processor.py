@@ -120,61 +120,22 @@ def _with_generation_guards(prompt: str) -> str:
     return f"{normalized}. {'; '.join(extra_clauses)}."
 
 
+_ENHANCEMENT_PRESERVATION = (
+    "preserving identity, expression, pose, framing, hairstyle, clothing, and background"
+    ", natural skin texture and realistic finish"
+)
+
+
 def _with_enhancement_guards(prompt: str) -> str:
     normalized = " ".join(prompt.split()).rstrip(".")
     if not normalized:
         return normalized
 
-    lower = normalized.lower()
-
-    needs_identity = not any(
-        token in lower
-        for token in (
-            "same person",
-            "same subject",
-            "preserve facial",
-            "keep facial",
-            "original identity",
-            "preserving",
-        )
-    )
-    needs_pose = not any(
-        token in lower
-        for token in (
-            "same expression",
-            "same pose",
-            "same framing",
-            "same background",
-            "same hairstyle",
-            "same clothing",
-        )
-    )
-    needs_texture = not any(
-        token in lower
-        for token in (
-            "natural skin",
-            "realistic detail",
-            "subtle retouch",
-            "realistic finish",
-        )
-    )
-
-    if not (needs_identity or needs_pose or needs_texture):
+    # Always append the canonical preservation clause exactly once.
+    # Skip only if the text already ends with it verbatim.
+    if normalized.lower().endswith(_ENHANCEMENT_PRESERVATION.lower()):
         return normalized + "."
-
-    guard_parts: list[str] = []
-    if needs_identity and needs_pose:
-        guard_parts.append(
-            "preserving the subject's facial identity, expression, pose, framing, hairstyle, clothing, and background"
-        )
-    elif needs_identity:
-        guard_parts.append("preserving the subject's facial identity")
-    elif needs_pose:
-        guard_parts.append("keeping the same expression, pose, framing, hairstyle, clothing, and background")
-    if needs_texture:
-        guard_parts.append("natural skin texture and realistic finish")
-
-    return f"{normalized}, {', '.join(guard_parts)}."
+    return f"{normalized}, {_ENHANCEMENT_PRESERVATION}."
 
 
 def rewrite_for_image_generation(prompt: str) -> str:
@@ -217,16 +178,15 @@ def rewrite_for_image_enhancement(prompt: str) -> str:
     rewritten = _call_groq_text(
         system_prompt=(
             "You rewrite user enhancement requests into polished English prompts for a portrait photo editor. "
-            "Produce one or two concise sentences that read naturally as a single coherent instruction. "
-            "The image is already taken — describe only adjustments to lighting, color, tone, or detail. "
-            "Mood or style keywords (e.g. 'cinematic', 'warm', 'moody') mean color grading or lighting changes, not scene or subject changes. "
-            "Every output must reflect that the subject's facial identity, expression, pose, framing, hairstyle, and clothing remain unchanged unless the user explicitly requests otherwise — weave this naturally into the sentence rather than appending a mechanical list. "
+            "Write one concise sentence describing only the requested adjustments to lighting, color, tone, or detail. "
+            "Mood or style keywords (e.g. 'cinematic', 'warm', 'moody') mean color grading or lighting changes only — never scene or subject changes. "
+            "Do NOT include any preservation language — it is appended automatically. "
             "Do not invent new scenes, props, outfits, accessories, or effects beyond what the user requested. "
-            "Output only the final prompt, with no commentary."
+            "Output only the adjustment description, with no commentary."
         ),
         user_prompt=raw_prompt,
         temperature=0.15,
-        max_tokens=260,
+        max_tokens=200,
     )
 
     if rewritten:
