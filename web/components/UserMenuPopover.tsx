@@ -163,7 +163,7 @@ export default function UserMenuPopover({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-[19rem] rounded-2xl border border-gray-200 bg-white/95 p-4 shadow-2xl shadow-black/40 backdrop-blur">
+        <div className="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-[19rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-gray-200 bg-white/95 p-4 shadow-2xl shadow-black/40 backdrop-blur">
           <div className="flex items-center gap-3">
             {avatarUrl ? (
               <img

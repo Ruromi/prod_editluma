@@ -60,7 +60,7 @@ export default function LandingPageContent({
         </div>
       </div>
 
-      <div className="flex flex-col gap-28 pb-28">
+      <div className="flex flex-col gap-16 pb-16 sm:gap-24 sm:pb-24 lg:gap-28 lg:pb-28">
         <HeroSection isAuthenticated={isAuthenticated} language={language} />
         <ProblemSection language={language} />
         <GallerySection language={language} />

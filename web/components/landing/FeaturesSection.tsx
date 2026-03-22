@@ -26,7 +26,7 @@ export default function FeaturesSection({ language }: FeaturesSectionProps) {
         <p className="mt-3 text-sm text-gray-500">{copy.subheading}</p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {features.map((f) => (
           <div
             key={f.title}

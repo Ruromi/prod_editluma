@@ -52,10 +52,10 @@ export default function HeroSection({ isAuthenticated, language }: HeroSectionPr
           </div>
 
           <div className="mt-8 flex flex-col items-center gap-3 lg:items-start">
-            <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
+            <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-center lg:justify-start">
               <Link
                 href={primaryHref}
-                className="inline-flex min-w-[240px] items-center justify-center whitespace-nowrap rounded-xl bg-gray-950 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-xl bg-gray-950 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800 sm:min-w-[240px]"
               >
                 {isAuthenticated ? copy.primaryCtaSignedIn : copy.primaryCtaSignedOut}
               </Link>

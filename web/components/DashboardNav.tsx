@@ -46,7 +46,7 @@ export default function DashboardNav({
   }, []);
 
   return (
-    <nav className="flex items-center gap-6">
+    <nav className="flex items-center gap-3 sm:gap-6">
       {TABS.map((t) =>
         isDashboard ? (
           <button
@@ -76,7 +76,7 @@ export default function DashboardNav({
 
       <Link
         href="/pricing"
-        className={`text-sm font-medium transition-colors relative pb-0.5 ${
+        className={`hidden sm:inline-flex text-sm font-medium transition-colors relative pb-0.5 ${
           isPricing
             ? "text-gray-900"
             : "text-gray-500 hover:text-gray-400"
@@ -90,7 +90,7 @@ export default function DashboardNav({
 
       <Link
         href="/mypage"
-        className={`text-sm font-medium transition-colors relative pb-0.5 ${
+        className={`hidden sm:inline-flex text-sm font-medium transition-colors relative pb-0.5 ${
           isMyPage
             ? "text-gray-900"
             : "text-gray-500 hover:text-gray-400"
