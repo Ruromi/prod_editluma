@@ -7,11 +7,6 @@ type GallerySectionProps = {
 
 export default function GallerySection({ language }: GallerySectionProps) {
   const copy = landingCopy[language].gallery;
-  const detailCards = [
-    { label: copy.originalStateLabel, value: "originalState" as const },
-    { label: copy.turnaroundLabel, value: "turnaround" as const },
-    { label: copy.resultUseLabel, value: "resultUse" as const },
-  ];
 
   return (
     <section id="examples" className="mx-auto max-w-6xl px-6">
@@ -37,33 +32,12 @@ export default function GallerySection({ language }: GallerySectionProps) {
                 }}
               />
             </div>
-            <div className="space-y-4 px-5 py-5">
+            <div className="px-5 py-5">
               <span className="inline-flex rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-500">
                 {g.label}
               </span>
-              <div>
-                <h3 className="text-lg font-semibold tracking-tight text-gray-900">{g.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-gray-600">{g.summary}</p>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                {detailCards.map((detail) => (
-                  <div
-                    key={`${g.src}-${detail.value}`}
-                    className="rounded-2xl border border-gray-200 bg-white px-4 py-4"
-                  >
-                    <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">
-                      {detail.label}
-                    </p>
-                    <p className="mt-2 text-sm leading-relaxed text-gray-700">{g[detail.value]}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">
-                  {copy.promptLabel}
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-gray-700">{g.prompt}</p>
-              </div>
+              <h3 className="mt-3 text-lg font-semibold tracking-tight text-gray-900">{g.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">{g.summary}</p>
             </div>
           </div>
         ))}

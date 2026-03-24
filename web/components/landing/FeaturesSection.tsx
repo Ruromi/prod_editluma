@@ -14,7 +14,7 @@ type FeatureCard = {
 
 export default function FeaturesSection({ language }: FeaturesSectionProps) {
   const copy = landingCopy[language].features;
-  const features: FeatureCard[] = copy.items;
+  const features: FeatureCard[] = copy.items.slice(0, 3);
 
   return (
     <section id="features" className="mx-auto max-w-6xl px-6">
@@ -23,7 +23,6 @@ export default function FeaturesSection({ language }: FeaturesSectionProps) {
           {copy.eyebrow}
         </p>
         <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">{copy.heading}</h2>
-        <p className="mt-3 text-sm text-gray-500">{copy.subheading}</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -44,9 +43,6 @@ export default function FeaturesSection({ language }: FeaturesSectionProps) {
               />
             </div>
             <div className="flex flex-1 flex-col px-5 py-5">
-              <div className="mb-3 inline-flex w-fit rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">
-                Result state
-              </div>
               <h4 className="text-lg font-semibold tracking-tight text-gray-900">{f.title}</h4>
               <p className="mt-2 text-sm leading-relaxed text-gray-600">{f.desc}</p>
             </div>

@@ -5,8 +5,6 @@ import GallerySection from "@/components/landing/GallerySection";
 import HeroSection from "@/components/landing/HeroSection";
 import LandingFooter from "@/components/landing/LandingFooter";
 import ProblemSection from "@/components/landing/ProblemSection";
-import TrustSection from "@/components/landing/TrustSection";
-import UseCasesSection from "@/components/landing/UseCasesSection";
 import { landingCopy } from "@/components/landing/copy";
 import {
   persistLandingLanguage,
@@ -60,13 +58,11 @@ export default function LandingPageContent({
         </div>
       </div>
 
-      <div className="flex flex-col gap-16 pb-16 sm:gap-24 sm:pb-24 lg:gap-28 lg:pb-28">
+      <div className="flex flex-col gap-14 pb-14 sm:gap-20 sm:pb-20 lg:gap-24 lg:pb-24">
         <HeroSection isAuthenticated={isAuthenticated} language={language} />
         <ProblemSection language={language} />
         <GallerySection language={language} />
         <FeaturesSection language={language} />
-        <UseCasesSection language={language} />
-        <TrustSection language={language} />
       </div>
       <LandingFooter language={language} />
     </>
